@@ -1,0 +1,118 @@
+[Server]
+    [Server.RPC]
+        addr = "0.0.0.0:20"
+        timeout = "1s"
+    [Server.HTTP]
+        addr = "0.0.0.0:8000"
+        timeout = "2s"
+        mode = "debug"
+
+[Client]
+    [Client.RPC]
+        [Client.RPC.RPCStardust]
+            key = "xHf74ZfV43cAUsUl"
+            secret = "d0dbe915091d400bd8ee7f27f0791303"
+            dial = "10s"
+            timeout = "300ms"
+            keepAliveInterval = "60s"
+            keepAliveTimeout = "20s"
+    [Client.HTTP]
+        [Client.HTTP.DemoClient]
+            key = "xHf74ZfV43cAUsUl"
+            secret = "d0dbe915091d400bd8ee7f27f0791303"
+            dial = "100ms"
+            timeout = "300ms"
+            keepAlive = "60s"
+
+        [Client.HTTP.AppClient]
+            host = "http://localhost:8001"
+            secretURL = "/api/app/secrets"
+            skipsURL = "/api/app/skips"
+            requestTimeout = 1000000000
+            key = "xHf74ZfV43cAUsUl"
+            secret = "d0dbe915091d400bd8ee7f27f0791303"
+            dial = "100ms"
+            timeout = "1s"
+            keepAlive = "60s"
+
+[MySQL]
+    dbName = "saas_test"
+    addr = "127.0.0.1:3306"
+    dsn = "root@tcp(127.0.0.1:3306)/saas_test?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"
+    readDSN = ["root@tcp(127.0.0.1:3306)/saas_test?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"]
+    active = 20
+    idle = 10
+    idleTimeout ="4h"
+    queryTimeout = "200ms"
+    execTimeout = "300ms"
+    tranTimeout = "400ms"
+    slowQueryDuration = "250ms"
+
+[Redis]
+    dbName = "saas-test"
+    dbIndex = 0
+    addr = "127.0.0.1:6379"
+    password = ""
+    maxIdle = 5
+    maxActive = 10
+    dialTimeout = "1s"
+    readTimeout = "1s"
+    writeTimeout = "1s"
+    idleTimeout = "10s"
+    slowOpTimeout = "100ms"
+
+[RocketMQ]
+    endPoint = ["your_end_point"]
+    accessKey = "your_access_key"
+    secretKey = "your_secret_key"
+    namespace = "your_name_space"
+    logPath = "/export/apps/golang/src/apps/waterdrop/logs/rocketmq.log"
+    [RocketMQ.SaasProducer]
+        retry = 1
+        sendTimeout = 1000 #ms
+        topicName = "your_topic_name"
+    [RocketMQ.OrderConsumer]
+        topicName = "your_topic_name"
+        tags = ["go-rocketmq","go-tag"]
+        gid = "your_gid"
+        #idempotentTTL = 3600 #unit s,default one hour
+        #orderly = true
+    [RocketMQ.SmsConsumer]
+        topicName = "your_topic_name"
+        tags = ["go-rocketmq"]
+        gid = "your_gid"
+        idempotentTTL = 0 #unit s, 0 means it's not need to handle idempotent
+
+[Registry]
+    type = "etcd"
+    endpoints = "127.0.0.1:2379"
+    dialTimeout = "1s"
+
+# unique id pool
+[IdPool]
+    len = 500 #max size
+    bizType = 1 #business type
+
+[Log]
+    addCaller = true
+    callerSkip = 1
+    level = "info"
+    outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
+    errorOutputPath = ["stderr","/export/apps/golang/src/apps/waterdrop/logs/error.log"]
+
+[Trace]
+    [Trace.Jaeger]
+        serviceName = "waterdrop"
+        enableRPCMetrics = true
+        #sampler config
+        samplerType = "const"
+        samplerParam = 1
+        #report config
+        agentAddr = "127.0.0.1:6831"
+        reporterLogSpans = false
+        reporterBufferFlushInterval = "2s"
+        #header config
+        traceBaggageHeaderPrefix = "ctx-"
+        traceContextHeaderName = "X-Trace-Id"
+        #option config
+        maxTagValueLength = 5120
