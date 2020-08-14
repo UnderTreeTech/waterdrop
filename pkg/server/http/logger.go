@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Logger() gin.HandlerFunc {
+func (s *Server) logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
 		var quota float64
@@ -19,22 +19,25 @@ func Logger() gin.HandlerFunc {
 		c.Next()
 
 		err := c.Errors
-		dt := time.Since(now)
+		duration := time.Since(now)
 
-		log.Info(c.Request.Context(),
-			"http-access-log",
-			log.String("ip", c.ClientIP()),
+		fields := make([]log.Field, 8)
+		fields = append(
+			fields,
+			log.String("client_ip", c.ClientIP()),
 			log.String("method", c.Request.Method),
 			log.String("path", c.Request.URL.Path),
 			log.Any("headers", c.Request.Header),
-			log.String("params", c.Request.Form.Encode()),
-			//log.Bytes("body", "body"),
-			//log.Int("ret", cerr.Code()),
-			//log.String("msg", cerr.Message()),
-			//log.String("stack", fmt.Sprintf("%+v", err)),
-			log.String("err", err.String()),
+			log.String("req", c.Request.Form.Encode()),
 			log.Float64("quota", quota),
-			log.Float64("exec_time", dt.Seconds()),
+			log.Float64("duration", duration.Seconds()),
+			log.String("error", err.String()),
 		)
+
+		if duration >= s.config.SlowRequestTimeout {
+			log.Warn(c.Request.Context(), "http-slow-access-log", fields...)
+		} else {
+			log.Info(c.Request.Context(), "http-access-log", fields...)
+		}
 	}
 }

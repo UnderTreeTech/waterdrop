@@ -1,11 +1,18 @@
 [Server]
     [Server.RPC]
-        addr = "0.0.0.0:20"
-        timeout = "1s"
+        network = "tcp"
+        addr = "0.0.0.0:20813"
+        idleTimeout = "180s"
+        maxLifeTime = "2h"
+        forceCloseWait = "20s"
+        keepAliveInterval = "60s"
+        keepAliveTimeout = "20s"
+        slowRequestDuration = "500ms"
     [Server.HTTP]
         addr = "0.0.0.0:8000"
         timeout = "2s"
         mode = "debug"
+        slowRequestDuration = "500ms"
 
 [Client]
     [Client.RPC]

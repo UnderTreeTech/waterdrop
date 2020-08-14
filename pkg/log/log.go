@@ -78,25 +78,21 @@ func defaultConfig() *Config {
 
 func Init(moduleName string) func() {
 	logConf := defaultConfig()
-	if moduleName != "" {
-		if err := conf.Unmarshal(moduleName, logConf); err != nil {
-			log.Printf("reload server.http fail, err msg %s", err.Error())
-		}
+	if err := conf.Unmarshal(moduleName, logConf); err != nil {
+		log.Printf("reload server.http fail, err msg %s", err.Error())
 	}
 
 	defaultLogger = newLogger(logConf)
-	if moduleName != "" {
-		conf.OnChange(func(config *conf.Config) {
-			reloadConf := defaultConfig()
-			if err := conf.Unmarshal(moduleName, reloadConf); err != nil {
-				log.Printf("reload server.http fail, err msg %s", err.Error())
-			}
+	conf.OnChange(func(config *conf.Config) {
+		reloadConf := defaultConfig()
+		if err := conf.Unmarshal(moduleName, reloadConf); err != nil {
+			log.Printf("reload server.http fail, err msg %s", err.Error())
+		}
 
-			if err := defaultLogger.level.UnmarshalText([]byte(reloadConf.Level)); err != nil {
-				panic(fmt.Sprintf("unmarshal log level fail, err msg %s", err.Error()))
-			}
-		})
-	}
+		if err := defaultLogger.level.UnmarshalText([]byte(reloadConf.Level)); err != nil {
+			panic(fmt.Sprintf("unmarshal log level fail, err msg %s", err.Error()))
+		}
+	})
 
 	return func() { defaultLogger.logger.Sync() }
 }

@@ -30,9 +30,19 @@ func main() {
 
 	srv := server.NewHTTPServer()
 	srv.Start()
+
+	//rpcConf := &rpc.Config{}
+	//if err := conf.Unmarshal("Server.RPC", rpcConf); err != nil {
+	//	panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
+	//}
+
+	//rpcSrv := rpc.New(rpcConf)
+	//demo.RegisterDemoServer(rpcSrv.Server(), &service.Service{})
+	//rpcSrv.Start()
 	<-c
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	srv.Stop(ctx)
+	//rpcSrv.Stop()
 }

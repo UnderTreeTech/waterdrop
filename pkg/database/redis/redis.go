@@ -102,6 +102,6 @@ func (r *Redis) getStatement(commandName string, args ...interface{}) (res strin
 func (r *Redis) slowLog(ctx context.Context, statement string, now time.Time) {
 	elapse := time.Since(now)
 	if elapse > r.conf.SlowOpTimeout {
-		log.Warn(ctx, "slow redis query", log.String("statement", statement), log.Duration("op_time", elapse))
+		log.Warn(ctx, "slow-redis-query", log.String("statement", statement), log.Duration("op_time", elapse))
 	}
 }

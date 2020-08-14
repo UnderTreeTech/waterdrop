@@ -16,7 +16,7 @@ import (
 )
 
 func NewHTTPServer() *http.Server {
-	srv := http.NewServer("Server.HTTP")
+	srv := http.New("Server.HTTP")
 
 	s := srv.Group("/api")
 	{

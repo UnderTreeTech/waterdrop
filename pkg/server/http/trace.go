@@ -3,18 +3,18 @@ package http
 import (
 	"context"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/trace"
+	tracer "github.com/UnderTreeTech/waterdrop/pkg/trace"
 	"github.com/gin-gonic/gin"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
-func Trace(conf *Config) gin.HandlerFunc {
+func (s *Server) trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// start trace
-		span, ctx := trace.StartSpanFromContext(c.Request.Context(),
+		span, ctx := tracer.StartSpanFromContext(c.Request.Context(),
 			c.Request.Method+" "+c.Request.URL.Path,
-			trace.HeaderExtractor(opentracing.HTTPHeadersCarrier(c.Request.Header)))
+			tracer.HeaderExtractor(opentracing.HTTPHeadersCarrier(c.Request.Header)))
 		ext.Component.Set(span, "http")
 		ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
 		ext.HTTPMethod.Set(span, c.Request.Method)
@@ -22,9 +22,9 @@ func Trace(conf *Config) gin.HandlerFunc {
 		ext.PeerHostIPv4.SetString(span, c.ClientIP())
 
 		// adjust request timeout
-		timeout := conf.Timeout
+		timeout := s.config.Timeout
 		reqTimeout := getTimeout(c.Request)
-		if reqTimeout > 0 && conf.Timeout > reqTimeout {
+		if reqTimeout > 0 && timeout > reqTimeout {
 			timeout = reqTimeout
 		}
 
@@ -36,7 +36,7 @@ func Trace(conf *Config) gin.HandlerFunc {
 		}()
 
 		c.Request = c.Request.WithContext(ctx)
-		c.Writer.Header().Set(_httpHeaderTraceId, trace.TraceID(ctx))
+		c.Writer.Header().Set(_httpHeaderTraceId, tracer.TraceID(ctx))
 
 		c.Next()
 	}

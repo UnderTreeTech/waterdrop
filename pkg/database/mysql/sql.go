@@ -693,7 +693,7 @@ func parseDSNAddr(dsn string) (addr string) {
 func slowLog(ctx context.Context, statement string, now time.Time, slowQueryDuration time.Duration) {
 	du := time.Since(now)
 	if du > slowQueryDuration {
-		log.Warn(ctx, "slow query", log.String("statement", statement), log.Duration("duration", du))
+		log.Warn(ctx, "slow-mysql-query", log.String("statement", statement), log.Duration("duration", du))
 	}
 }
 
