@@ -12,6 +12,6 @@ func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *empt
 	return reply, nil
 }
 func (s *Service) SayHelloURL(ctx context.Context, req *demo.HelloReq) (reply *demo.HelloResp, err error) {
-	reply = &demo.HelloResp{}
+	reply = &demo.HelloResp{Content: "Hello " + req.Name}
 	return reply, nil
 }

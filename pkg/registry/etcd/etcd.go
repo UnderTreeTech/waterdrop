@@ -142,7 +142,7 @@ func (e *EtcdRegistry) Close() {
 }
 
 func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
-	return fmt.Sprintf("/%s/%s/%s/%s", e.config.Prefix, info.Name, info.Scheme, info.Addr)
+	return fmt.Sprintf("/%s/%s/%s", e.config.Prefix, info.Name, info.Addr)
 }
 
 // Resolver Segment
@@ -230,6 +230,6 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 		addrs = append(addrs, addr)
 	}
 
-	log.Infof(fmt.Sprintf("resolver %d peer service", len(addrs)))
+	log.Infof(fmt.Sprintf("resolver %d peer service", len(addrs)), log.Any("services", addrs))
 	return addrs
 }

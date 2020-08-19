@@ -74,11 +74,10 @@ func New(config *Config) *Server {
 		MaxConnectionAge:      config.MaxLifeTime,
 	})
 
-	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate(), srv.validate())
 	unaryOpts := srv.WithUnaryServerChain(srv.unaryInterceptors...)
-
 	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, unaryOpts)
 	srv.server = grpc.NewServer(srv.serverOptions...)
+	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate())
 
 	return srv
 }
@@ -100,6 +99,7 @@ func (s *Server) Start() net.Addr {
 			panic(fmt.Sprintf("GRPC Server serve fail,err msg %s", err.Error()))
 		}
 	}()
+
 	log.Printf("GRPC Server: start grpc listen addr: %s", listener.Addr().String())
 	return listener.Addr()
 }
