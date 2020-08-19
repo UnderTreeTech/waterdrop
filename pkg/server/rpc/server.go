@@ -100,7 +100,7 @@ func (s *Server) Start() net.Addr {
 			panic(fmt.Sprintf("GRPC Server serve fail,err msg %s", err.Error()))
 		}
 	}()
-	log.Printf("GRPC Server: start grpc listen addr: %s", s.config.Addr)
+	log.Printf("GRPC Server: start grpc listen addr: %s", listener.Addr().String())
 	return listener.Addr()
 }
 

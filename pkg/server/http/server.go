@@ -35,10 +35,8 @@ func srvConfig(name string) *Config {
 	config := defaultConfig()
 
 	if err := conf.Unmarshal(name, config); err != nil {
-		panic(fmt.Sprintf("reload server.http fail, err msg %s", err.Error()))
+		panic(fmt.Sprintf("unmarshal server.http fail, err msg %s", err.Error()))
 	}
-
-	log.Printf("reload http server config, %+v", config)
 
 	conf.OnChange(func(config *conf.Config) {
 		err := config.Unmarshal(name, config)
@@ -91,7 +89,7 @@ func (s *Server) Start() net.Addr {
 		}
 	}()
 
-	log.Printf("HTTP Server: start http listen addr: %s", s.config.Addr)
+	log.Printf("HTTP Server: start http listen addr: %s", listener.Addr().String())
 	return listener.Addr()
 }
 
