@@ -1,6 +1,5 @@
 [Server]
     [Server.RPC]
-        network = "tcp"
         addr = "0.0.0.0:0"
         idleTimeout = "180s"
         maxLifeTime = "2h"

@@ -9,9 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/attributes"
+
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/mvcc/mvccpb"
-	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/resolver"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -29,6 +30,8 @@ var (
 		DialTimeout: 10 * time.Second,
 		RegisterTTL: 90 * time.Second,
 	}
+	schemeHTTP = "http"
+	schemeGRPC = "grpc"
 )
 
 type Config struct {
@@ -209,6 +212,10 @@ func (e *EtcdRegistry) parse(resp *clientv3.GetResponse) (services []*registry.S
 func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Address {
 	addrs := make([]resolver.Address, 0, len(services))
 	for _, service := range services {
+		if service.Scheme != schemeGRPC {
+			continue
+		}
+
 		var weight int64
 		if weight, _ := strconv.ParseInt(service.Metadata[registry.MetaWeight], 10, 64); weight <= 0 {
 			weight = 100
@@ -223,10 +230,8 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 		addr := resolver.Address{
 			Addr:       u.Host,
 			ServerName: service.Name,
-			Attributes: &attributes.Attributes{},
+			Attributes: attributes.New("weight", weight, "scheme", u.Scheme),
 		}
-		addr.Attributes.WithValues("weight", weight, "scheme", u.Scheme)
-
 		addrs = append(addrs, addr)
 	}
 

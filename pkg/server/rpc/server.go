@@ -19,8 +19,7 @@ import (
 var _abortIndex int8 = math.MaxInt8 / 2
 
 type Config struct {
-	Network string
-	Addr    string
+	Addr string
 
 	Timeout        time.Duration
 	IdleTimeout    time.Duration
@@ -43,7 +42,6 @@ type Server struct {
 
 func defaultConfig() *Config {
 	return &Config{
-		Network:             "tcp",
 		Addr:                "0.0.0.0:20812",
 		Timeout:             time.Second,
 		IdleTimeout:         180 * time.Second,
@@ -74,10 +72,10 @@ func New(config *Config) *Server {
 		MaxConnectionAge:      config.MaxLifeTime,
 	})
 
+	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate())
 	unaryOpts := srv.WithUnaryServerChain(srv.unaryInterceptors...)
 	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, unaryOpts)
 	srv.server = grpc.NewServer(srv.serverOptions...)
-	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate())
 
 	return srv
 }

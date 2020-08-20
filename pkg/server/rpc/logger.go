@@ -26,9 +26,14 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 
 		// call server interceptor
 		resp, err = handler(ctx, req)
+		var errmsg string
+		if err != nil {
+			errmsg = err.Error()
+		}
 
 		duration := time.Since(now)
-		fields := make([]log.Field, 6)
+
+		fields := make([]log.Field, 0, 6)
 		fields = append(
 			fields,
 			log.String("client_ip", clientIP),
@@ -36,7 +41,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 			log.Any("req", req),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
-			log.String("error", err.Error()),
+			log.String("error", errmsg),
 		)
 
 		if duration >= s.config.SlowRequestDuration {

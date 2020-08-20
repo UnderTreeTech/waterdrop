@@ -21,7 +21,7 @@ func (s *Server) logger() gin.HandlerFunc {
 		err := c.Errors
 		duration := time.Since(now)
 
-		fields := make([]log.Field, 8)
+		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
 			log.String("client_ip", c.ClientIP()),

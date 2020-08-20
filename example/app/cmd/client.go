@@ -31,12 +31,15 @@ func main() {
 	resolver.Register(etcd)
 
 	client := demo.NewDemoClient(newClient())
-	reply, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
-	if err != nil {
-		fmt.Println(err)
+	now := time.Now()
+	for i := 0; i < 1; i++ {
+		reply, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(reply)
 	}
-	fmt.Println(reply)
-
+	fmt.Println(time.Since(now))
 	time.Sleep(time.Hour * 30)
 }
 

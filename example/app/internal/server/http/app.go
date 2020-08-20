@@ -1,32 +1,17 @@
-package server
+package http
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/UnderTreeTech/waterdrop/example/app/internal/dao"
 	"github.com/UnderTreeTech/waterdrop/example/app/internal/model"
 	"github.com/UnderTreeTech/waterdrop/example/app/internal/utils"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/gomodule/redigo/redis"
 )
-
-func NewHTTPServer() *http.Server {
-	srv := http.New("Server.HTTP")
-
-	s := srv.Group("/api")
-	{
-		s.GET("/app/secrets", getAppInfo)
-		s.GET("/app/skips", getSkipUrls)
-		s.POST("/app/validate/:id", validateApp)
-	}
-
-	return srv
-}
 
 func getAppInfo(c *gin.Context) {
 	ctx := c.Request.Context()
