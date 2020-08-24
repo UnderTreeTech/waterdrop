@@ -38,6 +38,7 @@ func FromIncomingContext(ctx context.Context) opentracing.StartSpanOption {
 	if err != nil {
 		return NullStartSpanOption{}
 	}
+
 	return ext.RPCServerOption(sc)
 }
 
@@ -49,6 +50,7 @@ func HeaderExtractor(carrier opentracing.HTTPHeadersCarrier) opentracing.StartSp
 	if err != nil {
 		return NullStartSpanOption{}
 	}
+
 	return opentracing.ChildOf(sc)
 }
 
@@ -59,6 +61,7 @@ func HeaderInjector(ctx context.Context, carrier opentracing.HTTPHeadersCarrier)
 		span.LogFields(log.String("event", "inject failed"), log.Error(err))
 		return ctx
 	}
+
 	return context.WithValue(ctx, httpCarrierKey{}, carrier)
 }
 
@@ -68,6 +71,7 @@ func MetadataExtractor(carrier metadata.MD) opentracing.StartSpanOption {
 	if err != nil {
 		return NullStartSpanOption{}
 	}
+
 	return opentracing.ChildOf(sc)
 }
 
@@ -79,6 +83,7 @@ func MetadataInjector(ctx context.Context, carrier metadata.MD) context.Context 
 		span.LogFields(log.String("event", "inject failed"), log.Error(err))
 		return ctx
 	}
+
 	return metadata.NewOutgoingContext(ctx, carrier)
 }
 
@@ -87,5 +92,10 @@ func TraceID(ctx context.Context) string {
 	if sp == nil {
 		return ""
 	}
-	return sp.Context().(jaeger.SpanContext).TraceID().String()
+
+	if jsc, ok := sp.Context().(jaeger.SpanContext); ok {
+		return jsc.TraceID().String()
+	}
+
+	return ""
 }
