@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
+	"google.golang.org/grpc/balancer/roundrobin"
+
 	"github.com/UnderTreeTech/protobuf/demo"
 
 	"google.golang.org/grpc/resolver"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
 
+	//_ "github.com/UnderTreeTech/waterdrop/example/app/internal/ecode"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"google.golang.org/grpc"
@@ -33,11 +38,11 @@ func main() {
 	client := demo.NewDemoClient(newClient())
 	now := time.Now()
 	for i := 0; i < 1; i++ {
-		reply, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
+		_, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("err", status.ExtractStatus(err))
 		}
-		fmt.Println(reply)
+		//fmt.Println(reply)
 	}
 	fmt.Println(time.Since(now))
 	time.Sleep(time.Hour * 30)
@@ -49,6 +54,7 @@ func newClient() *grpc.ClientConn {
 		"etcd://default/service.user.v1",
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
+		grpc.WithBalancerName(roundrobin.Name),
 	)
 	if err != nil {
 		panic(err)

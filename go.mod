@@ -28,7 +28,7 @@ require (
 	golang.org/x/sys v0.0.0-20200817155316-9781c653f443 // indirect
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/tools v0.0.0-20200527183253-8e7acdbce89d // indirect
-	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70 // indirect
+	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	google.golang.org/grpc v1.28.1
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7

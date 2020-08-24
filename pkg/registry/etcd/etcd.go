@@ -144,10 +144,6 @@ func (e *EtcdRegistry) Close() {
 	e.client.Close()
 }
 
-func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
-	return fmt.Sprintf("/%s/%s/%s", e.config.Prefix, info.Name, info.Addr)
-}
-
 // Resolver Segment
 func (e *EtcdRegistry) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	go e.watch(cc, e.config.Prefix, target.Endpoint)
@@ -161,6 +157,10 @@ func (e *EtcdRegistry) Scheme() string {
 
 // ResolveNow is a noop for Resolver.
 func (e *EtcdRegistry) ResolveNow(rn resolver.ResolveNowOptions) {
+}
+
+func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
+	return fmt.Sprintf("/%s/%s/%s", e.config.Prefix, info.Name, info.Addr)
 }
 
 func (e *EtcdRegistry) watch(cc resolver.ClientConn, prefix string, serviceName string) {

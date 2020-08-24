@@ -13,7 +13,6 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
@@ -28,8 +27,6 @@ var (
 	// In such a case, QueryRow returns a placeholder *Row value that defers
 	// this error until a Scan.
 	ErrNoRows = sql.ErrNoRows
-	// ErrTxDone transaction done.
-	ErrTxDone = sql.ErrTxDone
 )
 
 // DB database.
@@ -43,9 +40,8 @@ type DB struct {
 // conn database connection
 type conn struct {
 	*sql.DB
-	breaker breaker.Breaker
-	conf    *Config
-	addr    string
+	conf *Config
+	addr string
 }
 
 // Tx transaction.
@@ -82,10 +78,10 @@ func (r *Row) Scan(dest ...interface{}) (err error) {
 	if r.cancel != nil {
 		r.cancel()
 	}
-	//r.db.onBreaker(&err)
 	if err != ErrNoRows {
 		err = errors.Wrapf(err, "query %s args %+v", r.query, r.args)
 	}
+
 	return
 }
 
@@ -104,6 +100,7 @@ func (rs *Rows) Close() (err error) {
 	if rs.cancel != nil {
 		rs.cancel()
 	}
+
 	return
 }
 
@@ -126,9 +123,7 @@ func Open(c *Config) (*DB, error) {
 		return nil, err
 	}
 	addr := parseDSNAddr(c.DSN)
-	brkGroup := breaker.NewGroup(c.Breaker)
-	brk := brkGroup.Get(addr)
-	w := &conn{DB: d, breaker: brk, conf: c, addr: addr}
+	w := &conn{DB: d, conf: c, addr: addr}
 	rs := make([]*conn, 0, len(c.ReadDSN))
 	for _, rd := range c.ReadDSN {
 		d, err := connect(c, rd)
@@ -136,13 +131,13 @@ func Open(c *Config) (*DB, error) {
 			return nil, err
 		}
 		addr = parseDSNAddr(rd)
-		brk := brkGroup.Get(addr)
-		r := &conn{DB: d, breaker: brk, conf: c, addr: addr}
+		r := &conn{DB: d, conf: c, addr: addr}
 		rs = append(rs, r)
 	}
 	db.write = w
 	db.read = rs
 	db.master = &DB{write: db.write}
+
 	return db, nil
 }
 
@@ -155,6 +150,7 @@ func connect(c *Config, dataSourceName string) (*sql.DB, error) {
 	d.SetMaxOpenConns(c.Active)
 	d.SetMaxIdleConns(c.Idle)
 	d.SetConnMaxLifetime(c.IdleTimeout)
+
 	return d, nil
 }
 
@@ -195,6 +191,7 @@ func (db *DB) Query(ctx context.Context, query string, args ...interface{}) (row
 		//}
 		return db.read[(idx+i)%len(db.read)].query(ctx, query, args...)
 	}
+
 	return db.write.query(ctx, query, args...)
 }
 
@@ -217,6 +214,7 @@ func (db *DB) readIndex() int {
 		return 0
 	}
 	v := atomic.AddInt64(&db.idx, 1)
+
 	return int(v) % len(db.read)
 }
 
@@ -225,11 +223,13 @@ func (db *DB) Close() (err error) {
 	if e := db.write.Close(); e != nil {
 		err = errors.WithStack(e)
 	}
+
 	for _, rd := range db.read {
 		if e := rd.Close(); e != nil {
 			err = errors.WithStack(e)
 		}
 	}
+
 	return
 }
 
@@ -239,11 +239,13 @@ func (db *DB) Ping(ctx context.Context) (err error) {
 	if err = db.write.ping(ctx); err != nil {
 		return
 	}
+
 	for _, rd := range db.read {
 		if err = rd.ping(ctx); err != nil {
 			return
 		}
 	}
+
 	return
 }
 
@@ -253,15 +255,8 @@ func (db *DB) Master() *DB {
 	if db.master == nil {
 		panic(ErrNoMaster)
 	}
-	return db.master
-}
 
-func (db *conn) onBreaker(err *error) {
-	if err != nil && *err != nil && *err != sql.ErrNoRows && *err != sql.ErrTxDone {
-		db.breaker.MarkFailed()
-	} else {
-		db.breaker.MarkSuccess()
-	}
+	return db.master
 }
 
 func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
@@ -271,10 +266,6 @@ func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
 
-	//if err = db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(db.addr, db.addr, "begin", "breaker")
-	//	return
-	//}
 	_, ctx, cancel := shrink(ctx, db.conf.TranTimeout)
 	rtx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -283,8 +274,8 @@ func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
 		span.Finish()
 		return
 	}
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), db.addr, db.addr, "begin")
 	tx = &Tx{tx: rtx, span: span, db: db, ctx: ctx, cancel: cancel}
+
 	return
 }
 
@@ -300,18 +291,13 @@ func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (re
 		slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
 	}()
 
-	//if err = db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(db.addr, db.addr, "exec", "breaker")
-	//	return
-	//}
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	res, err = db.ExecContext(ctx, query, args...)
 	cancel()
-	//db.onBreaker(&err)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), db.addr, db.addr, "exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
+
 	return
 }
 
@@ -323,19 +309,13 @@ func (db *conn) ping(ctx context.Context) (err error) {
 	ext.DBInstance.Set(span, db.conf.DBName)
 	defer span.Finish()
 
-	//if err = db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(db.addr, db.addr, "ping", "breaker")
-	//	return
-	//}
-
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	err = db.PingContext(ctx)
 	cancel()
-	//db.onBreaker(&err)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), db.addr, db.addr, "ping")
 	if err != nil {
 		err = errors.WithStack(err)
 	}
+
 	return
 }
 
@@ -347,6 +327,7 @@ func (db *conn) prepare(query string) (*Stmt, error) {
 	}
 	st := &Stmt{query: query, db: db}
 	st.stmt.Store(stmt)
+
 	return st, nil
 }
 
@@ -357,6 +338,7 @@ func (db *conn) prepared(query string) (stmt *Stmt) {
 		stmt.stmt.Store(s)
 		return
 	}
+
 	go func() {
 		for {
 			s, err := db.Prepare(query)
@@ -368,6 +350,7 @@ func (db *conn) prepared(query string) (stmt *Stmt) {
 			return
 		}
 	}()
+
 	return
 }
 
@@ -384,20 +367,15 @@ func (db *conn) query(ctx context.Context, query string, args ...interface{}) (r
 		slowLog(ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
 	}()
 
-	//if err = db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(db.addr, db.addr, "query", "breaker")
-	//	return
-	//}
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	rs, err := db.DB.QueryContext(ctx, query, args...)
-	//db.onBreaker(&err)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), db.addr, db.addr, "query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", query, args)
 		cancel()
 		return
 	}
 	rows = &Rows{Rows: rs, cancel: cancel}
+
 	return
 }
 
@@ -414,13 +392,9 @@ func (db *conn) queryRow(ctx context.Context, query string, args ...interface{})
 		slowLog(ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
 	}()
 
-	//if err := db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(db.addr, db.addr, "queryRow", "breaker")
-	//	return &Row{db: db, span: span, err: err}
-	//}
 	_, ctx, cancel := shrink(ctx, db.conf.QueryTimeout)
 	r := db.DB.QueryRowContext(ctx, query, args...)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), db.addr, db.addr, "queryrow")
+
 	return &Row{db: db, Row: r, query: query, args: args, span: span, cancel: cancel}
 }
 
@@ -434,6 +408,7 @@ func (s *Stmt) Close() (err error) {
 	if ok {
 		err = errors.WithStack(stmt.Close())
 	}
+
 	return
 }
 
@@ -460,10 +435,7 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 
 		defer span.Finish()
 	}
-	//if err = s.db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(s.db.addr, s.db.addr, "stmt:exec", "breaker")
-	//	return
-	//}
+
 	stmt, ok := s.stmt.Load().(*sql.Stmt)
 	if !ok {
 		err = ErrStmtNil
@@ -472,11 +444,10 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 	_, ctx, cancel := shrink(ctx, s.db.conf.ExecTimeout)
 	res, err = stmt.ExecContext(ctx, args...)
 	cancel()
-	//s.db.onBreaker(&err)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), s.db.addr, s.db.addr, "stmt:exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", s.query, args)
 	}
+
 	return
 }
 
@@ -504,10 +475,6 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 		defer span.Finish()
 	}
 
-	//if err = s.db.breaker.Allow(); err != nil {
-	//	//_metricReqErr.Inc(s.db.addr, s.db.addr, "stmt:query", "breaker")
-	//	return
-	//}
 	stmt, ok := s.stmt.Load().(*sql.Stmt)
 	if !ok {
 		err = ErrStmtNil
@@ -515,14 +482,13 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 	}
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	rs, err := stmt.QueryContext(ctx, args...)
-	//s.db.onBreaker(&err)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), s.db.addr, s.db.addr, "stmt:query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", s.query, args)
 		cancel()
 		return
 	}
 	rows = &Rows{Rows: rs, cancel: cancel}
+
 	return
 }
 
@@ -555,10 +521,6 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 		defer span.Finish()
 	}
 
-	//if row.err = s.db.breaker.Allow(); row.err != nil {
-	//	//_metricReqErr.Inc(s.db.addr, s.db.addr, "stmt:queryrow", "breaker")
-	//	return
-	//}
 	stmt, ok := s.stmt.Load().(*sql.Stmt)
 	if !ok {
 		return
@@ -566,7 +528,7 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	row.Row = stmt.QueryRowContext(ctx, args...)
 	row.cancel = cancel
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), s.db.addr, s.db.addr, "stmt:queryrow")
+
 	return
 }
 
@@ -574,13 +536,13 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 func (tx *Tx) Commit() (err error) {
 	err = tx.tx.Commit()
 	tx.cancel()
-	//tx.db.onBreaker(&err)
 	if tx.span != nil {
 		tx.span.Finish()
 	}
 	if err != nil {
 		err = errors.WithStack(err)
 	}
+
 	return
 }
 
@@ -588,13 +550,13 @@ func (tx *Tx) Commit() (err error) {
 func (tx *Tx) Rollback() (err error) {
 	err = tx.tx.Rollback()
 	tx.cancel()
-	//tx.db.onBreaker(&err)
 	if tx.span != nil {
 		tx.span.Finish()
 	}
 	if err != nil {
 		err = errors.WithStack(err)
 	}
+
 	return
 }
 
@@ -606,10 +568,10 @@ func (tx *Tx) Exec(query string, args ...interface{}) (res sql.Result, err error
 		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
 	}
 	res, err = tx.tx.ExecContext(tx.ctx, query, args...)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), tx.db.addr, tx.db.addr, "tx:exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
+
 	return
 }
 
@@ -628,7 +590,6 @@ func (tx *Tx) Query(query string, args ...interface{}) (rows *Rows, err error) {
 		err = errors.Wrapf(err, "query:%s, args:%+v", query, args)
 	}
 
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), tx.db.addr, tx.db.addr, "tx:query")
 	return
 }
 
@@ -643,7 +604,7 @@ func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
 	}
 
 	r := tx.tx.QueryRowContext(tx.ctx, query, args...)
-	//_metricReqDur.Observe(int64(time.Since(now)/time.Millisecond), tx.db.addr, tx.db.addr, "tx:queryrow")
+
 	return &Row{Row: r, db: tx.db, query: query, args: args}
 }
 
@@ -656,6 +617,7 @@ func (tx *Tx) Stmt(stmt *Stmt) *Stmt {
 	ts := tx.tx.StmtContext(tx.ctx, as)
 	st := &Stmt{query: stmt.query, tx: true, span: tx.span, db: tx.db}
 	st.stmt.Store(ts)
+
 	return st
 }
 
@@ -677,6 +639,7 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 	}
 	st := &Stmt{query: query, tx: true, span: tx.span, db: tx.db}
 	st.stmt.Store(stmt)
+
 	return st, nil
 }
 
@@ -687,6 +650,7 @@ func parseDSNAddr(dsn string) (addr string) {
 		// just ignore parseDSN error, mysql client will return error for us when connect.
 		return ""
 	}
+
 	return cfg.Addr
 }
 
@@ -705,5 +669,6 @@ func shrink(ctx context.Context, duration time.Duration) (time.Duration, context
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, duration)
+
 	return duration, ctx, cancel
 }

@@ -1,6 +1,7 @@
 [Server]
     [Server.RPC]
         addr = "0.0.0.0:0"
+        timeout = "1s"
         idleTimeout = "180s"
         maxLifeTime = "2h"
         forceCloseWait = "20s"
