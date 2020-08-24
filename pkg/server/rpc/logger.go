@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"google.golang.org/grpc/peer"
@@ -26,14 +28,16 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 
 		// call server interceptor
 		resp, err = handler(ctx, req)
-		var errmsg string
+		var errmsg, retcode string
 		if err != nil {
-			errmsg = err.Error()
+			estatus := status.ExtractStatus(err)
+			retcode = estatus.Error()
+			errmsg = estatus.Message()
 		}
 
 		duration := time.Since(now)
 
-		fields := make([]log.Field, 0, 6)
+		fields := make([]log.Field, 0, 7)
 		fields = append(
 			fields,
 			log.String("client_ip", clientIP),
@@ -41,6 +45,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 			log.Any("req", req),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
+			log.String("code", retcode),
 			log.String("error", errmsg),
 		)
 

@@ -4,16 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"google.golang.org/grpc/peer"
 
 	"github.com/opentracing/opentracing-go/ext"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
+	"github.com/opentracing/opentracing-go/log"
 
 	"google.golang.org/grpc"
 )
@@ -44,13 +41,9 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 
 		resp, err = handler(ctx, req)
 		if err != nil {
-			code := codes.Unknown
-			if s, ok := status.FromError(err); ok {
-				code = s.Code()
-			}
-			span.SetTag("code", code)
+			estatus := status.ExtractStatus(err)
 			ext.Error.Set(span, true)
-			span.LogFields(log.String("event", "error"), log.String("message", err.Error()))
+			span.LogFields(log.String("event", "error"), log.Int("code", estatus.Code()), log.String("message", estatus.Message()))
 		}
 
 		return
