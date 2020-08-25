@@ -21,12 +21,12 @@ type ServerInfo struct {
 }
 
 func New() *ServerInfo {
-	config := &rpc.Config{}
+	config := &rpc.ServerConfig{}
 	if err := conf.Unmarshal("Server.RPC", config); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
 
-	server := rpc.New(config)
+	server := rpc.NewServer(config)
 	registerServers(server.Server(), &service.Service{})
 
 	//server.Use()

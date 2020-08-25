@@ -17,7 +17,8 @@ import (
 
 func (s *Server) trace() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		span, ctx := trace.StartSpanFromContext(ctx, info.FullMethod, trace.FromIncomingContext(ctx))
+		ctx, opt := trace.FromIncomingContext(ctx)
+		span, ctx := trace.StartSpanFromContext(ctx, info.FullMethod, opt)
 		ext.Component.Set(span, "grpc")
 		ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
 		if peer, ok := peer.FromContext(ctx); ok {
@@ -27,9 +28,9 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		// adjust request timeout
 		timeout := s.config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
-			reqTimeout := time.Until(deadline)
-			if timeout > reqTimeout {
-				timeout = reqTimeout
+			derivedTimeout := time.Until(deadline)
+			if timeout > derivedTimeout {
+				timeout = derivedTimeout
 			}
 		}
 
@@ -40,6 +41,44 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		}()
 
 		resp, err = handler(ctx, req)
+		if err != nil {
+			estatus := status.ExtractStatus(err)
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "error"), log.Int("code", estatus.Code()), log.String("message", estatus.Message()))
+		}
+
+		return
+	}
+}
+
+func (c *Client) trace() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
+		ctx, md := trace.FromOutgoingContext(ctx)
+		span, ctx := trace.StartSpanFromContext(ctx, method)
+		ext.Component.Set(span, "grpc")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		if peer, ok := peer.FromContext(ctx); ok {
+			ext.PeerAddress.Set(span, peer.Addr.String())
+		}
+
+		// adjust request timeout
+		timeout := c.config.Timeout
+		if deadline, ok := ctx.Deadline(); ok {
+			derivedTimeout := time.Until(deadline)
+			if timeout > derivedTimeout {
+				timeout = derivedTimeout
+			}
+		}
+
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer func() {
+			span.Finish()
+			cancel()
+		}()
+
+		trace.MetadataInjector(ctx, md)
+
+		err = invoker(ctx, method, req, reply, cc, opts...)
 		if err != nil {
 			estatus := status.ExtractStatus(err)
 			ext.Error.Set(span, true)

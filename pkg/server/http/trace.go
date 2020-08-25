@@ -5,16 +5,13 @@ import (
 
 	tracer "github.com/UnderTreeTech/waterdrop/pkg/trace"
 	"github.com/gin-gonic/gin"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
 func (s *Server) trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// start trace
-		span, ctx := tracer.StartSpanFromContext(c.Request.Context(),
-			c.Request.Method+" "+c.Request.URL.Path,
-			tracer.HeaderExtractor(opentracing.HTTPHeadersCarrier(c.Request.Header)))
+		ctx, opt := tracer.HeaderExtractor(c.Request.Context(), c.Request.Header)
+		span, ctx := tracer.StartSpanFromContext(ctx, c.Request.Method+" "+c.Request.URL.Path, opt)
 		ext.Component.Set(span, "http")
 		ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
 		ext.HTTPMethod.Set(span, c.Request.Method)
@@ -29,7 +26,6 @@ func (s *Server) trace() gin.HandlerFunc {
 		}
 
 		ctx, cancel := context.WithTimeout(ctx, timeout)
-
 		defer func() {
 			span.Finish()
 			cancel()

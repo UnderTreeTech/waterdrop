@@ -16,13 +16,18 @@
 
 [Client]
     [Client.RPC]
-        [Client.RPC.RPCStardust]
+        [Client.RPC.Stardust]
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
-            dial = "10s"
-            timeout = "300ms"
+            dialTimeout = "10s"
+            block = true
+            balancer = "round_robin"
+            target = "etcd://default/service.user.v1"
+            timeout = "500ms"
             keepAliveInterval = "60s"
             keepAliveTimeout = "20s"
+            slowRequestDuration = "500ms"
+
     [Client.HTTP]
         [Client.HTTP.DemoClient]
             key = "xHf74ZfV43cAUsUl"
@@ -118,9 +123,6 @@
         agentAddr = "127.0.0.1:6831"
         reporterLogSpans = false
         reporterBufferFlushInterval = "2s"
-        #header config
-        traceBaggageHeaderPrefix = "ctx-"
-        traceContextHeaderName = "X-Trace-Id"
         #option config
         maxTagValueLength = 5120
 

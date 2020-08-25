@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
+
 	gstatus "google.golang.org/grpc/status"
 
 	"github.com/golang/protobuf/ptypes/any"
@@ -141,6 +143,7 @@ func (s *status) Details() []interface{} {
 func errToStatus(code string) *status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
+		log.Errorf("internal_error", log.String("error", code))
 		return ServerErr
 	}
 

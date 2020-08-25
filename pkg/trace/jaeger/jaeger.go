@@ -10,7 +10,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	jaeger "github.com/uber/jaeger-client-go"
 	jconfig "github.com/uber/jaeger-client-go/config"
 )
 
@@ -19,7 +18,6 @@ type JaegerConfig struct {
 	ServiceName      string
 	Sampler          *jconfig.SamplerConfig
 	Reporter         *jconfig.ReporterConfig
-	Headers          *jaeger.HeadersConfig
 	EnableRPCMetrics bool
 	options          []jconfig.Option
 }
@@ -43,7 +41,6 @@ type Config struct {
 
 func defaultJaegerConfig() *JaegerConfig {
 	agentAddr := "127.0.0.1:6831"
-	headerName := "X-Trace-Id"
 	if addr := os.Getenv("JAEGER_AGENT_ADDR"); addr != "" {
 		agentAddr = addr
 	}
@@ -60,10 +57,6 @@ func defaultJaegerConfig() *JaegerConfig {
 			LocalAgentHostPort:  agentAddr,
 		},
 		EnableRPCMetrics: true,
-		Headers: &jaeger.HeadersConfig{
-			TraceBaggageHeaderPrefix: "ctx-",
-			TraceContextHeaderName:   headerName,
-		},
 	}
 }
 
@@ -81,7 +74,6 @@ func newJaegerClient(traceConf *JaegerConfig) (opentracing.Tracer, func()) {
 		Sampler:     traceConf.Sampler,
 		Reporter:    traceConf.Reporter,
 		RPCMetrics:  traceConf.EnableRPCMetrics,
-		Headers:     traceConf.Headers,
 	}
 
 	tracer, closer, err := configuration.NewTracer(traceConf.options...)
@@ -108,15 +100,11 @@ func Init(moduleName string) func() {
 		reporter.LocalAgentHostPort = jconf.AgentAddr
 		reporter.LogSpans = jconf.ReporterLogSpans
 		reporter.BufferFlushInterval = jconf.ReporterBufferFlushInterval
-		headers := &jaeger.HeadersConfig{}
-		headers.TraceBaggageHeaderPrefix = jconf.TraceBaggageHeaderPrefix
-		headers.TraceContextHeaderName = jconf.TraceContextHeaderName
 
 		traceConf.ServiceName = jconf.ServiceName
 		traceConf.EnableRPCMetrics = jconf.EnableRPCMetrics
 		traceConf.Sampler = sampler
 		traceConf.Reporter = reporter
-		traceConf.Headers = headers
 
 		maxTagValueOpt := jconfig.MaxTagValueLength(jconf.MaxTagValueLength)
 		traceConf.WithOption(maxTagValueOpt)

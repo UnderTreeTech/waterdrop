@@ -18,7 +18,7 @@ import (
 // borrow from gin
 var _abortIndex int8 = math.MaxInt8 / 2
 
-type Config struct {
+type ServerConfig struct {
 	Addr string
 
 	Timeout        time.Duration
@@ -34,14 +34,14 @@ type Config struct {
 
 type Server struct {
 	server *grpc.Server
-	config *Config
+	config *ServerConfig
 
 	serverOptions     []grpc.ServerOption
 	unaryInterceptors []grpc.UnaryServerInterceptor
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultConfig() *ServerConfig {
+	return &ServerConfig{
 		Addr:                "0.0.0.0:20812",
 		Timeout:             time.Second,
 		IdleTimeout:         180 * time.Second,
@@ -53,7 +53,7 @@ func defaultConfig() *Config {
 	}
 }
 
-func New(config *Config) *Server {
+func NewServer(config *ServerConfig) *Server {
 	if config == nil {
 		config = defaultConfig()
 	}
