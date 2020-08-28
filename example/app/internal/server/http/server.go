@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	ip "github.com/UnderTreeTech/waterdrop/utils/net"
+	"github.com/UnderTreeTech/waterdrop/utils/xnet"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
 
@@ -17,7 +17,7 @@ type ServerInfo struct {
 }
 
 func New() *ServerInfo {
-	server := http.New("Server.HTTP")
+	server := http.NewServer("Server.HTTP")
 
 	router(server)
 	middlewares(server)
@@ -27,7 +27,7 @@ func New() *ServerInfo {
 	serviceInfo := &registry.ServiceInfo{
 		Name:    "server.http.example",
 		Scheme:  "http",
-		Addr:    fmt.Sprintf("%s://%s:%s", "http", ip.InternalIP(), port),
+		Addr:    fmt.Sprintf("%s://%s:%s", "http", xnet.InternalIP(), port),
 		Version: "1.0.0",
 	}
 

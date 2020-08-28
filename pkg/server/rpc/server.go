@@ -40,7 +40,7 @@ type Server struct {
 	unaryInterceptors []grpc.UnaryServerInterceptor
 }
 
-func defaultConfig() *ServerConfig {
+func defaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Addr:                "0.0.0.0:20812",
 		Timeout:             time.Second,
@@ -55,7 +55,7 @@ func defaultConfig() *ServerConfig {
 
 func NewServer(config *ServerConfig) *Server {
 	if config == nil {
-		config = defaultConfig()
+		config = defaultServerConfig()
 	}
 
 	srv := &Server{

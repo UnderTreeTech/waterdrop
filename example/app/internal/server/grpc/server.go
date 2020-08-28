@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/utils/xnet"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
 	"google.golang.org/grpc"
@@ -12,7 +14,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/example/app/internal/service"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
-	ip "github.com/UnderTreeTech/waterdrop/utils/net"
 )
 
 type ServerInfo struct {
@@ -25,7 +26,7 @@ func New() *ServerInfo {
 	if err := conf.Unmarshal("Server.RPC", config); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
-
+	fmt.Println("rpc config", config)
 	server := rpc.NewServer(config)
 	registerServers(server.Server(), &service.Service{})
 
@@ -36,7 +37,7 @@ func New() *ServerInfo {
 	serviceInfo := &registry.ServiceInfo{
 		Name:    "service.user.v1",
 		Scheme:  "grpc",
-		Addr:    fmt.Sprintf("%s://%s:%s", "grpc", ip.InternalIP(), port),
+		Addr:    fmt.Sprintf("%s://%s:%s", "grpc", xnet.InternalIP(), port),
 		Version: "1.0.0",
 	}
 

@@ -51,7 +51,7 @@ func FromOutgoingContext(ctx context.Context) (context.Context, metadata.MD) {
 		ctx = metadata.NewOutgoingContext(ctx, md)
 	}
 
-	return metadata.NewOutgoingContext(ctx, md), md
+	return ctx, md
 }
 
 // rpc: MetadataInjector
@@ -66,27 +66,14 @@ func MetadataInjector(ctx context.Context, md metadata.MD) error {
 	return nil
 }
 
-type httpCarrierKey struct{}
-
-// HTTP HeaderExtractor
+// HTTP: HeaderExtractor
 func HeaderExtractor(ctx context.Context, carrier map[string][]string) (context.Context, opentracing.StartSpanOption) {
-	md := metadata.MD(carrier)
-	ctx = metadata.NewIncomingContext(ctx, md)
-
-	return FromIncomingContext(ctx)
-}
-
-// HTTP HeaderInjector
-func HeaderInjector(ctx context.Context, carrier map[string][]string) context.Context {
-
-	span := opentracing.SpanFromContext(ctx)
-	err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, carrier)
+	sc, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, &Metadata{md: carrier})
 	if err != nil {
-		span.LogFields(log.String("event", "inject failed"), log.Error(err))
-		return ctx
+		return ctx, NullStartSpanOption{}
 	}
 
-	return context.WithValue(ctx, httpCarrierKey{}, carrier)
+	return ctx, opentracing.ChildOf(sc)
 }
 
 func TraceID(ctx context.Context) string {

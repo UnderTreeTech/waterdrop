@@ -7,6 +7,17 @@ import (
 )
 
 const (
+	_contentType        = "Content-Type"
+	_json               = "application/json;charset=utf-8"
+	_userAgent          = "User-Agent"
+	_waterdropUserAgent = "waterdrop"
+	_appkey             = "Appkey"
+	_timestamp          = "Timestamp"
+	_sign               = "Sign"
+	_nonce              = "Nonce"
+	_acceptLanguage     = "Accept-Language"
+	_locale             = "zh-CN"
+
 	_httpHeaderTimeout = "X-Request-Timeout"
 	_httpHeaderTraceId = "X-Trace-Id"
 )
@@ -16,14 +27,10 @@ const (
 func getTimeout(req *http.Request) time.Duration {
 	to := req.Header.Get(_httpHeaderTimeout)
 	timeout, err := strconv.ParseInt(to, 10, 64)
-	if err == nil && timeout > 20 {
-		timeout -= 20 // reduce 20ms every time.
+	//reduce 10ms network transmission time for every request
+	if err == nil && timeout > 10 {
+		timeout -= 10
 	}
-	return time.Duration(timeout) * time.Millisecond
-}
 
-// setTimeout set timeout into http request.
-func setTimeout(req *http.Request, timeout time.Duration) {
-	td := int64(timeout / time.Millisecond)
-	req.Header.Set(_httpHeaderTimeout, strconv.FormatInt(td, 10))
+	return time.Duration(timeout) * time.Millisecond
 }

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/peer"
@@ -29,6 +30,12 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		timeout := s.config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
 			derivedTimeout := time.Until(deadline)
+			fmt.Println(derivedTimeout, timeout)
+			// reduce 10ms network transmission time for every request
+			if derivedTimeout-10*time.Millisecond > 0 {
+				derivedTimeout = derivedTimeout - 10*time.Millisecond
+			}
+
 			if timeout > derivedTimeout {
 				timeout = derivedTimeout
 			}
@@ -57,9 +64,6 @@ func (c *Client) trace() grpc.UnaryClientInterceptor {
 		span, ctx := trace.StartSpanFromContext(ctx, method)
 		ext.Component.Set(span, "grpc")
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-		if peer, ok := peer.FromContext(ctx); ok {
-			ext.PeerAddress.Set(span, peer.Addr.String())
-		}
 
 		// adjust request timeout
 		timeout := c.config.Timeout

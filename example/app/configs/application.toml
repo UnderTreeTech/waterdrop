@@ -9,7 +9,7 @@
         keepAliveTimeout = "20s"
         slowRequestDuration = "500ms"
     [Server.HTTP]
-        addr = "0.0.0.0:0"
+        addr = "0.0.0.0:20827"
         timeout = "2s"
         mode = "debug"
         slowRequestDuration = "500ms"
@@ -29,23 +29,16 @@
             slowRequestDuration = "500ms"
 
     [Client.HTTP]
-        [Client.HTTP.DemoClient]
-            key = "xHf74ZfV43cAUsUl"
-            secret = "d0dbe915091d400bd8ee7f27f0791303"
-            dial = "100ms"
-            timeout = "300ms"
-            keepAlive = "60s"
-
         [Client.HTTP.AppClient]
-            host = "http://localhost:8001"
-            secretURL = "/api/app/secrets"
-            skipsURL = "/api/app/skips"
-            requestTimeout = 1000000000
+            hostURL = "http://localhost:20827"
+            timeout = "1s"
+            #keepAlive = "60s"
+            slowRequestDuration = "500ms"
+            enableDebug = true
+            enableSign = false
+            #dial = "100ms"
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
-            dial = "100ms"
-            timeout = "1s"
-            keepAlive = "60s"
 
 [MySQL]
     dbName = "saas_test"

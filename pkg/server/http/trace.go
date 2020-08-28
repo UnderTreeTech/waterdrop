@@ -3,6 +3,8 @@ package http
 import (
 	"context"
 
+	"google.golang.org/grpc/metadata"
+
 	tracer "github.com/UnderTreeTech/waterdrop/pkg/trace"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go/ext"
@@ -25,6 +27,7 @@ func (s *Server) trace() gin.HandlerFunc {
 			timeout = reqTimeout
 		}
 
+		ctx = metadata.NewIncomingContext(ctx, metadata.MD(c.Request.Header))
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer func() {
 			span.Finish()

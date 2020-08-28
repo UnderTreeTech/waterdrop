@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Config struct {
+type ServerConfig struct {
 	Addr string `conf:"addr"`
 
 	Timeout time.Duration `conf:"timeout"`
@@ -22,8 +22,8 @@ type Config struct {
 	SlowRequestTimeout time.Duration
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultServerConfig() *ServerConfig {
+	return &ServerConfig{
 		Addr:               "0.0.0.0:9090",
 		Mode:               gin.ReleaseMode,
 		Timeout:            time.Millisecond * 1000,
@@ -31,8 +31,8 @@ func defaultConfig() *Config {
 	}
 }
 
-func srvConfig(name string) *Config {
-	config := defaultConfig()
+func srvConfig(name string) *ServerConfig {
+	config := defaultServerConfig()
 
 	if err := conf.Unmarshal(name, config); err != nil {
 		panic(fmt.Sprintf("unmarshal server.http fail, err msg %s", err.Error()))
@@ -51,10 +51,10 @@ func srvConfig(name string) *Config {
 type Server struct {
 	*gin.Engine
 	Server *http.Server
-	config *Config
+	config *ServerConfig
 }
 
-func New(confName string) *Server {
+func NewServer(confName string) *Server {
 	config := srvConfig(confName)
 	srv := &Server{
 		Engine: gin.New(),

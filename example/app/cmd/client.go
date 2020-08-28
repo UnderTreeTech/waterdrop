@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
-
+	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
-	"github.com/UnderTreeTech/protobuf/demo"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
 	"google.golang.org/grpc/resolver"
 
@@ -37,6 +37,55 @@ func main() {
 	etcd := etcd.New(etcdConf)
 	resolver.Register(etcd)
 
+	httpCliConf := &http.ClientConfig{}
+	if err := conf.Unmarshal("Client.HTTP.AppClient", httpCliConf); err != nil {
+		panic(fmt.Sprintf("unmarshal http client config fail, err msg %s", err.Error()))
+	}
+	fmt.Println("http client conf", httpCliConf)
+	httpClient := http.NewClient(httpCliConf)
+	r := &http.Request{
+		URI:        "/api/app/validate/{id}",
+		PathParams: map[string]string{"id": "1"},
+		Body: `{
+					"email": "example@example.com",
+					"name": "John&Sun",
+					"password": "styd.cn",
+					"sex": 2,
+					"age": 12,
+					"addr": [
+						{
+							"mobile": "上海市徐汇区",
+							"address": "<a onblur='alert(secret)' href='http://www.google.com'>Google</a>",
+							"app": {
+								"sappkey": "<p>md5hash</p>"
+							},
+							"reply": {
+								"urls": [
+									"www.&baidu.com",
+									"www.g&oogle.com",
+									"&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;&#x3b;",
+									"u003cimg src=1 onerror=alert(/xss/)u003e"
+								]
+							},
+							"resp": [
+								{
+									"app_key": "sha1hash",
+									"app_secret": "<href>rsa</href>"
+								}
+							]
+						}
+					]
+				}`,
+	}
+
+	var result interface{}
+	err := httpClient.Post(context.Background(), r, &result)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(result)
+	}
+
 	cliConf := &rpc.ClientConfig{}
 	if err := conf.Unmarshal("Client.RPC.Stardust", cliConf); err != nil {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
@@ -49,8 +98,8 @@ func main() {
 		if err != nil {
 			fmt.Println("err", status.ExtractStatus(err))
 		}
-		//fmt.Println(reply)
 	}
 	fmt.Println(time.Since(now))
+
 	time.Sleep(time.Hour * 30)
 }

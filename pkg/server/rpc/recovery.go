@@ -4,9 +4,9 @@ import (
 	"context"
 	"runtime"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc"
 )
@@ -20,7 +20,7 @@ func (s *Server) recovery() grpc.UnaryServerInterceptor {
 				stack := make([]byte, size)
 				stack = stack[:runtime.Stack(stack, true)]
 				log.Error(ctx, "panic request", log.Any("req", req), log.Any("err", rerr), log.Bytes("stack", stack))
-				err = status.Errorf(codes.Unknown, "500")
+				err = status.ServerErr
 			}
 		}()
 
@@ -36,7 +36,7 @@ func (c *Client) recovery() grpc.UnaryClientInterceptor {
 				stack := make([]byte, size)
 				stack = stack[:runtime.Stack(stack, true)]
 				log.Error(ctx, "panic request", log.Any("req", req), log.Any("err", rerr), log.Bytes("stack", stack))
-				err = status.Errorf(codes.Unknown, "500")
+				err = status.ServerErr
 			}
 		}()
 
