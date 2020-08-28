@@ -26,7 +26,7 @@ func New() *ServerInfo {
 	if err := conf.Unmarshal("Server.RPC", config); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
-	fmt.Println("rpc config", config)
+
 	server := rpc.NewServer(config)
 	registerServers(server.Server(), &service.Service{})
 

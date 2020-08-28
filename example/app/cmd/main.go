@@ -23,6 +23,8 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
+
+	_ "github.com/UnderTreeTech/waterdrop/pkg/profile"
 )
 
 func main() {

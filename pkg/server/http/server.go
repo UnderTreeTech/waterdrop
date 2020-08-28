@@ -14,20 +14,20 @@ import (
 )
 
 type ServerConfig struct {
-	Addr string `conf:"addr"`
+	Addr string
 
-	Timeout time.Duration `conf:"timeout"`
-	Mode    string        `conf:"mode"`
+	Timeout time.Duration
+	Mode    string
 
-	SlowRequestTimeout time.Duration
+	SlowRequestDuration time.Duration
 }
 
 func defaultServerConfig() *ServerConfig {
 	return &ServerConfig{
-		Addr:               "0.0.0.0:9090",
-		Mode:               gin.ReleaseMode,
-		Timeout:            time.Millisecond * 1000,
-		SlowRequestTimeout: 500 * time.Millisecond,
+		Addr:                "0.0.0.0:9090",
+		Mode:                gin.ReleaseMode,
+		Timeout:             time.Millisecond * 1000,
+		SlowRequestDuration: 500 * time.Millisecond,
 	}
 }
 
@@ -56,12 +56,13 @@ type Server struct {
 
 func NewServer(confName string) *Server {
 	config := srvConfig(confName)
+
+	gin.SetMode(config.Mode)
 	srv := &Server{
 		Engine: gin.New(),
 		config: config,
 	}
 
-	gin.SetMode(config.Mode)
 	srv.Use(srv.recovery(), srv.trace(), srv.logger())
 
 	return srv

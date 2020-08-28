@@ -34,7 +34,7 @@ func (s *Server) logger() gin.HandlerFunc {
 			log.String("error", err.String()),
 		)
 
-		if duration >= s.config.SlowRequestTimeout {
+		if duration >= s.config.SlowRequestDuration {
 			log.Warn(c.Request.Context(), "http-slow-access-log", fields...)
 		} else {
 			log.Info(c.Request.Context(), "http-access-log", fields...)
