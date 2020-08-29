@@ -28,11 +28,11 @@ var (
 	AccessDenied       = add(403, "未授权访问")
 	NothingFound       = add(404, "页面不存在")
 	MethodNotAllowed   = add(405, "不支持该方法")
+	LimitExceed        = add(429, "请求超出限制")
 	Canceled           = add(498, "客户端取消请求")
 	ServerErr          = add(500, "网络错误，请稍后重试")
 	ServiceUnavailable = add(503, "过载保护,服务暂不可用")
 	Deadline           = add(504, "服务调用超时")
-	LimitExceed        = add(509, "请求超出限制")
 	UndefinedErr       = add(600, "未知错误")
 )
 
