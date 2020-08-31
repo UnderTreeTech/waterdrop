@@ -17,10 +17,10 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/UnderTreeTech/waterdrop/utils/xtime"
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xtime"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/UnderTreeTech/waterdrop/utils/xstring"
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xstring"
 	tlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/go-resty/resty/v2"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/UnderTreeTech/waterdrop/utils/xnet"
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
