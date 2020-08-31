@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"google.golang.org/grpc/peer"
@@ -30,7 +29,6 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		timeout := s.config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
 			derivedTimeout := time.Until(deadline)
-			fmt.Println(derivedTimeout, timeout)
 			// reduce 10ms network transmission time for every request
 			if derivedTimeout-10*time.Millisecond > 0 {
 				derivedTimeout = derivedTimeout - 10*time.Millisecond

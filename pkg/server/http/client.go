@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -37,10 +36,6 @@ type ClientConfig struct {
 
 	Key    string
 	Secret string
-}
-
-func defaultClientConfig() *ClientConfig {
-	return nil
 }
 
 type Request struct {
@@ -142,7 +137,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 		ext.Error.Set(span, true)
 		span.LogFields(tlog.String("event", "error"), tlog.Int("code", estatus.Code()), tlog.String("message", estatus.Message()))
 	}
-	fmt.Println(request.URL)
+
 	duration := time.Since(now)
 	fields := make([]log.Field, 0, 11)
 	fields = append(
