@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
+
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
@@ -20,25 +22,24 @@ import (
 
 	_ "github.com/UnderTreeTech/waterdrop/example/app/internal/ecode"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
 )
 
 func main() {
 	flag.Parse()
 
 	conf.Init()
-	defer log.Init("Log")()
-	defer jaeger.Init("Trace.Jaeger")()
+	defer log.New(nil).Sync()
+	defer jaeger.Init()()
 
 	etcdConf := &etcd.Config{}
-	if err := conf.Unmarshal("Etcd", etcdConf); err != nil {
+	if err := conf.Unmarshal("etcd", etcdConf); err != nil {
 		panic(fmt.Sprintf("unmarshal etcd config fail, err msg %s", err.Error()))
 	}
 	etcd := etcd.New(etcdConf)
 	resolver.Register(etcd)
 
 	httpCliConf := &http.ClientConfig{}
-	if err := conf.Unmarshal("Client.HTTP.AppClient", httpCliConf); err != nil {
+	if err := conf.Unmarshal("client.http.app", httpCliConf); err != nil {
 		panic(fmt.Sprintf("unmarshal http client config fail, err msg %s", err.Error()))
 	}
 	fmt.Println("http client conf", httpCliConf)
@@ -87,7 +88,7 @@ func main() {
 	}
 
 	cliConf := &rpc.ClientConfig{}
-	if err := conf.Unmarshal("Client.RPC.Stardust", cliConf); err != nil {
+	if err := conf.Unmarshal("client.rpc.stardust", cliConf); err != nil {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
 	}
 	fmt.Println(cliConf)

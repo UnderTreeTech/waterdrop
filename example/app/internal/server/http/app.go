@@ -59,7 +59,7 @@ func getAppInfo(c *gin.Context) {
 
 	shopId := uint64(time.Now().UnixNano())
 	s.ID = shopId
-	s.ShopName = "三体云动旗舰店"
+	s.ShopName = "小米旗舰店"
 	s.CreatedTime = uint32(utils.GetCurrentUnixTime())
 	s.UpdatedTime = uint32(utils.GetCurrentUnixTime())
 	if err := dao.GetDao().AddShop(ctx, s); err != nil {

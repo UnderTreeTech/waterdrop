@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/conf"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +18,7 @@ type ServerConfig struct {
 	Mode    string
 
 	SlowRequestDuration time.Duration
+	WatchConfig         bool
 }
 
 func defaultServerConfig() *ServerConfig {
@@ -31,31 +30,16 @@ func defaultServerConfig() *ServerConfig {
 	}
 }
 
-func srvConfig(name string) *ServerConfig {
-	config := defaultServerConfig()
-
-	if err := conf.Unmarshal(name, config); err != nil {
-		panic(fmt.Sprintf("unmarshal server.http fail, err msg %s", err.Error()))
-	}
-
-	conf.OnChange(func(config *conf.Config) {
-		err := config.Unmarshal(name, config)
-		if err != nil {
-			log.Printf("reload server.http fail, err msg %s", err.Error())
-		}
-	})
-
-	return config
-}
-
 type Server struct {
 	*gin.Engine
 	Server *http.Server
 	config *ServerConfig
 }
 
-func NewServer(confName string) *Server {
-	config := srvConfig(confName)
+func NewServer(config *ServerConfig) *Server {
+	if config == nil {
+		config = defaultServerConfig()
+	}
 
 	gin.SetMode(config.Mode)
 	srv := &Server{

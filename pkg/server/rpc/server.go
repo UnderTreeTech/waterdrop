@@ -30,6 +30,7 @@ type ServerConfig struct {
 	KeepAliveTimeout  time.Duration
 
 	SlowRequestDuration time.Duration
+	WatchConfig         bool
 }
 
 type Server struct {

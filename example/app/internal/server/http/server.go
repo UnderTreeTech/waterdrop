@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/conf"
+
 	"github.com/UnderTreeTech/waterdrop/utils/xnet"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
@@ -17,7 +19,15 @@ type ServerInfo struct {
 }
 
 func New() *ServerInfo {
-	server := http.NewServer("Server.HTTP")
+	srvConfig := &http.ServerConfig{}
+	parseConfig("server.http", srvConfig)
+	if srvConfig.WatchConfig {
+		conf.OnChange(func(config *conf.Config) {
+			parseConfig("server.http", srvConfig)
+		})
+	}
+
+	server := http.NewServer(srvConfig)
 
 	router(server)
 	middlewares(server)
@@ -32,6 +42,12 @@ func New() *ServerInfo {
 	}
 
 	return &ServerInfo{Server: server, ServiceInfo: serviceInfo}
+}
+
+func parseConfig(configName string, srvConfig *http.ServerConfig) {
+	if err := conf.Unmarshal(configName, srvConfig); err != nil {
+		panic(fmt.Sprintf("unmarshal http server config fail, err msg %s", err.Error()))
+	}
 }
 
 func middlewares(s *http.Server) {

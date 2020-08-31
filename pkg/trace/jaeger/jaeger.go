@@ -2,6 +2,7 @@ package jaeger
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -84,15 +85,14 @@ func newJaegerClient(traceConf *JaegerConfig) (opentracing.Tracer, func()) {
 	return tracer, func() { closer.Close() }
 }
 
-func Init(moduleName string) func() {
-	traceConf := defaultJaegerConfig()
-	if moduleName != "" {
-		jconf := &Config{}
-		err := conf.Unmarshal(moduleName, jconf)
-		if err != nil {
-			panic(fmt.Sprintf("reload server.http fail, err msg %s", err.Error()))
-		}
-
+func Init() func() {
+	traceConf := &JaegerConfig{}
+	jconf := &Config{}
+	err := conf.Unmarshal("trace.jaeger", jconf)
+	if err != nil {
+		log.Printf("unmarshal trace.jaeger config fail, err msg %s", err.Error())
+		traceConf = defaultJaegerConfig()
+	} else {
 		sampler := &jconfig.SamplerConfig{}
 		sampler.Type = jconf.SamplerType
 		sampler.Param = jconf.SamplerParam
@@ -100,7 +100,6 @@ func Init(moduleName string) func() {
 		reporter.LocalAgentHostPort = jconf.AgentAddr
 		reporter.LogSpans = jconf.ReporterLogSpans
 		reporter.BufferFlushInterval = jconf.ReporterBufferFlushInterval
-
 		traceConf.ServiceName = jconf.ServiceName
 		traceConf.EnableRPCMetrics = jconf.EnableRPCMetrics
 		traceConf.Sampler = sampler

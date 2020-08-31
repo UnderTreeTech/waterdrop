@@ -37,7 +37,7 @@ func (d *dao) Close() {
 
 func NewMySQL() *mysql.DB {
 	config := &mysql.Config{}
-	if err := conf.Unmarshal("MySQL", config); err != nil {
+	if err := conf.Unmarshal("mysql", config); err != nil {
 		panic(fmt.Sprintf("unmarshal mysql config fail,err msg %s", err.Error()))
 	}
 	log.Infof("db config", log.Any("config", config))
@@ -48,7 +48,7 @@ func NewMySQL() *mysql.DB {
 
 func NewRedis() *redis.Redis {
 	config := &redis.Config{}
-	if err := conf.Unmarshal("Redis", config); err != nil {
+	if err := conf.Unmarshal("redis", config); err != nil {
 		panic(fmt.Sprintf("unmarshal redis config fail,err msg %s", err.Error()))
 	}
 	log.Infof("redis config", log.Any("config", config))

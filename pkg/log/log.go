@@ -7,8 +7,6 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/conf"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
 	"go.uber.org/zap"
@@ -28,7 +26,8 @@ type Config struct {
 
 	Level string
 
-	Debug bool
+	Debug       bool
+	WatchConfig bool
 
 	OutputPath      []string
 	ErrorOutputPath []string
@@ -76,25 +75,24 @@ func defaultConfig() *Config {
 	}
 }
 
-func Init(moduleName string) func() {
-	logConf := defaultConfig()
-	if err := conf.Unmarshal(moduleName, logConf); err != nil {
-		log.Printf("reload server.http fail, err msg %s", err.Error())
+func New(config *Config) *Logger {
+	if config == nil {
+		config = defaultConfig()
 	}
 
-	defaultLogger = newLogger(logConf)
-	conf.OnChange(func(config *conf.Config) {
-		reloadConf := defaultConfig()
-		if err := conf.Unmarshal(moduleName, reloadConf); err != nil {
-			log.Printf("reload server.http fail, err msg %s", err.Error())
-		}
+	defaultLogger = newLogger(config)
 
-		if err := defaultLogger.level.UnmarshalText([]byte(reloadConf.Level)); err != nil {
-			panic(fmt.Sprintf("unmarshal log level fail, err msg %s", err.Error()))
-		}
-	})
+	return defaultLogger
+}
 
-	return func() { defaultLogger.logger.Sync() }
+func (l *Logger) SetLevel(level string) {
+	if err := l.level.UnmarshalText([]byte(level)); err != nil {
+		log.Printf("set log level fail, err msg %s", err.Error())
+	}
+}
+
+func (l *Logger) Sync() {
+	l.logger.Sync()
 }
 
 func Debug(ctx context.Context, msg string, fields ...Field) {

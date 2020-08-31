@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	syslog "log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,15 +34,15 @@ func main() {
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 
 	conf.Init()
-	defer log.Init("Log")()
-	defer jaeger.Init("Trace.Jaeger")()
+	defer initLog().Sync()
+	defer jaeger.Init()()
 	defer dao.NewDao().Close()
 
 	http := http.New()
 	rpc := grpc.New()
 
 	etcdConf := &etcd.Config{}
-	if err := conf.Unmarshal("Etcd", etcdConf); err != nil {
+	if err := conf.Unmarshal("etcd", etcdConf); err != nil {
 		panic(fmt.Sprintf("unmarshal etcd config fail, err msg %s", err.Error()))
 	}
 	etcd := etcd.New(etcdConf)
@@ -56,4 +57,23 @@ func main() {
 	etcd.Close()
 	http.Server.Stop(ctx)
 	rpc.Server.Stop()
+}
+
+func initLog() *log.Logger {
+	logConfig := &log.Config{}
+
+	if err := conf.Unmarshal("log", logConfig); err != nil {
+		syslog.Printf("parse log config fail, err msg %s", err.Error())
+	}
+
+	logger := log.New(logConfig)
+
+	conf.OnChange(func(config *conf.Config) {
+		if err := conf.Unmarshal("log", logConfig); err != nil {
+			syslog.Printf("parse log config fail, err msg %s", err.Error())
+		}
+		logger.SetLevel(logConfig.Level)
+	})
+
+	return logger
 }

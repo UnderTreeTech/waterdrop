@@ -1,5 +1,5 @@
-[Server]
-    [Server.RPC]
+[server]
+    [server.rpc]
         addr = "0.0.0.0:0"
         timeout = "1s"
         idleTimeout = "180s"
@@ -8,15 +8,17 @@
         keepAliveInterval = "60s"
         keepAliveTimeout = "20s"
         slowRequestDuration = "500ms"
-    [Server.HTTP]
+        watchConfig = true
+    [server.http]
         addr = "0.0.0.0:20827"
         timeout = "2s"
         mode = "debug"
         slowRequestDuration = "500ms"
+        watchConfig = true
 
-[Client]
-    [Client.RPC]
-        [Client.RPC.Stardust]
+[client]
+    [client.rpc]
+        [client.rpc.stardust]
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
             dialTimeout = "10s"
@@ -28,8 +30,8 @@
             keepAliveTimeout = "20s"
             slowRequestDuration = "500ms"
 
-    [Client.HTTP]
-        [Client.HTTP.AppClient]
+    [client.http]
+        [client.http.app]
             hostURL = "http://localhost:20827"
             timeout = "1s"
             #keepAlive = "60s"
@@ -40,7 +42,7 @@
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
 
-[MySQL]
+[mysql]
     dbName = "saas_test"
     addr = "127.0.0.1:3306"
     dsn = "root@tcp(127.0.0.1:3306)/saas_test?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"
@@ -53,7 +55,7 @@
     tranTimeout = "400ms"
     slowQueryDuration = "250ms"
 
-[Redis]
+[redis]
     dbName = "saas-test"
     dbIndex = 0
     addr = "127.0.0.1:6379"
@@ -88,25 +90,26 @@
         gid = "your_gid"
         idempotentTTL = 0 #unit s, 0 means it's not need to handle idempotent
 
-[Registry]
+[registry]
     type = "etcd"
     endpoints = "127.0.0.1:2379"
     dialTimeout = "1s"
 
 # unique id pool
-[IdPool]
+[uniqueid]
     len = 500 #max size
     bizType = 1 #business type
 
-[Log]
+[log]
     addCaller = true
     callerSkip = 1
     level = "info"
     outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
     errorOutputPath = ["stderr","/export/apps/golang/src/apps/waterdrop/logs/error.log"]
+    watchConfig = true
 
-[Trace]
-    [Trace.Jaeger]
+[trace]
+    [trace.jaeger]
         serviceName = "waterdrop"
         enableRPCMetrics = true
         #sampler config
@@ -119,7 +122,7 @@
         #option config
         maxTagValueLength = 5120
 
-[Etcd]
+[etcd]
     prefix = "waterdrop"
     endpoints = ["127.0.0.1:2379"]
     dialTimeout = "1s"
