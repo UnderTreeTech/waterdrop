@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -18,12 +19,16 @@ func getAppInfo(c *gin.Context) {
 	condition := map[string]interface{}{
 		"id": 26186061323568199,
 	}
+
 	shop, err := dao.GetDao().FindShop(ctx, condition)
 	if err != nil {
 		log.Error(ctx, "get shop", log.Any("err", err))
 	}
 
 	dao.GetRedis().Do(ctx, "set", "shop_info_"+strconv.Itoa(int(shop.ID)), shop.ShopName)
+	dao.GetRedis().Do(ctx, "HSET", "helloworld", "4", "123")
+	reply, err := redis.Strings(dao.GetRedis().Do(ctx, "HMGET", "helloworld", "1", "4", "3"))
+	fmt.Println(reply, err)
 
 	s := &model.Shop{}
 	s.ID = uint64(time.Now().UnixNano())

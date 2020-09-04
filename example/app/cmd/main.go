@@ -25,6 +25,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
+	_ "github.com/UnderTreeTech/waterdrop/pkg/metric"
 	_ "github.com/UnderTreeTech/waterdrop/pkg/profile"
 )
 

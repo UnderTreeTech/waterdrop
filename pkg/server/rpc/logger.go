@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -31,6 +33,9 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
+
+		metric.UnaryServerHandleCounter.Inc(ip, info.FullMethod, estatus.Error())
+		metric.UnaryServerReqDuration.Observe(float64(duration/time.Millisecond), ip, info.FullMethod)
 
 		fields := make([]log.Field, 0, 8)
 		fields = append(
@@ -73,6 +78,9 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
 
+		metric.UnaryClientHandleCounter.Inc(peerInfo.Addr.String(), method, estatus.Error())
+		metric.UnaryClientReqDuration.Observe(float64(duration/time.Millisecond), peerInfo.Addr.String(), method)
+
 		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
@@ -83,7 +91,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 			log.Float64("duration", duration.Seconds()),
 			log.Any("reply", reply),
 			log.Int("code", estatus.Code()),
-			log.String("error", estatus.Message()),
+			log.String("error", estatus.Error()),
 		)
 
 		if duration >= c.config.SlowRequestDuration {

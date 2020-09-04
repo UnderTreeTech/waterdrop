@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
@@ -70,19 +72,26 @@ func (r *Redis) Do(ctx context.Context, commandName string, args ...interface{})
 	ext.PeerAddress.Set(span, r.conf.Addr)
 	ext.DBInstance.Set(span, r.conf.DBName)
 	ext.DBStatement.Set(span, statement)
-	defer func() {
-		span.Finish()
-		r.slowLog(ctx, statement, time.Now())
-	}()
 
 	conn, err := r.pool.GetContext(ctx)
 	if err != nil {
-		conn.Close()
+		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, commandName, err.Error())
 		return nil, err
 	}
 
+	now := time.Now()
+	defer func() {
+		conn.Close()
+		span.Finish()
+		r.slowLog(ctx, statement, now)
+	}()
+
 	reply, err := conn.Do(commandName, args...)
-	conn.Close()
+	if err != nil {
+		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, commandName, err.Error())
+	}
+
+	metric.RedisClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), r.conf.DBName, r.conf.Addr, commandName)
 
 	return reply, err
 }

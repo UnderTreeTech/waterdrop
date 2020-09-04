@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+
 	"google.golang.org/grpc/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
@@ -138,13 +140,17 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 		span.LogFields(tlog.String("event", "error"), tlog.Int("code", estatus.Code()), tlog.String("message", estatus.Message()))
 	}
 
+	uri := strings.TrimPrefix(request.URL, c.client.HostURL)
+	metric.HTTPClientHandleCounter.Inc(uri, request.Method, c.client.HostURL, estatus.Error())
+	metric.HTTPClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), uri, request.Method, c.client.HostURL)
+
 	duration := time.Since(now)
 	fields := make([]log.Field, 0, 11)
 	fields = append(
 		fields,
 		log.String("host", c.client.HostURL),
 		log.String("method", request.Method),
-		log.String("uri", strings.TrimPrefix(request.URL, c.client.HostURL)),
+		log.String("uri", uri),
 		log.Any("headers", request.Header),
 		log.Any("query", request.QueryParam),
 		log.Any("body", request.Body),

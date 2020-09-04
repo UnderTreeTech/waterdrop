@@ -7,6 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -169,16 +171,16 @@ func (db *DB) Exec(ctx context.Context, query string, args ...interface{}) (res 
 // Multiple queries or executions may be run concurrently from the returned
 // statement. The caller must call the statement's Close method when the
 // statement is no longer needed.
-func (db *DB) Prepare(query string) (*Stmt, error) {
-	return db.write.prepare(query)
+func (db *DB) Prepare(ctx context.Context, query string) (*Stmt, error) {
+	return db.write.prepare(ctx, query)
 }
 
 // Prepared creates a prepared statement for later queries or executions.
 // Multiple queries or executions may be run concurrently from the returned
 // statement. The caller must call the statement's Close method when the
 // statement is no longer needed.
-func (db *DB) Prepared(query string) (stmt *Stmt) {
-	return db.write.prepared(query)
+func (db *DB) Prepared(ctx context.Context, query string) (stmt *Stmt) {
+	return db.write.prepared(ctx, query)
 }
 
 // Query executes a query that returns rows, typically a SELECT. The args are
@@ -260,6 +262,8 @@ func (db *DB) Master() *DB {
 }
 
 func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
+	now := time.Now()
+	defer slowLog(ctx, "begin", now, db.conf.SlowQueryDuration)
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.transaction")
 	ext.PeerAddress.Set(span, db.addr)
 	ext.Component.Set(span, "mysql")
@@ -268,18 +272,21 @@ func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
 
 	_, ctx, cancel := shrink(ctx, db.conf.TranTimeout)
 	rtx, err := db.BeginTx(ctx, nil)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "begin")
 	if err != nil {
 		err = errors.WithStack(err)
 		cancel()
 		span.Finish()
 		return
 	}
+
 	tx = &Tx{tx: rtx, span: span, db: db, ctx: ctx, cancel: cancel}
 
 	return
 }
 
 func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (res sql.Result, err error) {
+	now := time.Now()
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.exec")
 	ext.PeerAddress.Set(span, db.addr)
 	ext.Component.Set(span, "mysql")
@@ -288,12 +295,13 @@ func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (re
 	ext.DBStatement.Set(span, fmt.Sprint(query, args))
 	defer func() {
 		span.Finish()
-		slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
+		slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), now, db.conf.SlowQueryDuration)
 	}()
 
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	res, err = db.ExecContext(ctx, query, args...)
 	cancel()
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
@@ -302,6 +310,9 @@ func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (re
 }
 
 func (db *conn) ping(ctx context.Context) (err error) {
+	now := time.Now()
+	defer slowLog(ctx, "ping", now, db.conf.SlowQueryDuration)
+
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.ping")
 	ext.PeerAddress.Set(span, db.addr)
 	ext.Component.Set(span, "mysql")
@@ -312,6 +323,7 @@ func (db *conn) ping(ctx context.Context) (err error) {
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	err = db.PingContext(ctx)
 	cancel()
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "ping")
 	if err != nil {
 		err = errors.WithStack(err)
 	}
@@ -319,7 +331,8 @@ func (db *conn) ping(ctx context.Context) (err error) {
 	return
 }
 
-func (db *conn) prepare(query string) (*Stmt, error) {
+func (db *conn) prepare(ctx context.Context, query string) (*Stmt, error) {
+	defer slowLog(ctx, fmt.Sprintf("prepare query(%s)", query), time.Now(), db.conf.SlowQueryDuration)
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		err = errors.Wrapf(err, "prepare %s", query)
@@ -331,7 +344,8 @@ func (db *conn) prepare(query string) (*Stmt, error) {
 	return st, nil
 }
 
-func (db *conn) prepared(query string) (stmt *Stmt) {
+func (db *conn) prepared(ctx context.Context, query string) (stmt *Stmt) {
+	defer slowLog(ctx, fmt.Sprintf("prepared query(%s)", query), time.Now(), db.conf.SlowQueryDuration)
 	stmt = &Stmt{query: query, db: db}
 	s, err := db.Prepare(query)
 	if err == nil {
@@ -355,6 +369,8 @@ func (db *conn) prepared(query string) (stmt *Stmt) {
 }
 
 func (db *conn) query(ctx context.Context, query string, args ...interface{}) (rows *Rows, err error) {
+	now := time.Now()
+
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.query")
 	ext.PeerAddress.Set(span, db.addr)
 	ext.Component.Set(span, "mysql")
@@ -364,11 +380,12 @@ func (db *conn) query(ctx context.Context, query string, args ...interface{}) (r
 
 	defer func() {
 		span.Finish()
-		slowLog(ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
+		slowLog(ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), now, db.conf.SlowQueryDuration)
 	}()
 
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	rs, err := db.DB.QueryContext(ctx, query, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", query, args)
 		cancel()
@@ -380,6 +397,8 @@ func (db *conn) query(ctx context.Context, query string, args ...interface{}) (r
 }
 
 func (db *conn) queryRow(ctx context.Context, query string, args ...interface{}) *Row {
+	now := time.Now()
+
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.queryrow")
 	ext.PeerAddress.Set(span, db.addr)
 	ext.Component.Set(span, "mysql")
@@ -389,11 +408,12 @@ func (db *conn) queryRow(ctx context.Context, query string, args ...interface{})
 
 	defer func() {
 		span.Finish()
-		slowLog(ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", query, args), time.Now(), db.conf.SlowQueryDuration)
+		slowLog(ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", query, args), now, db.conf.SlowQueryDuration)
 	}()
 
 	_, ctx, cancel := shrink(ctx, db.conf.QueryTimeout)
 	r := db.DB.QueryRowContext(ctx, query, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "queryrow")
 
 	return &Row{db: db, Row: r, query: query, args: args, span: span, cancel: cancel}
 }
@@ -419,7 +439,9 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 		err = ErrStmtNil
 		return
 	}
-	defer slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", s.query, args), time.Now(), s.db.conf.SlowQueryDuration)
+
+	now := time.Now()
+	defer slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", s.query, args), now, s.db.conf.SlowQueryDuration)
 
 	if s.tx {
 		if s.span != nil {
@@ -444,6 +466,7 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 	_, ctx, cancel := shrink(ctx, s.db.conf.ExecTimeout)
 	res, err = stmt.ExecContext(ctx, args...)
 	cancel()
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", s.query, args)
 	}
@@ -482,6 +505,7 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 	}
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	rs, err := stmt.QueryContext(ctx, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", s.query, args)
 		cancel()
@@ -528,6 +552,7 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	row.Row = stmt.QueryRowContext(ctx, args...)
 	row.cancel = cancel
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.queryrow")
 
 	return
 }
@@ -563,11 +588,15 @@ func (tx *Tx) Rollback() (err error) {
 // Exec executes a query that doesn't return rows. For example: an INSERT and
 // UPDATE.
 func (tx *Tx) Exec(query string, args ...interface{}) (res sql.Result, err error) {
-	defer slowLog(tx.ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), time.Now(), tx.db.conf.SlowQueryDuration)
+	now := time.Now()
+	defer slowLog(tx.ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), now, tx.db.conf.SlowQueryDuration)
+
 	if tx.span != nil {
 		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
 	}
+
 	res, err = tx.tx.ExecContext(tx.ctx, query, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
@@ -577,13 +606,15 @@ func (tx *Tx) Exec(query string, args ...interface{}) (res sql.Result, err error
 
 // Query executes a query that returns rows, typically a SELECT.
 func (tx *Tx) Query(query string, args ...interface{}) (rows *Rows, err error) {
-	defer slowLog(tx.ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), time.Now(), tx.db.conf.SlowQueryDuration)
+	now := time.Now()
+	defer slowLog(tx.ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), now, tx.db.conf.SlowQueryDuration)
 
 	if tx.span != nil {
 		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
 	}
 
 	rs, err := tx.tx.QueryContext(tx.ctx, query, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.query")
 	if err == nil {
 		rows = &Rows{Rows: rs}
 	} else {
@@ -597,6 +628,7 @@ func (tx *Tx) Query(query string, args ...interface{}) (rows *Rows, err error) {
 // QueryRow always returns a non-nil value. Errors are deferred until Row's
 // Scan method is called.
 func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
+	now := time.Now()
 	defer slowLog(tx.ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", query, args), time.Now(), tx.db.conf.SlowQueryDuration)
 
 	if tx.span != nil {
@@ -604,6 +636,7 @@ func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
 	}
 
 	r := tx.tx.QueryRowContext(tx.ctx, query, args...)
+	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.queryrow")
 
 	return &Row{Row: r, db: tx.db, query: query, args: args}
 }

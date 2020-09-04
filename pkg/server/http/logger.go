@@ -3,6 +3,9 @@ package http
 import (
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/gin-gonic/gin"
@@ -18,10 +21,16 @@ func (s *Server) logger() gin.HandlerFunc {
 
 		c.Next()
 
-		err := c.Errors
 		duration := time.Since(now)
+		estatus := status.OK
+		if len(c.Errors) > 0 {
+			estatus = status.ExtractStatus(c.Errors.Last().Err)
+		}
 
-		fields := make([]log.Field, 0, 8)
+		metric.HTTPServerHandleCounter.Inc(c.Request.URL.Path, c.Request.Method, c.ClientIP(), estatus.Error())
+		metric.HTTPServerReqDuration.Observe(float64(duration/time.Millisecond), c.Request.URL.Path, c.Request.Method, c.ClientIP())
+
+		fields := make([]log.Field, 0, 9)
 		fields = append(
 			fields,
 			log.String("client_ip", c.ClientIP()),
@@ -31,7 +40,8 @@ func (s *Server) logger() gin.HandlerFunc {
 			log.String("req", c.Request.Form.Encode()),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
-			log.String("error", err.String()),
+			log.Int("code", estatus.Code()),
+			log.String("error", estatus.Message()),
 		)
 
 		if duration >= s.config.SlowRequestDuration {
