@@ -28,8 +28,8 @@ func getTimeout(req *http.Request) time.Duration {
 	to := req.Header.Get(_httpHeaderTimeout)
 	timeout, err := strconv.ParseInt(to, 10, 64)
 	//reduce 10ms network transmission time for every request
-	if err == nil && timeout > 10 {
-		timeout -= 10
+	if err == nil && timeout > 5 {
+		timeout -= 5
 	}
 
 	return time.Duration(timeout) * time.Millisecond

@@ -47,7 +47,7 @@ func (s *Server) recovery() gin.HandlerFunc {
 
 				log.Error(
 					c.Request.Context(),
-					"access error",
+					"panic request",
 					log.Bytes("stack", stack(3)),
 					log.String("method", c.Request.Method),
 					log.Int("code", c.Writer.Status()),
