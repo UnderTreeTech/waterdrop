@@ -1,17 +1,13 @@
 package profile
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/pprof"
 
 	"github.com/gin-gonic/gin"
 )
 
-func init() {
-	//gin.SetMode(gin.ReleaseMode)
-	engine := gin.Default()
-
+func RegisterProfile(engine *gin.Engine) {
 	perf := engine.Group("/debug/profile")
 	{
 		perf.GET("/", profileHandler(pprof.Index))
@@ -26,12 +22,6 @@ func init() {
 		perf.GET("/mutex", profileHandler(pprof.Handler("mutex").ServeHTTP))
 		perf.GET("/threadcreate", profileHandler(pprof.Handler("threadcreate").ServeHTTP))
 	}
-
-	go func() {
-		if err := engine.Run("localhost:20828"); err != nil {
-			panic(fmt.Sprintf("start profile server fail, error %s", err.Error()))
-		}
-	}()
 }
 
 func profileHandler(handler http.HandlerFunc) gin.HandlerFunc {

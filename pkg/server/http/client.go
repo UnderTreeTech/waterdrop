@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	"google.golang.org/grpc/metadata"
 

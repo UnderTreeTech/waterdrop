@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
@@ -91,7 +91,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 			log.Float64("duration", duration.Seconds()),
 			log.Any("reply", reply),
 			log.Int("code", estatus.Code()),
-			log.String("error", estatus.Error()),
+			log.String("error", estatus.Message()),
 		)
 
 		if duration >= c.config.SlowRequestDuration {

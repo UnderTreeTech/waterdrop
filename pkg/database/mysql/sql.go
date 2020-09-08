@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	opentracing "github.com/opentracing/opentracing-go"
 

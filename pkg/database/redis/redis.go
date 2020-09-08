@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/metric"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 

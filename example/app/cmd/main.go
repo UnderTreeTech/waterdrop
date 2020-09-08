@@ -25,8 +25,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
-	_ "github.com/UnderTreeTech/waterdrop/pkg/metric"
-	_ "github.com/UnderTreeTech/waterdrop/pkg/profile"
+	_ "github.com/UnderTreeTech/waterdrop/pkg/stats"
 )
 
 func main() {
