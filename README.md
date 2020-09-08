@@ -11,6 +11,7 @@ Waterdrop(水滴) is a high performance micro-service framework based on gin and
 - Database：集成MySQL、Redis
 - Log：基于Zap封装
 - Trace：集成Opentracing接入，jaeger落地支撑
+- Distribute Lock：基于Redis、ETCD实现分布式锁，前者适合最终一致性业务锁，后者适合强一致性业务锁
 
 ## Installation
 
