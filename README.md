@@ -7,7 +7,7 @@ Waterdrop is a high performance micro-service framework based on gin and grpc. W
 
 ## Features
 
-- HTTP Server: Based on [GIN](https://github.com/gin-gonic/gin) and can reuse all its features
+- HTTP Server: Based on [gin](https://github.com/gin-gonic/gin) and can reuse all its features
 - RPC Server: Based on the official [gRPC-go](https://github.com/grpc/grpc-go) and use ETCD for service registration and discovery, 
 default load balancing policy is roundrobin
 - Conf: Support YAML, TOML, JSON and other extensions, default TOML parsing, user can decide whether or not to 
