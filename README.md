@@ -19,7 +19,9 @@ Waterdrop(水滴) is a high performance micro-service framework based on gin and
 - Status：全局错误处理，用于HTTP/RPC之间错误转换。后续可扩展成从remote加载错误定义
 - Dashboard：基于Grafana搭建metrics大盘，待实现
 - Breaker：熔断器，计划支持google sre breaker及netflix hystrix，待实现
-- Middlewares & Interceptors：http/rpc server通用中间件，如令牌桶/漏桶限流、signature签名等
+- Middlewares & Interceptors：http/rpc server通用中间件，如令牌桶/漏桶限流、signature签名等，待实现
+- Cron：定时任务，基于[cron](github.com/robfig/cron)实现定时任务处理，待实现
+
 
 ## Installation
 
