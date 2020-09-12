@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345
+	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gin-gonic/gin v1.6.3

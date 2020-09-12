@@ -141,10 +141,11 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 	}
 
 	uri := strings.TrimPrefix(request.URL, c.client.HostURL)
-	metric.HTTPClientHandleCounter.Inc(uri, request.Method, c.client.HostURL, estatus.Error())
-	metric.HTTPClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), uri, request.Method, c.client.HostURL)
-
 	duration := time.Since(now)
+
+	metric.HTTPClientHandleCounter.Inc(uri, request.Method, c.client.HostURL, estatus.Error())
+	metric.HTTPClientReqDuration.Observe(duration.Seconds(), uri, request.Method, c.client.HostURL)
+
 	fields := make([]log.Field, 0, 11)
 	fields = append(
 		fields,

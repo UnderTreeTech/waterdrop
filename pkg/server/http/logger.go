@@ -28,7 +28,7 @@ func (s *Server) logger() gin.HandlerFunc {
 		}
 
 		metric.HTTPServerHandleCounter.Inc(c.Request.URL.Path, c.Request.Method, c.ClientIP(), estatus.Error())
-		metric.HTTPServerReqDuration.Observe(float64(duration/time.Millisecond), c.Request.URL.Path, c.Request.Method, c.ClientIP())
+		metric.HTTPServerReqDuration.Observe(duration.Seconds(), c.Request.URL.Path, c.Request.Method, c.ClientIP())
 
 		fields := make([]log.Field, 0, 9)
 		fields = append(

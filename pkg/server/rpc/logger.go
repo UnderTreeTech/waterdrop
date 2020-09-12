@@ -35,7 +35,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 		duration := time.Since(now)
 
 		metric.UnaryServerHandleCounter.Inc(ip, info.FullMethod, estatus.Error())
-		metric.UnaryServerReqDuration.Observe(float64(duration/time.Millisecond), ip, info.FullMethod)
+		metric.UnaryServerReqDuration.Observe(duration.Seconds(), ip, info.FullMethod)
 
 		fields := make([]log.Field, 0, 8)
 		fields = append(
@@ -79,7 +79,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 		duration := time.Since(now)
 
 		metric.UnaryClientHandleCounter.Inc(peerInfo.Addr.String(), method, estatus.Error())
-		metric.UnaryClientReqDuration.Observe(float64(duration/time.Millisecond), peerInfo.Addr.String(), method)
+		metric.UnaryClientReqDuration.Observe(duration.Seconds(), peerInfo.Addr.String(), method)
 
 		fields := make([]log.Field, 0, 8)
 		fields = append(
