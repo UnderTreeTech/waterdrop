@@ -91,7 +91,7 @@ func (r *Redis) Do(ctx context.Context, commandName string, args ...interface{})
 		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, commandName, err.Error())
 	}
 
-	metric.RedisClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), r.conf.DBName, r.conf.Addr, commandName)
+	metric.RedisClientReqDuration.Observe(time.Since(now).Seconds(), r.conf.DBName, r.conf.Addr, commandName)
 
 	return reply, err
 }

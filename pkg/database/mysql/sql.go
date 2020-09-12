@@ -272,7 +272,7 @@ func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
 
 	_, ctx, cancel := shrink(ctx, db.conf.TranTimeout)
 	rtx, err := db.BeginTx(ctx, nil)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "begin")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), db.conf.DBName, db.addr, "begin")
 	if err != nil {
 		err = errors.WithStack(err)
 		cancel()
@@ -301,7 +301,7 @@ func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (re
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	res, err = db.ExecContext(ctx, query, args...)
 	cancel()
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "exec")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), db.conf.DBName, db.addr, "exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
@@ -323,7 +323,7 @@ func (db *conn) ping(ctx context.Context) (err error) {
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	err = db.PingContext(ctx)
 	cancel()
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "ping")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), db.conf.DBName, db.addr, "ping")
 	if err != nil {
 		err = errors.WithStack(err)
 	}
@@ -385,7 +385,7 @@ func (db *conn) query(ctx context.Context, query string, args ...interface{}) (r
 
 	_, ctx, cancel := shrink(ctx, db.conf.ExecTimeout)
 	rs, err := db.DB.QueryContext(ctx, query, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "query")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), db.conf.DBName, db.addr, "query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", query, args)
 		cancel()
@@ -413,7 +413,7 @@ func (db *conn) queryRow(ctx context.Context, query string, args ...interface{})
 
 	_, ctx, cancel := shrink(ctx, db.conf.QueryTimeout)
 	r := db.DB.QueryRowContext(ctx, query, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), db.conf.DBName, db.addr, "queryrow")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), db.conf.DBName, db.addr, "queryrow")
 
 	return &Row{db: db, Row: r, query: query, args: args, span: span, cancel: cancel}
 }
@@ -466,7 +466,7 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 	_, ctx, cancel := shrink(ctx, s.db.conf.ExecTimeout)
 	res, err = stmt.ExecContext(ctx, args...)
 	cancel()
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.exec")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), s.db.conf.DBName, s.db.addr, "stmt.exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", s.query, args)
 	}
@@ -505,7 +505,7 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 	}
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	rs, err := stmt.QueryContext(ctx, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.query")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), s.db.conf.DBName, s.db.addr, "stmt.query")
 	if err != nil {
 		err = errors.Wrapf(err, "query:%s, args:%+v", s.query, args)
 		cancel()
@@ -552,7 +552,7 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 	_, ctx, cancel := shrink(ctx, s.db.conf.QueryTimeout)
 	row.Row = stmt.QueryRowContext(ctx, args...)
 	row.cancel = cancel
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), s.db.conf.DBName, s.db.addr, "stmt.queryrow")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), s.db.conf.DBName, s.db.addr, "stmt.queryrow")
 
 	return
 }
@@ -596,7 +596,7 @@ func (tx *Tx) Exec(query string, args ...interface{}) (res sql.Result, err error
 	}
 
 	res, err = tx.tx.ExecContext(tx.ctx, query, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.exec")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), tx.db.conf.DBName, tx.db.addr, "tx.exec")
 	if err != nil {
 		err = errors.Wrapf(err, "exec:%s, args:%+v", query, args)
 	}
@@ -614,7 +614,7 @@ func (tx *Tx) Query(query string, args ...interface{}) (rows *Rows, err error) {
 	}
 
 	rs, err := tx.tx.QueryContext(tx.ctx, query, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.query")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), tx.db.conf.DBName, tx.db.addr, "tx.query")
 	if err == nil {
 		rows = &Rows{Rows: rs}
 	} else {
@@ -636,7 +636,7 @@ func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
 	}
 
 	r := tx.tx.QueryRowContext(tx.ctx, query, args...)
-	metric.MySQLClientReqDuration.Observe(float64(time.Since(now)/time.Millisecond), tx.db.conf.DBName, tx.db.addr, "tx.queryrow")
+	metric.MySQLClientReqDuration.Observe(time.Since(now).Seconds(), tx.db.conf.DBName, tx.db.addr, "tx.queryrow")
 
 	return &Row{Row: r, db: tx.db, query: query, args: args}
 }

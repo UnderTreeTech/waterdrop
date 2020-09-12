@@ -142,12 +142,20 @@ var (
 
 // rocketmq metrics
 var (
+	RocketMQClientHandleCounter = NewCounterVec(&CounterVecOpts{
+		Namespace: _rocketmqClientNamespace,
+		Subsystem: "requests",
+		Name:      "code_total",
+		Help:      "rocketmq client requests code count.",
+		Labels:    []string{"peer", "type", "name", "command", "code"},
+	})
+
 	RocketMQClientReqDuration = NewHistogramVec(&HistogramVecOpts{
 		Namespace: _rocketmqClientNamespace,
 		Subsystem: "requests",
 		Name:      "duration_ms",
 		Help:      "rocketmq client requests duration(ms).",
-		Labels:    []string{"name", "addr", "command"},
+		Labels:    []string{"peer", "type", "name", "command"},
 		Buckets:   []float64{5, 10, 25, 50, 100, 250, 500, 1000},
 	})
 )
