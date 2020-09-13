@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/dao"
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/model"
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/utils"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/model"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/utils"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/protobuf/ptypes/empty"

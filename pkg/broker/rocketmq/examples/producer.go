@@ -8,7 +8,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/mq/rocketmq"
+	"github.com/UnderTreeTech/waterdrop/pkg/broker/rocketmq"
 )
 
 func main() {

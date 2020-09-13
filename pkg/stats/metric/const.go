@@ -159,3 +159,23 @@ var (
 		Buckets:   []float64{5, 10, 25, 50, 100, 250, 500, 1000},
 	})
 )
+
+// kafka metrics
+var (
+	KafkaClientHandleCounter = NewCounterVec(&CounterVecOpts{
+		Namespace: _kafkaClientNamespace,
+		Subsystem: "requests",
+		Name:      "code_total",
+		Help:      "kafka client requests code count.",
+		Labels:    []string{"peer", "type", "name", "command", "code"},
+	})
+
+	KafkaClientReqDuration = NewHistogramVec(&HistogramVecOpts{
+		Namespace: _kafkaClientNamespace,
+		Subsystem: "requests",
+		Name:      "duration_ms",
+		Help:      "kafka client requests duration(ms).",
+		Labels:    []string{"peer", "type", "name", "command"},
+		Buckets:   []float64{5, 10, 25, 50, 100, 250, 500, 1000},
+	})
+)

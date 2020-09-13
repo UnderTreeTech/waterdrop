@@ -20,7 +20,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
 
-	_ "github.com/UnderTreeTech/waterdrop/example/app/internal/ecode"
+	_ "github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 )
 
