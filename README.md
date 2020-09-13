@@ -18,7 +18,7 @@ watch the config file changes for hot reload configuration
 - Distribute Lock: distributed Lock is implemented based on Redis and ETCD. 
 The former is suitable for final consistent business locks, while the latter is suitable for strongly consistent business locks
 - Stats: Metrics & Profile for service operation
-- MQ: Support RocketMQ and Kafka. developing...
+- Broker: Support RocketMQ and Kafka.
 - Utils: Helper class function
 - Registry: Service Registry discovery, etcd is the default service discovery component
 - Status: Global error handling for error conversion between HTTP/RPC

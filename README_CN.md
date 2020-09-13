@@ -15,7 +15,7 @@
 - Trace：集成Opentracing接入，jaeger落地支撑
 - Distribute Lock：基于Redis、ETCD实现分布式锁，前者适合最终一致性业务锁，后者适合强一致性业务锁
 - Stats：服务运行metrics & profile
-- MQ：默认支持RocketMQ, Kafka. 实现中...
+- Broker：默认支持RocketMQ, Kafka. 
 - Utils: 辅助类函数
 - Registry：服务注册发现，制定通用接口定义，默认支持etcd
 - Status：全局错误处理，用于HTTP/RPC之间错误转换。后续可扩展成从remote加载错误定义
