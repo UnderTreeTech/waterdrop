@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/model"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/model"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/UnderTreeTech/waterdrop/pkg/database/mysql"

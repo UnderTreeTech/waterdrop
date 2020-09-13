@@ -10,15 +10,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/server/grpc"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/server/grpc"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/server/http"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/server/http"
 
 	"google.golang.org/grpc/resolver"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/dao"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"

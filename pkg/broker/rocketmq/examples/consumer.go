@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/broker/rocketmq"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/UnderTreeTech/waterdrop/pkg/mq/rocketmq"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 

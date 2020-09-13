@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/UnderTreeTech/waterdrop/example/app/internal/ecode"
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
 
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/golang/protobuf/ptypes/empty"
