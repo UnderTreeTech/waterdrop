@@ -23,9 +23,9 @@ The former is suitable for final consistent business locks, while the latter is 
 - Registry: Service Registry discovery, etcd is the default service discovery component
 - Status: Global error handling for error conversion between HTTP/RPC
 - Dashboard: Build metrics dashboard based on Grafana, to be implemented
-- Breaker: Plan to support [alibaba sentinel] (github.com/alibaba/sentinel-golang), 
-[Google sre breaker] (https://landing.google.com/sre/sre-book/chapters/handling-overload/) and 
-[netflix Hystrix] (https://github.com/afex/hystrix-go), to be implemented
+- Breaker: Plan to support [alibaba sentinel](github.com/alibaba/sentinel-golang), 
+[Google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/) and 
+[netflix Hystrix](https://github.com/afex/hystrix-go), to be implemented
 - Middlewares & Interceptors: HTTP/RPC Server common middleware, such as token bucket/leaky bucket flow limiting, 
 request signature, etc., to be implemented
 - Cron: Timed task, based on [Cron](github.com/robfig/cron), to be implemented
