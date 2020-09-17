@@ -31,3 +31,9 @@
             keepAliveInterval = "60s"
             keepAliveTimeout = "20s"
             slowRequestDuration = "500ms"
+
+[stats]
+    addr = "0.0.0.0:20828"
+    mode = "debug"
+    enableMetric = true
+    enableProfile = true

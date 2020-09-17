@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/stats"
+
 	"google.golang.org/grpc/resolver"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
@@ -26,8 +28,6 @@ import (
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
-
-	_ "github.com/UnderTreeTech/waterdrop/pkg/stats"
 )
 
 func main() {
@@ -65,6 +65,7 @@ func main() {
 	etcd := etcd.New(etcdConf)
 	etcd.Register(context.Background(), serviceInfo)
 	resolver.Register(etcd)
+	startStats()
 
 	<-c
 
@@ -80,6 +81,14 @@ func parseConfig(configName string, srvConfig *rpc.ServerConfig) {
 	if err := conf.Unmarshal(configName, srvConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
+}
+
+func startStats() {
+	statsConfig := &stats.StatsConfig{}
+	if err := conf.Unmarshal("stats", statsConfig); err != nil {
+		panic(fmt.Sprintf("unmarshal stats config fail, err msg %s", err.Error()))
+	}
+	stats.StartStats(statsConfig)
 }
 
 type Service struct{}
