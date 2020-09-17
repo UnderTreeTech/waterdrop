@@ -129,3 +129,9 @@
     registerTTL = "90s"
     username = ""
     password = ""
+
+[stats]
+    addr = "0.0.0.0:20828"
+    mode = "debug"
+    enableMetric = true
+    enableProfile = true

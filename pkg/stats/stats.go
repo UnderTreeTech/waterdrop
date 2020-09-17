@@ -8,15 +8,42 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func init() {
-	//gin.SetMode(gin.ReleaseMode)
+type StatsConfig struct {
+	Addr string
+	Mode string
+
+	EnableMetric  bool
+	EnableProfile bool
+}
+
+func defaultStatsConfig() *StatsConfig {
+	return &StatsConfig{
+		Addr: "0.0.0.0:20828",
+		Mode: "release",
+
+		EnableMetric:  true,
+		EnableProfile: true,
+	}
+}
+
+func StartStats(config *StatsConfig) {
+	if config == nil {
+		config = defaultStatsConfig()
+	}
+
+	gin.SetMode(config.Mode)
 	engine := gin.Default()
 
-	profile.RegisterProfile(engine)
-	metric.RegisterMetric(engine)
+	if config.EnableProfile {
+		profile.RegisterProfile(engine)
+	}
+
+	if config.EnableMetric {
+		metric.RegisterMetric(engine)
+	}
 
 	go func() {
-		if err := engine.Run("localhost:20828"); err != nil {
+		if err := engine.Run(config.Addr); err != nil {
 			panic(fmt.Sprintf("start profile server fail, error %s", err.Error()))
 		}
 	}()
