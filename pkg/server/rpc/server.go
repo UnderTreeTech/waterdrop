@@ -31,6 +31,8 @@ type ServerConfig struct {
 
 	SlowRequestDuration time.Duration
 	WatchConfig         bool
+
+	EnableMetric bool
 }
 
 type Server struct {
@@ -74,6 +76,10 @@ func NewServer(config *ServerConfig) *Server {
 	})
 
 	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate())
+	if config.EnableMetric {
+		srv.Use(srv.Metric())
+	}
+
 	unaryOpts := srv.WithUnaryServerChain(srv.unaryInterceptors...)
 	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, unaryOpts)
 	srv.server = grpc.NewServer(srv.serverOptions...)

@@ -19,6 +19,8 @@ type ServerConfig struct {
 
 	SlowRequestDuration time.Duration
 	WatchConfig         bool
+
+	EnableMetric bool
 }
 
 func defaultServerConfig() *ServerConfig {
@@ -48,6 +50,9 @@ func NewServer(config *ServerConfig) *Server {
 	}
 
 	srv.Use(srv.recovery(), srv.trace(), srv.logger())
+	if config.EnableMetric {
+		srv.Use(srv.Metric())
+	}
 
 	return srv
 }
