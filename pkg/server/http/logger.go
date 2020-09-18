@@ -3,7 +3,6 @@ package http
 import (
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -26,9 +25,6 @@ func (s *Server) logger() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			estatus = status.ExtractStatus(c.Errors.Last().Err)
 		}
-
-		metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, c.ClientIP(), estatus.Error())
-		metric.HTTPServerReqDuration.Observe(duration.Seconds(), c.FullPath(), c.Request.Method, c.ClientIP())
 
 		fields := make([]log.Field, 0, 9)
 		fields = append(

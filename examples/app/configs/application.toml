@@ -9,12 +9,14 @@
         keepAliveTimeout = "20s"
         slowRequestDuration = "500ms"
         watchConfig = true
+        enableMetric = true
     [server.http]
         addr = "0.0.0.0:20827"
         timeout = "2s"
         mode = "debug"
         slowRequestDuration = "500ms"
         watchConfig = true
+        enableMetric = true
 
 [client]
     [client.rpc]
