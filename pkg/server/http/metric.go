@@ -13,7 +13,8 @@ func (s *Server) Metric() gin.HandlerFunc {
 		now := time.Now()
 		c.Next()
 
-		metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, c.ClientIP(), strconv.Itoa(c.Writer.Status()))
-		metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, c.ClientIP())
+		appkey := c.Request.Header.Get("appkey")
+		metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, appkey, strconv.Itoa(c.Writer.Status()))
+		metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, appkey)
 	}
 }

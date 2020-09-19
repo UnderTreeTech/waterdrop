@@ -224,7 +224,7 @@ func (c *Client) sign(ctx context.Context, method string, timestamp string, nonc
 
 	digest := md5.Sum(xstring.StringToBytes(signStr))
 	sign := hex.EncodeToString(digest[:])
-	log.Info(ctx, "signature info", log.String("sign_str", signStr), log.String("sign", sign))
+	log.Debug(ctx, "signature info", log.String("sign_str", signStr), log.String("sign", sign))
 
 	return sign, nil
 }

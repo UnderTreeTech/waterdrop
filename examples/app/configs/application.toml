@@ -105,7 +105,7 @@
 [log]
     addCaller = true
     callerSkip = 1
-    level = "info"
+    level = "debug"
     outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
     errorOutputPath = ["stderr","/export/apps/golang/src/apps/waterdrop/logs/error.log"]
     watchConfig = true
