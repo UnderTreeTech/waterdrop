@@ -73,7 +73,7 @@ func (rw *RollingWindow) resetBucket(offset int) {
 		distance = (rw.bucketSize - rw.lastWindowOffset) + offset
 	}
 
-	for counter := 1; counter < distance; counter++ {
+	for counter := 1; counter <= distance; counter++ {
 		offset := (counter + rw.lastWindowOffset) % rw.bucketSize
 		rw.win.buckets[offset].reset()
 	}
