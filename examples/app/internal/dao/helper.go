@@ -14,7 +14,7 @@ type txKey struct{}
 func (d *dao) Begin(ctx context.Context) (context.Context, error) {
 	tx, err := d.db.Begin(ctx)
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 
 	ctx = context.WithValue(ctx, txKey{}, tx)

@@ -54,7 +54,7 @@ func (gsb *googleSreBreaker) Allow() error {
 	success, total := gsb.summary()
 	googleAccepts := gsb.k * success
 
-	dropRatio := math.Max(0, float64(total)-googleAccepts/float64(total+1))
+	dropRatio := math.Max(0, (float64(total)-googleAccepts)/float64(total+1))
 	if dropRatio <= 0 {
 		if atomic.LoadInt32(&gsb.state) == StateOpen {
 			atomic.CompareAndSwapInt32(&gsb.state, StateOpen, StateClosed)
@@ -67,6 +67,7 @@ func (gsb *googleSreBreaker) Allow() error {
 	}
 
 	if gsb.proba.TrueOnProba(dropRatio) {
+		//gsb.Reject()
 		return status.ServiceUnavailable
 	}
 
@@ -88,4 +89,19 @@ func (gsb *googleSreBreaker) Accept() {
 
 func (gsb *googleSreBreaker) Reject() {
 	gsb.rw.Add(0)
+}
+
+func (gsb *googleSreBreaker) Do(run func() error, accept func(error) bool) error {
+	if err := gsb.Allow(); err != nil {
+		return err
+	}
+
+	err := run()
+	if accept(err) {
+		gsb.Accept()
+	} else {
+		gsb.Reject()
+	}
+
+	return err
 }

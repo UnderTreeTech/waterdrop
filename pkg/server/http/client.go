@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"google.golang.org/grpc/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
@@ -46,8 +48,9 @@ type Request struct {
 }
 
 type Client struct {
-	client *resty.Client
-	config *ClientConfig
+	client   *resty.Client
+	config   *ClientConfig
+	breakers *breaker.BreakerGroup
 }
 
 func NewClient(config *ClientConfig) *Client {
@@ -58,8 +61,9 @@ func NewClient(config *ClientConfig) *Client {
 	cli.SetHostURL(config.HostURL)
 
 	return &Client{
-		client: cli,
-		config: config,
+		client:   cli,
+		config:   config,
+		breakers: breaker.NewBreakerGroup(),
 	}
 }
 
@@ -97,71 +101,96 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 }
 
 func (c *Client) execute(ctx context.Context, request *resty.Request) error {
-	span, ctx := trace.StartSpanFromContext(ctx, request.Method+" "+request.URL)
-	ext.Component.Set(span, "http")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.HTTPMethod.Set(span, request.Method)
-	ext.HTTPUrl.Set(span, request.URL)
+	err := c.breakers.Do(request.URL,
+		func() error {
+			span, ctx := trace.StartSpanFromContext(ctx, request.Method+" "+request.URL)
+			ext.Component.Set(span, "http")
+			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+			ext.HTTPMethod.Set(span, request.Method)
+			ext.HTTPUrl.Set(span, request.URL)
 
-	// adjust request timeout
-	timeout := c.config.Timeout
-	if deadline, ok := ctx.Deadline(); ok {
-		derivedTimeout := time.Until(deadline)
-		if timeout > derivedTimeout {
-			timeout = derivedTimeout
+			// adjust request timeout
+			timeout := c.config.Timeout
+			if deadline, ok := ctx.Deadline(); ok {
+				derivedTimeout := time.Until(deadline)
+				if timeout > derivedTimeout {
+					timeout = derivedTimeout
+				}
+			}
+
+			ctx = metadata.NewOutgoingContext(ctx, metadata.MD(request.Header))
+			ctx, cancel := context.WithTimeout(ctx, timeout)
+			defer func() {
+				span.Finish()
+				cancel()
+			}()
+
+			request.SetHeader(_httpHeaderTimeout, strconv.Itoa(int(c.config.Timeout/1e6)))
+			request.SetContext(ctx)
+
+			trace.MetadataInjector(ctx, metadata.MD(request.Header))
+
+			now := time.Now()
+			var quota float64
+			if deadline, ok := ctx.Deadline(); ok {
+				quota = time.Until(deadline).Seconds()
+			}
+
+			response, err := request.Execute(request.Method, request.URL)
+
+			estatus := status.OK
+			if err != nil {
+				estatus = status.ErrToStatus(err.Error())
+			}
+
+			if estatus.Code() != status.OK.Code() {
+				ext.Error.Set(span, true)
+				span.LogFields(tlog.String("event", "error"), tlog.Int("code", estatus.Code()), tlog.String("message", estatus.Message()))
+			}
+
+			duration := time.Since(now)
+			fields := make([]log.Field, 0, 11)
+			fields = append(
+				fields,
+				log.String("host", c.client.HostURL),
+				log.String("method", request.Method),
+				log.String("path", request.URL),
+				log.Any("headers", request.Header),
+				log.Any("query", request.QueryParam),
+				log.Any("body", request.Body),
+				log.Float64("quota", quota),
+				log.Float64("duration", duration.Seconds()),
+				log.Any("reply", response),
+				log.Int("code", estatus.Code()),
+				log.String("error", estatus.Message()),
+			)
+
+			if duration >= c.config.SlowRequestDuration {
+				log.Warn(ctx, "http-slow-request-log", fields...)
+			} else {
+				log.Info(ctx, "http-request-log", fields...)
+			}
+
+			return err
+		},
+		accept)
+
+	return err
+}
+
+func accept(err error) bool {
+	if err != nil {
+		switch status.ErrToStatus(err.Error()).Code() {
+		case status.Deadline.Code(), status.LimitExceed.Code(),
+			status.ServerErr.Code(), status.Canceled.Code(),
+			status.ServiceUnavailable.Code():
+			return false
+		default:
+			return true
 		}
 	}
 
-	ctx = metadata.NewOutgoingContext(ctx, metadata.MD(request.Header))
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer func() {
-		span.Finish()
-		cancel()
-	}()
-
-	request.SetHeader(_httpHeaderTimeout, strconv.Itoa(int(c.config.Timeout/1e6)))
-	request.SetContext(ctx)
-
-	trace.MetadataInjector(ctx, metadata.MD(request.Header))
-
-	now := time.Now()
-	var quota float64
-	if deadline, ok := ctx.Deadline(); ok {
-		quota = time.Until(deadline).Seconds()
-	}
-
-	response, err := request.Execute(request.Method, request.URL)
-
-	estatus := status.ExtractStatus(err)
-	if estatus.Code() != status.OK.Code() {
-		ext.Error.Set(span, true)
-		span.LogFields(tlog.String("event", "error"), tlog.Int("code", estatus.Code()), tlog.String("message", estatus.Message()))
-	}
-
-	duration := time.Since(now)
-	fields := make([]log.Field, 0, 11)
-	fields = append(
-		fields,
-		log.String("host", c.client.HostURL),
-		log.String("method", request.Method),
-		log.String("path", request.URL),
-		log.Any("headers", request.Header),
-		log.Any("query", request.QueryParam),
-		log.Any("body", request.Body),
-		log.Float64("quota", quota),
-		log.Float64("duration", duration.Seconds()),
-		log.Any("reply", response),
-		log.Int("code", estatus.Code()),
-		log.String("error", estatus.Message()),
-	)
-
-	if duration >= c.config.SlowRequestDuration {
-		log.Warn(ctx, "http-slow-request-log", fields...)
-	} else {
-		log.Info(ctx, "http-request-log", fields...)
-	}
-
-	return err
+	return true
 }
 
 func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) error {
