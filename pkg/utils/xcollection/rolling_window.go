@@ -31,13 +31,13 @@ func (rw *RollingWindow) Add(v float64) {
 	rw.mutex.Unlock()
 }
 
-func (rw *RollingWindow) Reduce(fn func(*window) float64) float64 {
+func (rw *RollingWindow) Reduce(fn func(*Bucket)) {
 	rw.mutex.RLock()
 	rw.updateWindowOffset()
-	reduce := fn(rw.win)
+	for _, bucket := range rw.win.buckets {
+		fn(bucket)
+	}
 	rw.mutex.RUnlock()
-
-	return reduce
 }
 
 func (rw *RollingWindow) updateWindowOffset() {
@@ -55,8 +55,10 @@ func (rw *RollingWindow) updateWindowOffset() {
 		rw.resetBucket(windowOffset)
 	}
 
-	rw.lastWindowTime = adjustedTime
-	rw.lastWindowOffset = windowOffset
+	if adjustedTime != rw.lastWindowTime {
+		rw.lastWindowTime = adjustedTime
+		rw.lastWindowOffset = windowOffset
+	}
 }
 
 func (rw *RollingWindow) resetWindow() {
@@ -80,14 +82,14 @@ func (rw *RollingWindow) resetBucket(offset int) {
 }
 
 type window struct {
-	buckets    []*bucket
+	buckets    []*Bucket
 	bucketSize int
 }
 
 func newWindow(size int) *window {
-	buckets := make([]*bucket, 0, size)
+	buckets := make([]*Bucket, 0, size)
 	for i := 0; i < size; i++ {
-		buckets = append(buckets, &bucket{})
+		buckets = append(buckets, &Bucket{})
 	}
 
 	return &window{
@@ -96,17 +98,17 @@ func newWindow(size int) *window {
 	}
 }
 
-type bucket struct {
+type Bucket struct {
 	Sum   float64
 	Count int64
 }
 
-func (b *bucket) add(v float64) {
+func (b *Bucket) add(v float64) {
 	b.Sum += v
 	b.Count++
 }
 
-func (b *bucket) reset() {
+func (b *Bucket) reset() {
 	b.Sum = 0
 	b.Count = 0
 }
