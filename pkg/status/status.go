@@ -140,7 +140,7 @@ func (s *status) Details() []interface{} {
 }
 
 // err convert grpc unkown code to ecode status
-func errToStatus(code string) *status {
+func ErrToStatus(code string) *status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
 		log.Errorf("internal_error", log.String("error", code))
@@ -180,9 +180,17 @@ func ExtractStatus(err error) *status {
 		return Deadline
 	case codes.Unavailable:
 		return ServiceUnavailable
+	case codes.Internal:
+		return ServerErr
 	case codes.Unknown:
-		return errToStatus(gst.Message())
+		return ErrToStatus(gst.Message())
 	}
 
 	return ServerErr
+}
+
+// EqualError equal error
+func EqualError(status *status, err error) bool {
+	errStatus := ErrToStatus(err.Error())
+	return errStatus.Code() == status.Code()
 }

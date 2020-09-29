@@ -47,8 +47,8 @@
 [mysql]
     dbName = "saas_test"
     addr = "127.0.0.1:3306"
-    dsn = "root@tcp(127.0.0.1:3306)/saas_test?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"
-    readDSN = ["root@tcp(127.0.0.1:3306)/saas_test?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"]
+    dsn = "root@tcp(127.0.0.1:3306)/saas?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"
+    readDSN = ["root@tcp(127.0.0.1:3306)/saas?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"]
     active = 20
     idle = 10
     idleTimeout ="4h"
@@ -75,7 +75,7 @@
     accessKey = "your_access_key"
     secretKey = "your_secret_key"
     namespace = "your_name_space"
-    logPath = "/export/apps/golang/src/apps/waterdrop/logs/rocketmq.log"
+    #logPath = "/export/apps/golang/src/apps/waterdrop/logs/rocketmq.log"
     [RocketMQ.SaasProducer]
         retry = 1
         sendTimeout = 1000 #ms
@@ -106,8 +106,9 @@
     addCaller = true
     callerSkip = 1
     level = "debug"
-    outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
-    errorOutputPath = ["stderr","/export/apps/golang/src/apps/waterdrop/logs/error.log"]
+    #outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
+    outputPath = ["stdout"]
+    errorOutputPath = ["stderr"]
     watchConfig = true
 
 [trace]

@@ -22,7 +22,7 @@ func getAppInfo(c *gin.Context) {
 
 	shop, err := dao.GetDao().FindShop(ctx, condition)
 	if err != nil {
-		log.Error(ctx, "get shop", log.Any("err", err))
+		log.Error(ctx, "get shop", log.Any("err", err.Error()))
 	}
 
 	dao.GetRedis().Do(ctx, "set", "shop_info_"+strconv.Itoa(int(shop.ID)), shop.ShopName)
@@ -60,6 +60,7 @@ func getAppInfo(c *gin.Context) {
 	ctx, err = dao.GetDao().Begin(ctx)
 	if err != nil {
 		log.Error(ctx, "begin tx", log.Any("err", err))
+		return
 	}
 
 	shopId := uint64(time.Now().UnixNano())

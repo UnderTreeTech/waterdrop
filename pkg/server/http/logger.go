@@ -23,7 +23,7 @@ func (s *Server) logger() gin.HandlerFunc {
 		duration := time.Since(now)
 		estatus := status.OK
 		if len(c.Errors) > 0 {
-			estatus = status.ExtractStatus(c.Errors.Last().Err)
+			estatus = status.ErrToStatus(c.Errors.Last().Error())
 		}
 
 		fields := make([]log.Field, 0, 9)

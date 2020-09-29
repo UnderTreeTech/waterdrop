@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"google.golang.org/grpc/keepalive"
 
 	"google.golang.org/grpc"
@@ -41,13 +43,16 @@ type Client struct {
 	conn          *grpc.ClientConn
 	config        *ClientConfig
 	clientOptions []grpc.DialOption
+	breakers      *breaker.BreakerGroup
 
 	unaryInterceptors []grpc.UnaryClientInterceptor
 }
 
 func NewClient(config *ClientConfig) *grpc.ClientConn {
 	cli := &Client{
-		config:            config,
+		config:   config,
+		breakers: breaker.NewBreakerGroup(),
+
 		clientOptions:     make([]grpc.DialOption, 0),
 		unaryInterceptors: make([]grpc.UnaryClientInterceptor, 0),
 	}
@@ -66,7 +71,7 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		Timeout: config.KeepAliveTimeout,
 	})
 
-	cli.Use(cli.recovery(), cli.trace(), cli.logger())
+	cli.Use(cli.recovery(), cli.breaker(), cli.trace(), cli.logger())
 	cli.clientOptions = append(
 		cli.clientOptions,
 		keepaliveOpts,
