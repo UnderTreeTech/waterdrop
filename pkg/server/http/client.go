@@ -107,7 +107,6 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			ext.Component.Set(span, "http")
 			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 			ext.HTTPMethod.Set(span, request.Method)
-			ext.HTTPUrl.Set(span, request.URL)
 
 			// adjust request timeout
 			timeout := c.config.Timeout
@@ -137,10 +136,13 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			}
 
 			response, err := request.Execute(request.Method, request.URL)
-
+			ext.HTTPUrl.Set(span, request.URL)
 			estatus := status.OK
 			if err != nil {
-				estatus = status.ErrToStatus(err.Error())
+				if uerr, ok := err.(*url.Error); ok {
+					err = uerr.Unwrap()
+				}
+				estatus = status.ExtractContextStatus(err)
 			}
 
 			if estatus.Code() != status.OK.Code() {
@@ -154,7 +156,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				fields,
 				log.String("host", c.client.HostURL),
 				log.String("method", request.Method),
-				log.String("path", request.URL),
+				log.String("path", strings.TrimPrefix(request.URL, c.client.HostURL)),
 				log.Any("headers", request.Header),
 				log.Any("query", request.QueryParam),
 				log.Any("body", request.Body),
@@ -171,7 +173,10 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				log.Info(ctx, "http-request-log", fields...)
 			}
 
-			return err
+			if estatus.Code() == status.OK.Code() {
+				return nil
+			}
+			return estatus
 		},
 		accept)
 
@@ -180,7 +185,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 
 func accept(err error) bool {
 	if err != nil {
-		switch status.ErrToStatus(err.Error()).Code() {
+		switch status.ExtractContextStatus(err).Code() {
 		case status.Deadline.Code(), status.LimitExceed.Code(),
 			status.ServerErr.Code(), status.Canceled.Code(),
 			status.ServiceUnavailable.Code():
