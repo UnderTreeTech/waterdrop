@@ -21,7 +21,6 @@ type Breaker interface {
 	Allow() error
 	Accept()
 	Reject()
-	Do(func() error, func(error) bool) error
 }
 
 type Proba struct {
@@ -62,8 +61,9 @@ func (bg *BreakerGroup) Get(name string) Breaker {
 	}
 
 	bg.mutex.Lock()
-	breaker = newGoogleSreBreaker(nil)
-	if _, ok := bg.breakers[name]; !ok {
+	breaker, ok = bg.breakers[name]
+	if !ok {
+		breaker = newGoogleSreBreaker(nil)
 		bg.breakers[name] = breaker
 	}
 	bg.mutex.Unlock()
@@ -73,5 +73,18 @@ func (bg *BreakerGroup) Get(name string) Breaker {
 
 func (bg *BreakerGroup) Do(name string, run func() error, accept func(error) bool) error {
 	breaker := bg.Get(name)
-	return breaker.Do(run, accept)
+	err := func() error {
+		if berr := breaker.Allow(); berr != nil {
+			return berr
+		}
+		return run()
+	}()
+
+	if accept(err) {
+		breaker.Accept()
+	} else {
+		breaker.Reject()
+	}
+
+	return err
 }
