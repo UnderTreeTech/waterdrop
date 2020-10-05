@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/Shopify/sarama v1.27.0
 	github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345
+	github.com/alibaba/sentinel-golang v0.6.1 // indirect
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect

@@ -36,7 +36,7 @@ func (rw *RollingWindow) Reduce(fn func(*Bucket)) {
 	adjustedTime := int(time.Now().UnixNano() / rw.bucketDuration.Nanoseconds())
 	windowOffset := adjustedTime % rw.bucketSize
 
-	if adjustedTime-rw.lastWindowTime < rw.bucketSize && windowOffset > rw.lastWindowOffset {
+	if adjustedTime-rw.lastWindowTime < rw.bucketSize && windowOffset >= rw.lastWindowOffset {
 		//当时间跨越到n个时钟周期之后时，当前统计无意义,只有当同处一个时钟内，且必须是顺序索引（逆序说明时钟跑到下一个时钟去了）
 		// When one or more buckets are missed we need to zero them out.
 		for _, bucket := range rw.win.buckets {

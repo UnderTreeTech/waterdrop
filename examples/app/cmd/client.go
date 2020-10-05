@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
-
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
 
@@ -80,11 +80,15 @@ func main() {
 	}
 
 	var result interface{}
-	err := httpClient.Post(context.Background(), r, &result)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(result)
+	for i := 0; i < 100; i++ {
+		go func() {
+			for j := 0; j < 100; j++ {
+				err := httpClient.Post(context.Background(), r, &result)
+				if err != nil {
+					fmt.Println("response", err)
+				}
+			}
+		}()
 	}
 
 	cliConf := &rpc.ClientConfig{}
@@ -97,7 +101,7 @@ func main() {
 	for i := 0; i < 1; i++ {
 		_, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
-			fmt.Println("err", status.ExtractStatus(err))
+			fmt.Println("err", status.ExtractStatus(err).Message())
 		}
 	}
 	fmt.Println(time.Since(now))

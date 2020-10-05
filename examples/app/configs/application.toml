@@ -38,7 +38,7 @@
             timeout = "1s"
             #keepAlive = "60s"
             slowRequestDuration = "500ms"
-            enableDebug = true
+            enableDebug = false
             enableSign = false
             #dial = "100ms"
             key = "xHf74ZfV43cAUsUl"

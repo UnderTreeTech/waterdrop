@@ -1,6 +1,7 @@
 package status
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -140,7 +141,7 @@ func (s *status) Details() []interface{} {
 }
 
 // err convert grpc unkown code to ecode status
-func ErrToStatus(code string) *status {
+func errToStatus(code string) *status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
 		log.Errorf("internal_error", log.String("error", code))
@@ -157,8 +158,11 @@ func ErrToStatus(code string) *status {
 
 // extract status from grpc call reply err
 func ExtractStatus(err error) *status {
-	gst, _ := gstatus.FromError(err)
+	if err == nil {
+		return OK
+	}
 
+	gst, _ := gstatus.FromError(err)
 	switch gst.Code() {
 	case codes.OK:
 		return OK
@@ -183,14 +187,24 @@ func ExtractStatus(err error) *status {
 	case codes.Internal:
 		return ServerErr
 	case codes.Unknown:
-		return ErrToStatus(gst.Message())
+		return errToStatus(gst.Message())
 	}
 
 	return ServerErr
 }
 
-// EqualError equal error
-func EqualError(status *status, err error) bool {
-	errStatus := ErrToStatus(err.Error())
-	return errStatus.Code() == status.Code()
+// ExtractContextStatus converts a context error into a Status.  It returns a
+// Status with status.OK if err is nil, or a Status from errToStatus if err is
+// non-nil and not a context error.
+func ExtractContextStatus(err error) *status {
+	switch err {
+	case nil:
+		return OK
+	case context.DeadlineExceeded:
+		return Deadline
+	case context.Canceled:
+		return Canceled
+	default:
+		return errToStatus(err.Error())
+	}
 }
