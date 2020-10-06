@@ -37,7 +37,7 @@ var (
 	UndefinedErr       = add(600, "未知错误")
 )
 
-func New(code int, msg string) *status {
+func New(code int, msg string) *Status {
 	if code < 0 {
 		panic(fmt.Sprintf("status code must be greater than zero"))
 	}
@@ -47,7 +47,7 @@ func New(code int, msg string) *status {
 	return estatus
 }
 
-func add(code int, msg string) *status {
+func add(code int, msg string) *Status {
 	estatus := new(code, msg)
 	_status.Store(code, estatus)
 
@@ -56,27 +56,27 @@ func add(code int, msg string) *status {
 
 // Status represents an RPC status code, message, and details.  It is immutable
 // and should be created with New, Newf, or FromProto.
-type status struct {
+type Status struct {
 	s *spb.Status
 }
 
 // New returns a Status representing c and msg.
-func new(c int, msg string) *status {
-	return &status{s: &spb.Status{Code: int32(c), Message: msg, Details: make([]*any.Any, 0)}}
+func new(c int, msg string) *Status {
+	return &Status{s: &spb.Status{Code: int32(c), Message: msg, Details: make([]*any.Any, 0)}}
 }
 
 // FromProto returns a Status representing s.
-func FromProto(s *spb.Status) *status {
-	return &status{s: proto.Clone(s).(*spb.Status)}
+func FromProto(s *spb.Status) *Status {
+	return &Status{s: proto.Clone(s).(*spb.Status)}
 }
 
 //implement error interface, return err code
-func (s *status) Error() string {
+func (s *Status) Error() string {
 	return strconv.Itoa(s.Code())
 }
 
 // Code returns the status code contained in s.
-func (s *status) Code() int {
+func (s *Status) Code() int {
 	if s == nil || s.s == nil {
 		return int(OK.s.Code)
 	}
@@ -85,7 +85,7 @@ func (s *status) Code() int {
 }
 
 // Message returns the message contained in s.
-func (s *status) Message() string {
+func (s *Status) Message() string {
 	if s == nil || s.s == nil {
 		return ""
 	}
@@ -94,7 +94,7 @@ func (s *status) Message() string {
 }
 
 // Proto returns s's status as an spb.Status proto message.
-func (s *status) Proto() *spb.Status {
+func (s *Status) Proto() *spb.Status {
 	if s == nil {
 		return nil
 	}
@@ -104,7 +104,7 @@ func (s *status) Proto() *spb.Status {
 
 // WithDetails returns a new status with the provided details messages appended to the status.
 // If any errors are encountered, it returns nil and the first error encountered.
-func (s *status) WithDetails(details ...proto.Message) (*status, error) {
+func (s *Status) WithDetails(details ...proto.Message) (*Status, error) {
 	if s.Code() == OK.Code() {
 		return nil, errors.New("no error details for status with code OK")
 	}
@@ -118,12 +118,12 @@ func (s *status) WithDetails(details ...proto.Message) (*status, error) {
 		p.Details = append(p.Details, any)
 	}
 
-	return &status{s: p}, nil
+	return &Status{s: p}, nil
 }
 
 // Details returns a slice of details messages attached to the status.
 // If a detail cannot be decoded, the error is returned in place of the detail.
-func (s *status) Details() []interface{} {
+func (s *Status) Details() []interface{} {
 	if s == nil || s.s == nil {
 		return nil
 	}
@@ -141,7 +141,7 @@ func (s *status) Details() []interface{} {
 }
 
 // err convert grpc unkown code to ecode status
-func errToStatus(code string) *status {
+func errToStatus(code string) *Status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
 		log.Errorf("internal_error", log.String("error", code))
@@ -153,11 +153,11 @@ func errToStatus(code string) *status {
 		return UndefinedErr
 	}
 
-	return estatus.(*status)
+	return estatus.(*Status)
 }
 
 // extract status from grpc call reply err
-func ExtractStatus(err error) *status {
+func ExtractStatus(err error) *Status {
 	if err == nil {
 		return OK
 	}
@@ -196,7 +196,7 @@ func ExtractStatus(err error) *status {
 // ExtractContextStatus converts a context error into a Status.  It returns a
 // Status with status.OK if err is nil, or a Status from errToStatus if err is
 // non-nil and not a context error.
-func ExtractContextStatus(err error) *status {
+func ExtractContextStatus(err error) *Status {
 	switch err {
 	case nil:
 		return OK
