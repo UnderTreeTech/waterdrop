@@ -23,7 +23,6 @@ import (
 )
 
 var (
-
 	// ErrStmtNil prepared stmt error
 	ErrStmtNil = errors.New("sql: prepare failed and stmt nil")
 	// ErrNoMaster is returned by Master when call master multiple times.
