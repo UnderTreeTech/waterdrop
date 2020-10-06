@@ -34,7 +34,13 @@ var (
 	ServerErr          = add(500, "网络错误，请稍后重试")
 	ServiceUnavailable = add(503, "过载保护,服务暂不可用")
 	Deadline           = add(504, "服务调用超时")
-	UndefinedErr       = add(600, "未知错误")
+	AppKeyInvalid      = add(600, "应用程序不存在或已被封禁")
+	SignCheckErr       = add(601, "签名校验失败")
+	RepeatedRequest    = add(602, "重复请求")
+	CaptchaErr         = add(603, "验证码错误")
+	TargetBlocked      = add(604, "资源锁定中，请稍后重试")
+	ServiceUpdate      = add(605, "系统升级中")
+	UndefinedErr       = add(1000, "未知错误")
 )
 
 func New(code int, msg string) *Status {
