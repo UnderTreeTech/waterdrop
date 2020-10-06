@@ -47,42 +47,13 @@ func main() {
 	r := &http.Request{
 		URI:        "/api/app/validate/{id}",
 		PathParams: map[string]string{"id": "1"},
-		Body: `{
-					"email": "example@example.com",
-					"name": "John&Sun",
-					"password": "styd.cn",
-					"sex": 2,
-					"age": 12,
-					"addr": [
-						{
-							"mobile": "上海市徐汇区",
-							"address": "<a onblur='alert(secret)' href='http://www.google.com'>Google</a>",
-							"app": {
-								"sappkey": "<p>md5hash</p>"
-							},
-							"reply": {
-								"urls": [
-									"www.&baidu.com",
-									"www.g&oogle.com",
-									"&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;&#x3b;",
-									"u003cimg src=1 onerror=alert(/xss/)u003e"
-								]
-							},
-							"resp": [
-								{
-									"app_key": "sha1hash",
-									"app_secret": "<href>rsa</href>"
-								}
-							]
-						}
-					]
-				}`,
+		Body:       `{"email":"example@example.com","name":"John&Sun","password":"styd.cn","sex":2,"age":12,"addr":[{"mobile":"上海市徐汇区","address":"<a onblur='alert(secret)' href='http://www.google.com'>Google</a>","app":{"sappkey":"<p>md5hash</p>"},"reply":{"urls":["www.&baidu.com","www.g&oogle.com","&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;&#x3b;","u003cimg src=1 onerror=alert(/xss/)u003e"]},"resp":[{"app_key":"sha1hash","app_secret":"<href>rsa</href>"}]}]}`,
 	}
 
 	var result interface{}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1; i++ {
 		go func() {
-			for j := 0; j < 100; j++ {
+			for j := 0; j < 1; j++ {
 				err := httpClient.Post(context.Background(), r, &result)
 				if err != nil {
 					fmt.Println("response", err)

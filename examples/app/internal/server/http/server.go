@@ -29,8 +29,8 @@ func New() *ServerInfo {
 
 	server := http.NewServer(srvConfig)
 
-	router(server)
 	middlewares(server)
+	router(server)
 
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())
@@ -53,6 +53,7 @@ func parseConfig(configName string, srvConfig *http.ServerConfig) {
 func middlewares(s *http.Server) {
 	//jwt token middleware
 	//s.Use(jwt.JWT())
+	s.Use(s.Header())
 }
 
 func router(s *http.Server) {
