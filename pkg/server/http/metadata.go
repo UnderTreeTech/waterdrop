@@ -12,6 +12,7 @@ const (
 	_userAgent          = "User-Agent"
 	_waterdropUserAgent = "waterdrop"
 	_appkey             = "Appkey"
+	_appkeyLen          = 16
 	_timestamp          = "Timestamp"
 	_sign               = "Sign"
 	_nonce              = "Nonce"

@@ -84,7 +84,6 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 			return nil, err
 		}
 
-		request.SetHeader(_appkey, c.config.Key)
 		request.SetHeader(_sign, sign)
 		request.SetHeader(_nonce, nonce)
 		request.SetHeader(_timestamp, ts)
@@ -94,6 +93,7 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 		request.SetHeader(_contentType, _json)
 	}
 
+	request.SetHeader(_appkey, c.config.Key)
 	request.SetHeader(_userAgent, _waterdropUserAgent)
 	request.SetHeader(_acceptLanguage, _locale)
 
@@ -158,7 +158,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				log.String("method", request.Method),
 				log.String("path", strings.TrimPrefix(request.URL, c.client.HostURL)),
 				log.Any("headers", request.Header),
-				log.Any("query", request.QueryParam),
+				log.String("query", request.QueryParam.Encode()),
 				log.Any("body", request.Body),
 				log.Float64("quota", quota),
 				log.Float64("duration", duration.Seconds()),
