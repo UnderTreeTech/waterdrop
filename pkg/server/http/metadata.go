@@ -12,14 +12,23 @@ const (
 	_userAgent          = "User-Agent"
 	_waterdropUserAgent = "waterdrop"
 	_appkey             = "Appkey"
-	_timestamp          = "Timestamp"
-	_sign               = "Sign"
-	_nonce              = "Nonce"
-	_acceptLanguage     = "Accept-Language"
-	_locale             = "zh-CN"
+
+	_timestamp      = "Timestamp"
+	_sign           = "Sign"
+	_nonce          = "Nonce"
+	_acceptLanguage = "Accept-Language"
+	_locale         = "zh-CN"
 
 	_httpHeaderTimeout = "X-Request-Timeout"
 	_httpHeaderTraceId = "X-Trace-Id"
+
+	_requestTimeout = 10
+	_nonceLen       = 16
+	_secretURL      = "/api/app/secret"
+	_skipsURL       = "/api/app/skips"
+	_appkeyLen      = 16
+
+	_maxBytes = 1 << 20 // 1 MiB
 )
 
 // get timeout from request header

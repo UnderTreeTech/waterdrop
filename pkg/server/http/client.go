@@ -33,8 +33,8 @@ type ClientConfig struct {
 	Timeout             time.Duration
 	SlowRequestDuration time.Duration
 
-	EnableDebug bool
 	EnableSign  bool
+	EnableDebug bool
 
 	Key    string
 	Secret string
@@ -78,13 +78,12 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 
 	if c.config.EnableSign {
 		ts := strconv.Itoa(int(xtime.GetCurrentUnixTime()))
-		nonce := xstring.RandomString(16)
+		nonce := xstring.RandomString(_nonceLen)
 		sign, err := c.sign(ctx, method, ts, nonce, req)
 		if err != nil {
 			return nil, err
 		}
 
-		request.SetHeader(_appkey, c.config.Key)
 		request.SetHeader(_sign, sign)
 		request.SetHeader(_nonce, nonce)
 		request.SetHeader(_timestamp, ts)
@@ -94,6 +93,7 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 		request.SetHeader(_contentType, _json)
 	}
 
+	request.SetHeader(_appkey, c.config.Key)
 	request.SetHeader(_userAgent, _waterdropUserAgent)
 	request.SetHeader(_acceptLanguage, _locale)
 
@@ -151,18 +151,19 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			}
 
 			duration := time.Since(now)
-			fields := make([]log.Field, 0, 11)
+			fields := make([]log.Field, 0, 12)
 			fields = append(
 				fields,
 				log.String("host", c.client.HostURL),
 				log.String("method", request.Method),
 				log.String("path", strings.TrimPrefix(request.URL, c.client.HostURL)),
 				log.Any("headers", request.Header),
-				log.Any("query", request.QueryParam),
+				log.String("query", request.QueryParam.Encode()),
 				log.Any("body", request.Body),
 				log.Float64("quota", quota),
 				log.Float64("duration", duration.Seconds()),
-				log.Any("reply", response),
+				log.Bytes("reply", response.Body()),
+				log.Int("status", response.StatusCode()),
 				log.Int("code", estatus.Code()),
 				log.String("error", estatus.Message()),
 			)
@@ -259,6 +260,5 @@ func (c *Client) sign(ctx context.Context, method string, timestamp string, nonc
 	digest := md5.Sum(xstring.StringToBytes(signStr))
 	sign := hex.EncodeToString(digest[:])
 	log.Debug(ctx, "signature info", log.String("sign_str", signStr), log.String("sign", sign))
-
 	return sign, nil
 }

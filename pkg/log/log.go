@@ -68,7 +68,7 @@ func defaultConfig() *Config {
 	return &Config{
 		AddCaller:       true,
 		CallerSkip:      1,
-		Level:           "info",
+		Level:           "debug",
 		Debug:           false,
 		OutputPath:      []string{"stdout"},
 		ErrorOutputPath: []string{"stderr"},

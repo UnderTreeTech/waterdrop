@@ -36,11 +36,9 @@
         [client.http.app]
             hostURL = "http://localhost:20827"
             timeout = "1s"
-            #keepAlive = "60s"
             slowRequestDuration = "500ms"
             enableDebug = false
-            enableSign = false
-            #dial = "100ms"
+            enableSign = true
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
 
@@ -106,7 +104,7 @@
     addCaller = true
     callerSkip = 1
     level = "debug"
-    #outputPath = ["stdout","/export/apps/golang/src/apps/waterdrop/logs/run.log"]
+    #outputPath = ["stdout","./logs/run.log"]
     outputPath = ["stdout"]
     errorOutputPath = ["stderr"]
     watchConfig = true
