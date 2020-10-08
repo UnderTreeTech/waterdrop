@@ -55,7 +55,7 @@ func (s *Server) recovery() gin.HandlerFunc {
 					log.String("host", c.Request.Host),
 					log.String("path", c.Request.URL.Path),
 					log.String("ip", c.ClientIP()),
-					log.String("err", c.Errors.ByType(gin.ErrorTypePrivate).String()),
+					log.String("error", c.Errors.ByType(gin.ErrorTypePrivate).String()),
 				)
 			}
 		}()

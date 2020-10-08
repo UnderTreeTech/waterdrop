@@ -1,6 +1,9 @@
 package xreply
 
 import (
+	"context"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 	"github.com/golang/protobuf/ptypes/empty"
 )
@@ -13,12 +16,16 @@ type response struct {
 
 var emptyReply = &empty.Empty{}
 
-func Reply(data interface{}, err error) interface{} {
+func Reply(ctx context.Context, data interface{}, err error) interface{} {
+	var reply *response
 	if err != nil {
-		return exception(err)
+		reply = exception(err)
+	} else {
+		reply = success(data)
 	}
+	log.Debug(ctx, "reply", log.Int("code", reply.Code), log.String("message", reply.Message), log.Any("data", reply.Data))
 
-	return success(data)
+	return reply
 }
 
 func exception(err error) (resp *response) {

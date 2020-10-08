@@ -39,7 +39,8 @@ var (
 	RepeatedRequest    = add(602, "重复请求")
 	CaptchaErr         = add(603, "验证码错误")
 	TargetBlocked      = add(604, "资源锁定中，请稍后重试")
-	ServiceUpdate      = add(605, "系统升级中")
+	PayloadTooLarge    = add(605, "请求体大小超出限制")
+	ServiceUpdate      = add(606, "系统升级中")
 	UndefinedErr       = add(1000, "未知错误")
 )
 

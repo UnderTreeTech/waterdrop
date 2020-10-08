@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
@@ -54,6 +56,13 @@ func middlewares(s *http.Server) {
 	//jwt token middleware
 	//s.Use(jwt.JWT())
 	s.Use(s.Header())
+
+	signClientConfig := &http.ClientConfig{}
+	if err := conf.Unmarshal("client.http.app", signClientConfig); err != nil {
+		panic(fmt.Sprintf("unmarshal signature client config fail, err msg %s", err.Error()))
+	}
+	signVerify := http.NewSignatureVerify(signClientConfig, dao.NewRedis())
+	s.Use(signVerify.Signature())
 }
 
 func router(s *http.Server) {

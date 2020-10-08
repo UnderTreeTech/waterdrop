@@ -62,13 +62,11 @@ func main() {
 
 func initLog() *log.Logger {
 	logConfig := &log.Config{}
-
 	if err := conf.Unmarshal("log", logConfig); err != nil {
 		syslog.Printf("parse log config fail, err msg %s", err.Error())
 	}
 
 	logger := log.New(logConfig)
-
 	conf.OnChange(func(config *conf.Config) {
 		if err := conf.Unmarshal("log", logConfig); err != nil {
 			syslog.Printf("parse log config fail, err msg %s", err.Error())
