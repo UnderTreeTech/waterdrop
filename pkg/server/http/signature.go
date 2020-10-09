@@ -142,7 +142,7 @@ func (s *SignVerify) validSign(c *gin.Context) error {
 			bodyBytes = make([]byte, c.Request.ContentLength, c.Request.ContentLength)
 			_, err = io.ReadFull(c.Request.Body, bodyBytes)
 		} else {
-			bodyBytes, err = ioutil.ReadAll(c.Request.Body)
+			bodyBytes, err = ioutil.ReadAll(io.LimitReader(c.Request.Body, _maxBytes))
 		}
 
 		if err != nil {
