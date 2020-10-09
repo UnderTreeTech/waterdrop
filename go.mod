@@ -16,17 +16,18 @@ require (
 	github.com/go-playground/validator/v10 v10.3.0
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gogo/protobuf v1.3.2-0.20200807193113-deb6fe8ca7c6 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v1.8.2
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
+	github.com/urfave/cli/v2 v2.2.0
 	go.etcd.io/etcd v0.0.0-20200402134248-51bdeb39e698
 	go.uber.org/zap v1.15.0
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect

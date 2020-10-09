@@ -1,2 +1,9 @@
 .idea/
 logs/
+
+
+#binary package
+tools/waterdrop/main
+tools/waterdrop/waterdrop
+tools/waterdrop/*.proto
+tools/waterdrop/*.pb.go
