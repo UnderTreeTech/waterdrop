@@ -30,28 +30,27 @@ import (
 // cd $GOPATH/src
 // go get -u github.com/gogo/protobuf
 const (
-	_genGoFastAddress = "go get -u github.com/gogo/protobuf/protoc-gen-gofast"
+	_getSwaggerGen = "go get github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/protoc-gen-swagger"
 	//默认proto生成在.proto文件所在目录
-	_grpcProtocCmd = `protoc --proto_path=%s:%s:%s --gofast_out=plugins=grpc:.`
+	_swaggerProtoc = `protoc --proto_path=%s:%s:%s --swagger_out=:.`
 )
 
-func generateGRPC(ctx *cli.Context) error {
-	if err := installGogoProtoc(); err != nil {
-		return err
+func installSwaggerProtoc() error {
+	if _, err := exec.LookPath("protoc-gen-swagger"); err != nil {
+		if err := utils.ExecuteGoGet(_getSwaggerGen); err != nil {
+			return err
+		}
 	}
-
-	if err := doGenerate(ctx, _grpcProtocCmd); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func installGogoProtoc() error {
-	if _, err := exec.LookPath("protoc-gen-gofast"); err != nil {
-		if err = utils.ExecuteGoGet(_genGoFastAddress); err != nil {
-			return err
-		}
+func generateSwagger(ctx *cli.Context) error {
+	if err := installSwaggerProtoc(); err != nil {
+		return err
+	}
+
+	if err := doGenerate(ctx, _swaggerProtoc); err != nil {
+		return err
 	}
 
 	return nil

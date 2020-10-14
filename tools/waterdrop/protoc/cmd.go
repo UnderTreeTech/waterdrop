@@ -32,7 +32,7 @@ var (
 var ProtocCmd = &cli.Command{
 	Name:            "protoc",
 	Usage:           "waterdrop protoc tools",
-	Action:          Run,
+	Action:          run,
 	SkipFlagParsing: false,
 	UsageText:       protocHelpTemplate,
 	Flags: []cli.Flag{

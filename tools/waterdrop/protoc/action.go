@@ -22,7 +22,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func Run(ctx *cli.Context) (err error) {
+func run(ctx *cli.Context) (err error) {
 	if err = checkProtocEnv(); err != nil {
 		return
 	}
@@ -30,6 +30,12 @@ func Run(ctx *cli.Context) (err error) {
 	// 根据指定目录下的proto 文件 生成pb.go 文件
 	if genGRPC {
 		if err = generateGRPC(ctx); err != nil {
+			return
+		}
+	}
+
+	if genSwagger {
+		if err = generateSwagger(ctx); err != nil {
 			return
 		}
 	}
