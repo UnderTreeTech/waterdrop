@@ -26,6 +26,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
 func ExecuteGoGet(address string) error {
@@ -37,8 +39,8 @@ func ExecuteGoGet(address string) error {
 	return cmd.Run()
 }
 
-func RunTool(name string, dir string, args []string) (err error) {
-	cmd := toolPath(name)
+func RunTool(ctx *cli.Context, dir string, args []string) (err error) {
+	cmd := toolPath(ctx.Command.Name)
 	toolCmd := &exec.Cmd{
 		Path:   cmd,
 		Args:   append([]string{cmd}, args...),
@@ -56,7 +58,7 @@ func RunTool(name string, dir string, args []string) (err error) {
 	}
 	if err = toolCmd.Run(); err != nil {
 		if e, ok := err.(*exec.ExitError); !ok || !e.Exited() {
-			fmt.Fprintf(os.Stderr, "运行 %s 出错: %v\n", name, err)
+			fmt.Fprintf(os.Stderr, "运行 %s 出错: %v\n", ctx.Command.Name, err)
 		}
 	}
 	return

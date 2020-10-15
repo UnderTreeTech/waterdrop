@@ -16,34 +16,52 @@
  *
  */
 
-package swagger
+package utgen
 
 import (
-	"os"
-	"os/exec"
+	"fmt"
 
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/utils"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/testgen/common"
 
 	"github.com/urfave/cli/v2"
 )
 
-var _installSwagger = `go get github.com/go-swagger/go-swagger/cmd/swagger`
+var genFunc string
 
-var SwaggerCmd = &cli.Command{
-	Name:            "swagger",
-	Usage:           "waterdrop swagger tools",
+var UTCmd = &cli.Command{
+	Name:            "utgen",
+	Usage:           "waterdrop unit test tools",
 	Action:          run,
 	SkipFlagParsing: false,
-	UsageText:       "swagger",
+	UsageText:       "ut",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:        "func",
+			Usage:       "whether to generate unit test by func",
+			Destination: &genFunc,
+		},
+	},
 }
 
 func run(ctx *cli.Context) error {
-	if _, err := exec.LookPath("swagger"); err != nil {
-		if err = utils.ExecuteGoGet(_installSwagger); err != nil {
-			return err
-		}
+	var (
+		err    error
+		files  []string
+		parses []*common.Parse
+	)
+
+	if err = common.ParseArgs(ctx.Args().Slice(), &files, 0); err != nil {
+		panic(err)
 	}
 
-	pwd, _ := os.Getwd()
-	return utils.RunTool(ctx, pwd, ctx.Args().Slice())
+	if parses, err = common.ParseFile(files...); err != nil {
+		panic(err)
+	}
+
+	if err = genTest(parses); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(common.GenTestSuccess)
+	return nil
 }

@@ -24,6 +24,7 @@ import (
 	"os"
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/swagger"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/testgen/utgen"
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc"
 
@@ -40,6 +41,7 @@ func main() {
 	app.Commands = []*cli.Command{
 		protoc.ProtocCmd,
 		swagger.SwaggerCmd,
+		utgen.UTCmd,
 	}
 
 	if err := app.Run(os.Args); err != nil {
