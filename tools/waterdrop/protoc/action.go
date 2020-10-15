@@ -34,6 +34,7 @@ func run(ctx *cli.Context) (err error) {
 		}
 	}
 
+	// 根据指定目录下的proto 文件 生成pb.swagger.json 文件
 	if genSwagger {
 		if err = generateSwagger(ctx); err != nil {
 			return
