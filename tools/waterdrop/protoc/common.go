@@ -21,12 +21,13 @@ package protoc
 import (
 	"errors"
 	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/utils"
 
 	"github.com/urfave/cli/v2"
 )
@@ -39,35 +40,6 @@ func checkProtocEnv() (err error) {
 	return nil
 }
 
-func gopath() (gp string) {
-	gopaths := strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))
-
-	if len(gopaths) == 1 && gopaths[0] != "" {
-		return gopaths[0]
-	}
-	pwd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	abspwd, err := filepath.Abs(pwd)
-	if err != nil {
-		return
-	}
-	for _, gopath := range gopaths {
-		if gopath == "" {
-			continue
-		}
-		absgp, err := filepath.Abs(gopath)
-		if err != nil {
-			return
-		}
-		if strings.HasPrefix(abspwd, absgp) {
-			return absgp
-		}
-	}
-	return build.Default.GOPATH
-}
-
 func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 	files := ctx.Args().Slice()
 	if len(files) == 0 {
@@ -75,8 +47,8 @@ func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 	}
 
 	pwd, _ := os.Getwd()
-	gosrc := path.Join(gopath(), "src")
-	ext := path.Join(gopath(), "pkg/mod")
+	gosrc := path.Join(utils.Gopath(), "src")
+	ext := path.Join(utils.Gopath(), "pkg/mod")
 	cmdLine := fmt.Sprintf(protocCmd, pwd, gosrc, ext)
 
 	args := strings.Split(cmdLine, " ")

@@ -16,33 +16,34 @@
  *
  */
 
-package main
+package swagger
 
 import (
-	"fmt"
-	"log"
 	"os"
+	"os/exec"
 
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/swagger"
-
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/utils"
 
 	"github.com/urfave/cli/v2"
 )
 
-const Version = "v0.1.0"
+var _installSwagger = `go get github.com/go-swagger/go-swagger/cmd/swagger`
 
-func main() {
-	app := cli.NewApp()
-	app.Name = "waterdrop"
-	app.Usage = "waterdrop tools"
-	app.Version = Version
-	app.Commands = []*cli.Command{
-		protoc.ProtocCmd,
-		swagger.SwaggerCmd,
+var SwaggerCmd = &cli.Command{
+	Name:            "swagger",
+	Usage:           "waterdrop swagger tools",
+	Action:          run,
+	SkipFlagParsing: false,
+	UsageText:       "swagger",
+}
+
+func run(ctx *cli.Context) error {
+	if _, err := exec.LookPath("swagger"); err != nil {
+		if err = utils.ExecuteGoGet(_installSwagger); err != nil {
+			return err
+		}
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		log.Fatalf(fmt.Sprintf("run waterdrop tool fail, error is %s", err.Error()))
-	}
+	pwd, _ := os.Getwd()
+	return utils.RunTool(ctx.Command.Name, pwd, ctx.Args().Slice())
 }
