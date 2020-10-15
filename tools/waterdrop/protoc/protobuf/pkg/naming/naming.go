@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/utils"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/utils"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/siddontang/go/ioutil2"

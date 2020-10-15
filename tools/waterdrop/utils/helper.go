@@ -39,7 +39,6 @@ func ExecuteGoGet(address string) error {
 
 func RunTool(name string, dir string, args []string) (err error) {
 	cmd := toolPath(name)
-	fmt.Println(name, dir, cmd, args)
 	toolCmd := &exec.Cmd{
 		Path:   cmd,
 		Args:   append([]string{cmd}, args...),

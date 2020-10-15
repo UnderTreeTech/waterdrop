@@ -1,7 +1,7 @@
 package tag
 
 import (
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/extensions/gogoproto"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/extensions/gogoproto"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/gen"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/gen"
 )
 
 func main() {

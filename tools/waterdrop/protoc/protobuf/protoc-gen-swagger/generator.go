@@ -7,11 +7,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/gen"
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/generator"
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/naming"
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/tag"
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protobuf/pkg/typemap"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/gen"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/generator"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/naming"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/tag"
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 )

@@ -54,7 +54,6 @@ func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 	args := strings.Split(cmdLine, " ")
 	args = append(args, files...)
 	cmd := exec.Command(args[0], args[1:]...)
-	fmt.Println("cmd", cmd)
 	cmd.Dir = pwd
 	cmd.Env = os.Environ()
 	cmd.Stdout = os.Stdout
