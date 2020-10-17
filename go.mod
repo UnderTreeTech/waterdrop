@@ -19,6 +19,7 @@ require (
 	github.com/gogo/protobuf v1.3.2-0.20200807193113-deb6fe8ca7c6 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v1.8.2
+	github.com/gorilla/websocket v1.4.2
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.3
