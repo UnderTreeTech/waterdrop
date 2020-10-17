@@ -105,3 +105,10 @@ func (s *Server) Start() net.Addr {
 func (s *Server) Stop(ctx context.Context) error {
 	return s.Server.Shutdown(ctx)
 }
+
+// upgrade http to websocket
+func (s *Server) Upgrade(ws *WebSocket) gin.IRoutes {
+	return s.GET(ws.Path, func(c *gin.Context) {
+		ws.Upgrade(c.Writer, c.Request)
+	})
+}
