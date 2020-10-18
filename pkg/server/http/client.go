@@ -142,7 +142,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				cancel()
 			}()
 
-			request.SetHeader(_httpHeaderTimeout, strconv.Itoa(int(c.config.Timeout/1e6)))
+			request.SetHeader(_httpHeaderTimeout, strconv.Itoa(int(timeout)))
 			request.SetContext(ctx)
 
 			trace.MetadataInjector(ctx, metadata.MD(request.Header))
