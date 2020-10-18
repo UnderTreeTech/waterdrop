@@ -45,8 +45,15 @@ func (s *Server) trace() gin.HandlerFunc {
 			timeout = reqTimeout
 		}
 
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
+
 		ctx = metadata.NewIncomingContext(ctx, metadata.MD(c.Request.Header))
-		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer func() {
 			span.Finish()
 			cancel()

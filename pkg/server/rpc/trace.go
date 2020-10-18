@@ -47,7 +47,7 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		timeout := s.config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
 			derivedTimeout := time.Until(deadline)
-			// reduce 10ms network transmission time for every request
+			// reduce 5ms network transmission time for every request
 			if derivedTimeout-5*time.Millisecond > 0 {
 				derivedTimeout = derivedTimeout - 5*time.Millisecond
 			}
@@ -57,7 +57,13 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
 		defer func() {
 			span.Finish()
 			cancel()
@@ -90,7 +96,13 @@ func (c *Client) trace() grpc.UnaryClientInterceptor {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
 		defer func() {
 			span.Finish()
 			cancel()
