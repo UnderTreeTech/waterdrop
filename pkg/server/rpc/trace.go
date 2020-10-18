@@ -57,7 +57,13 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
 		defer func() {
 			span.Finish()
 			cancel()
@@ -90,7 +96,13 @@ func (c *Client) trace() grpc.UnaryClientInterceptor {
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, timeout)
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
 		defer func() {
 			span.Finish()
 			cancel()
