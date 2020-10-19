@@ -1,0 +1,4 @@
+ignore:
+  - "docs"
+  - "examples"
+  - "tools"
