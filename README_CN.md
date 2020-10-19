@@ -20,7 +20,7 @@
 - Registry：服务注册发现，制定通用接口定义，默认支持etcd
 - Status：全局错误处理，用于HTTP/RPC之间错误转换。后续可扩展成从remote加载错误定义
 - Dashboard：基于Grafana搭建metrics大盘，待实现
-- Breaker：熔断器，计划支持[alibaba sentinel](github.com/alibaba/sentinel-golang)、[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/) 及 [netflix hystrix](https://github.com/afex/hystrix-go) 
+- Breaker：熔断器，支持[alibaba sentinel](github.com/alibaba/sentinel-golang)、[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/) 及 [netflix hystrix](https://github.com/afex/hystrix-go) 
 - Middlewares & Interceptors：http/rpc server通用中间件，如令牌桶/漏桶限流、signature签名等，待实现
 - Cron：定时任务，基于[cron](github.com/robfig/cron)实现定时任务处理，待实现
 
