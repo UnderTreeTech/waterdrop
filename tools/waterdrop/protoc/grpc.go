@@ -26,11 +26,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-//Notice that you must execute `go get -u github.com/gogo/protobuf` at $GOPATH/src dir first
+//Notice that you must execute `go get github.com/gogo/protobuf` at $GOPATH/src dir first
 // cd $GOPATH/src
 // go get -u github.com/gogo/protobuf
 const (
-	_genGoFastAddress = "go get -u github.com/gogo/protobuf/protoc-gen-gofast"
+	_genGoFastAddress = "go get github.com/gogo/protobuf/protoc-gen-gofast"
 	//默认proto生成在.proto文件所在目录
 	_grpcProtocCmd = `protoc --proto_path=%s:%s:%s --gofast_out=plugins=grpc:.`
 )
