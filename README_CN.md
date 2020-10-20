@@ -1,4 +1,10 @@
-[English](README.md)
+简体中文 | [English](README.md)
+
+[![Go](https://github.com/UnderTreeTech/waterdrop/workflows/Go/badge.svg?branch=master)](https://github.com/UnderTreeTech/waterdrop/actions)
+[![codecov](https://codecov.io/gh/UnderTreeTech/waterdrop/branch/master/graph/badge.svg)](https://codecov.io/gh/UnderTreeTech/waterdrop)
+[![Go Report Card](https://goreportcard.com/badge/github.com/UnderTreeTech/waterdrop)](https://goreportcard.com/report/github.com/UnderTreeTech/waterdrop)
+[![Release](https://img.shields.io/github/v/release/UnderTreeTech/waterdrop.svg?style=flat-square)](https://github.com/UnderTreeTech/waterdrop)
+[![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 
 ## Waterdrop
 
