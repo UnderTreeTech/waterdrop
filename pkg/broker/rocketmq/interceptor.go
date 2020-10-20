@@ -62,7 +62,7 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 			metric.RocketMQClientReqDuration.Observe(duration, "unknown", "rocketmq", pc.Topic, "produce")
 		} else {
 			log.Info(ctx, "rocketmq produce success", fields...)
-			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", string(realReply.Status))
+			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", string(rune(realReply.Status)))
 			metric.RocketMQClientReqDuration.Observe(duration, realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce")
 		}
 
@@ -86,7 +86,7 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 			errmsg = err.Error()
 		}
 		holder := reply.(*consumer.ConsumeResultHolder)
-		replyCode := string(holder.ConsumeResult)
+		replyCode := string(rune(holder.ConsumeResult))
 		duration := time.Since(now).Seconds()
 
 		for _, msg := range msgs {
