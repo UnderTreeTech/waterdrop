@@ -165,7 +165,7 @@ func (s *Status) Details() []interface{} {
 	return details
 }
 
-// err convert grpc unkown code to ecode status
+// err convert grpc unknown code to ecode status
 func errToStatus(code string) *Status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
