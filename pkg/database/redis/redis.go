@@ -118,6 +118,13 @@ func (r *Redis) Close() error {
 	return r.pool.Close()
 }
 
+func (r *Redis) Ping() error {
+	if _, err := r.Do(context.Background(), "SET", "ping", "pong"); err != nil {
+		log.Error(context.Background(), "ping redis fail", log.String("error", err.Error()))
+	}
+	return nil
+}
+
 func (r *Redis) getStatement(commandName string, args ...interface{}) (res string) {
 	res = commandName
 	if len(args) > 0 {
