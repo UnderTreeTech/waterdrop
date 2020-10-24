@@ -127,11 +127,26 @@ func (s *Server) Start() net.Addr {
 	return listener.Addr()
 }
 
-// GracefulStop stops the gRPC server gracefully. It stops the server from
+// Stop stops the gRPC server gracefully. It stops the server from
 // accepting new connections and RPCs and blocks until all the pending RPCs are
 // finished.
-func (s *Server) Stop() {
-	s.server.GracefulStop()
+func (s *Server) Stop(ctx context.Context) error {
+	var err error
+	ch := make(chan struct{})
+
+	go func() {
+		s.server.GracefulStop()
+		close(ch)
+	}()
+
+	select {
+	case <-ctx.Done():
+		s.server.Stop()
+		err = ctx.Err()
+	case <-ch:
+	}
+
+	return err
 }
 
 func (s *Server) Server() *grpc.Server {
