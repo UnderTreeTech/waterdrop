@@ -118,9 +118,9 @@ func (r *Redis) Close() error {
 	return r.pool.Close()
 }
 
-func (r *Redis) Ping() error {
-	if _, err := r.Do(context.Background(), "SET", "ping", "pong"); err != nil {
-		log.Error(context.Background(), "ping redis fail", log.String("error", err.Error()))
+func (r *Redis) Ping(ctx context.Context) error {
+	if _, err := r.Do(ctx, "SET", "ping", "pong"); err != nil {
+		log.Error(ctx, "ping redis fail", log.String("error", err.Error()))
 	}
 	return nil
 }
