@@ -75,7 +75,7 @@ func main() {
 	defer cancel()
 	etcd.Close()
 	http.Server.Stop(ctx)
-	rpc.Server.Stop()
+	rpc.Server.Stop(ctx)
 }
 
 func initLog() *log.Logger {

@@ -88,7 +88,7 @@ func main() {
 	<-c
 
 	etcd.Close()
-	server.Stop()
+	server.Stop(context.Background())
 }
 
 func registerServers(g *grpc.Server, s *Service) {
