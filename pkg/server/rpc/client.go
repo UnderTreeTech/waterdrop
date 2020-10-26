@@ -94,7 +94,10 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		cli.clientOptions,
 		keepaliveOpts,
 		grpc.WithInsecure(),
-		grpc.WithBalancerName(config.Balancer),
+		// grpc.WithBalancerName(config.Balancer),
+		// use WithDefaultServiceConfig to fix golinter staticcheck error
+		// maybe it's better to use balancer config struct, you can get more detail at here: https://github.com/grpc/grpc-go/issues/3003
+		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"`+config.Balancer+`"}`),
 		cli.WithUnaryServerChain(cli.unaryInterceptors...),
 	)
 

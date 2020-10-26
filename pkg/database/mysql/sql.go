@@ -556,6 +556,12 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 // If the query selects no rows, the *Row's Scan will return ErrNoRows.
 // Otherwise, the *Row's Scan scans the first selected row and discards the rest.
 func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
+	if s == nil {
+		row = &Row{}
+		row.err = ErrStmtNil
+		return
+	}
+
 	now := time.Now()
 	defer slowLog(ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", s.query, args), now, s.db.conf.SlowQueryDuration)
 	row = &Row{db: s.db, query: s.query, args: args}
