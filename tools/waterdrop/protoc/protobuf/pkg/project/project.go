@@ -73,6 +73,7 @@ func NewProjInfo(file string, modDirName string, modImportPath string) (projInfo
 	i := strings.Index(projInfo.AbsolutePath, modDirName)
 	if i == -1 {
 		err = errors.Errorf("project is not inside module, project=%s, module=%s", projPath, modDirName)
+		return nil, err
 	}
 	relativePath := projInfo.AbsolutePath[i+len(modDirName):]
 	projInfo.ImportPath = modImportPath + relativePath

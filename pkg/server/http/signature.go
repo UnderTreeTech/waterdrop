@@ -80,7 +80,7 @@ func NewSignatureVerify(config *ClientConfig, r *redis.Redis) *SignVerify {
 	return sv
 }
 
-func (s *SignVerify) verify(c *gin.Context) (err error) {
+func (s *SignVerify) verify(c *gin.Context) error {
 	ctx := c.Request.Context()
 	nonce := c.Request.Header.Get(_nonce)
 	if _nonceLen != len(c.Request.Header.Get(_nonce)) {
@@ -104,7 +104,7 @@ func (s *SignVerify) verify(c *gin.Context) (err error) {
 	}
 
 	//check whether it's a reply attack or not
-	exist, err := rr.Int(s.r.Do(ctx, "exists", nonce))
+	exist, _ := rr.Int(s.r.Do(ctx, "exists", nonce))
 	if exist > 0 {
 		log.Warn(ctx, "reply attack", log.String("nonce", nonce))
 		return status.RepeatedRequest

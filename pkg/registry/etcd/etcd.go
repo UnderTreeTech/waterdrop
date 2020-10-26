@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"sync"
 	"time"
 
@@ -234,11 +233,6 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 			continue
 		}
 
-		var weight int64
-		if weight, _ := strconv.ParseInt(service.Metadata[registry.MetaWeight], 10, 64); weight <= 0 {
-			weight = 100
-		}
-
 		u, err := url.Parse(service.Addr)
 		if err != nil {
 			log.Errorf("parse service addr fail", log.Any("service", service), log.String("error", err.Error()))
@@ -248,7 +242,7 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 		addr := resolver.Address{
 			Addr:       u.Host,
 			ServerName: service.Name,
-			Attributes: attributes.New("weight", weight, "scheme", u.Scheme),
+			Attributes: attributes.New("scheme", u.Scheme),
 		}
 		addrs = append(addrs, addr)
 	}

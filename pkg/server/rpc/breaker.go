@@ -42,7 +42,6 @@ func (c *Client) breaker() grpc.UnaryClientInterceptor {
 				default:
 					return true
 				}
-				return true
 			})
 	}
 }
