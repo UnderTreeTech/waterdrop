@@ -38,7 +38,7 @@
             timeout = "1s"
             slowRequestDuration = "500ms"
             enableDebug = false
-            enableSign = true
+            enableSign = false
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
 

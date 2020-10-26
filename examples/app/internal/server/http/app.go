@@ -139,7 +139,7 @@ type ValidateReq struct {
 }
 
 type Address struct {
-	Mobile  string         `protobuf:"bytes,1,opt,name=mobile,proto3" json:"mobile" form:"mobile" validate:"required,mobile,min=6,max=20"`
+	Mobile  string         `protobuf:"bytes,1,opt,name=mobile,proto3" json:"mobile" form:"mobile" validate:"required,min=6,max=20"`
 	Address string         `protobuf:"bytes,2,opt,name=address,proto3" json:"address" form:"address" validate:"required,max=100"`
 	App     *AppReq        `protobuf:"bytes,3,opt,name=app,proto3" json:"app"`
 	Reply   *SkipUrlsReply `protobuf:"bytes,4,opt,name=reply,proto3" json:"reply"`
