@@ -560,15 +560,11 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 		row = &Row{}
 		row.err = ErrStmtNil
 		return
+	} else {
+		row = &Row{db: s.db, query: s.query, args: args}
 	}
-
 	now := time.Now()
 	defer slowLog(ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", s.query, args), now, s.db.conf.SlowQueryDuration)
-	row = &Row{db: s.db, query: s.query, args: args}
-	if s == nil {
-		row.err = ErrStmtNil
-		return
-	}
 
 	if s.tx {
 		if s.span != nil {
