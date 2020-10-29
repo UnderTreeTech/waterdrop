@@ -7,6 +7,7 @@ require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/Shopify/sarama v1.27.0
 	github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345
+	github.com/alibaba/sentinel-golang v0.6.1 // indirect
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -19,7 +20,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/protobuf v1.4.0
 	github.com/gomodule/redigo v1.8.2
 	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -52,7 +53,7 @@ require (
 	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6
-	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55
+	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
 	google.golang.org/grpc v1.29.1
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.3.0 // indirect
