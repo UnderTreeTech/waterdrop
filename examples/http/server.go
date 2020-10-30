@@ -22,6 +22,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/alibaba/sentinel-golang/core/flow"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/ratelimit/setinel"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/ratelimit/sentinel"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
@@ -31,7 +37,23 @@ import (
 func main() {
 	defer log.New(nil).Sync()
 
+	config := &setinel.Config{
+		AppName: "sentinel-http",
+	}
+	config.FlowRules = append(
+		config.FlowRules,
+		&flow.Rule{
+			Resource:               "GET:/api/ping",
+			Threshold:              1.0,
+			TokenCalculateStrategy: flow.Direct,
+			ControlBehavior:        flow.Reject,
+			StatIntervalInMs:       1000,
+		},
+	)
+	setinel.InitSentinel(config)
+
 	srv := http.NewServer(nil)
+	srv.Use(sentinel.Sentinel())
 
 	g := srv.Group("/api")
 	{
