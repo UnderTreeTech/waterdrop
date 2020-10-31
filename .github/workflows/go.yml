@@ -40,7 +40,7 @@ jobs:
       run: golangci-lint run --timeout=10m -v --disable-all --enable=govet --enable=gofmt --enable=ineffassign --enable=misspell
 
     - name: Test
-      run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+      run: go test -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
       
     - name: Codecov
       uses: codecov/codecov-action@v1.0.14
