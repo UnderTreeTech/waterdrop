@@ -32,7 +32,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 )
 
-func TestSentinel(t *testing.T) {
+func TestInitSentinel(t *testing.T) {
 	config := &Config{
 		AppName:   "sentinel",
 		FlowRules: make([]*flow.Rule, 0),
