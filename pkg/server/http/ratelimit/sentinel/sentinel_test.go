@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -37,7 +38,7 @@ import (
 	"github.com/alibaba/sentinel-golang/api"
 )
 
-func initSentinel() {
+func TestMain(m *testing.M) {
 	defer log.New(nil).Sync()
 	if err := api.InitDefault(); err != nil {
 		panic(fmt.Sprintf("init sentinel entity fail, error is %s", err.Error()))
@@ -70,11 +71,12 @@ func initSentinel() {
 	if err != nil {
 		panic(fmt.Sprintf("load rules fail, error is %s", err.Error()))
 	}
+
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestSentinel(t *testing.T) {
-	initSentinel()
-
 	// default sentinel without WithMethods
 	t.Run("default sentinel", func(t *testing.T) {
 		engine := gin.New()
