@@ -91,6 +91,10 @@ type Row struct {
 
 // Scan copies the columns from the matched row into the values pointed at by dest.
 func (r *Row) Scan(dest ...interface{}) (err error) {
+	if r.span != nil {
+		defer r.span.Finish()
+	}
+
 	if r.err != nil {
 		err = r.err
 	} else if r.Row == nil {
@@ -579,7 +583,7 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 		ext.DBInstance.Set(span, s.db.conf.DBName)
 		ext.DBStatement.Set(span, fmt.Sprint(s.query, args))
 
-		defer span.Finish()
+		s.span = span
 	}
 
 	if row.err = s.db.breaker.Allow(); row.err != nil {
