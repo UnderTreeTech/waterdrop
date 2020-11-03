@@ -29,10 +29,10 @@ import (
 
 	gstatus "google.golang.org/grpc/status"
 
-	"github.com/golang/protobuf/ptypes/any"
-
+	// nolint:staticcheck
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/any"
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 )
