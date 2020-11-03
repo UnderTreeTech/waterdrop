@@ -233,3 +233,16 @@ func ExtractContextStatus(err error) *Status {
 		return errToStatus(err.Error())
 	}
 }
+
+// EqualError check an err is a status error
+func EqualError(s *Status, err error) bool {
+	if _, ok := err.(*Status); !ok {
+		return false
+	}
+
+	if s.Code() == err.(*Status).Code() {
+		return true
+	}
+
+	return false
+}

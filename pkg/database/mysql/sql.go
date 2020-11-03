@@ -25,6 +25,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/status"
+
 	"errors"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
@@ -209,10 +211,9 @@ func (db *DB) Prepared(ctx context.Context, query string) (stmt *Stmt) {
 func (db *DB) Query(ctx context.Context, query string, args ...interface{}) (rows *Rows, err error) {
 	idx := db.readIndex()
 	for i := range db.read {
-		//if rows, err = db.read[(idx+i)%len(db.read)].query(ctx, query, args...); !ecode.EqualError(ecode.ServiceUnavailable, err) {
-		//	return
-		//}
-		return db.read[(idx+i)%len(db.read)].query(ctx, query, args...)
+		if rows, err = db.read[(idx+i)%len(db.read)].query(ctx, query, args...); !status.EqualError(status.ServiceUnavailable, err) {
+			return
+		}
 	}
 
 	return db.write.query(ctx, query, args...)
@@ -224,11 +225,11 @@ func (db *DB) Query(ctx context.Context, query string, args ...interface{}) (row
 func (db *DB) QueryRow(ctx context.Context, query string, args ...interface{}) *Row {
 	idx := db.readIndex()
 	for i := range db.read {
-		//if row := db.read[(idx+i)%len(db.read)].queryRow(ctx, query, args...); !ecode.EqualError(ecode.ServiceUnavailable, row.err) {
-		//	return row
-		//}
-		return db.read[(idx+i)%len(db.read)].queryRow(ctx, query, args...)
+		if row := db.read[(idx+i)%len(db.read)].queryRow(ctx, query, args...); !status.EqualError(status.ServiceUnavailable, row.err) {
+			return row
+		}
 	}
+
 	return db.write.queryRow(ctx, query, args...)
 }
 
