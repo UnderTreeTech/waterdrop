@@ -90,11 +90,14 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
-
+		var peerIP string
+		if estatus.Code() != status.ServiceUnavailable.Code() {
+			peerIP = peerInfo.Addr.String()
+		}
 		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
-			log.String("peer_ip", peerInfo.Addr.String()),
+			log.String("peer_ip", peerIP),
 			log.String("method", method),
 			log.Any("req", req),
 			log.Float64("quota", quota),
