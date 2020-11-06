@@ -51,7 +51,7 @@ func main() {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
 	}
 
-	client := demo.NewDemoClient(rpc.NewClient(cliConf))
+	client := demo.NewDemoClient(rpc.NewClient(cliConf).GetConn())
 	for i := 0; i < 100; i++ {
 		reply, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
