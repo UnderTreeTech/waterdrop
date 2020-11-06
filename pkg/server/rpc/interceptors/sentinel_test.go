@@ -16,7 +16,7 @@
  *
  */
 
-package sentinel
+package interceptors
 
 import (
 	"context"
