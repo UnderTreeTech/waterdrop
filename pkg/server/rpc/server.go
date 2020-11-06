@@ -26,6 +26,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
+
 	"google.golang.org/grpc/reflection"
 
 	"google.golang.org/grpc/keepalive"
@@ -95,7 +97,7 @@ func NewServer(config *ServerConfig) *Server {
 
 	srv.Use(srv.recovery(), srv.trace(), srv.logger())
 	if config.EnableMetric {
-		srv.Use(srv.Metric())
+		srv.Use(interceptors.Metric())
 	}
 
 	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, srv.WithUnaryServerChain())

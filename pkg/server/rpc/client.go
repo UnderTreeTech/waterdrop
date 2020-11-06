@@ -162,3 +162,8 @@ func (c *Client) Use(interceptors ...grpc.UnaryClientInterceptor) {
 func (c *Client) GetConn() *grpc.ClientConn {
 	return c.conn
 }
+
+// GetConn return the client breakers
+func (c *Client) GetBreakers() *breaker.BreakerGroup {
+	return c.breakers
+}

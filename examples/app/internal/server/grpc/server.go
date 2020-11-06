@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
@@ -51,7 +53,7 @@ func New() *ServerInfo {
 	server := rpc.NewServer(srvConfig)
 	registerServers(server.Server(), &service.Service{})
 
-	server.Use(server.Validate())
+	server.Use(interceptors.Validate())
 
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())

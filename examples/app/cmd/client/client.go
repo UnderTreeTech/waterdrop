@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
+
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
 
@@ -116,7 +118,7 @@ func main() {
 	}
 	fmt.Println(cliConf)
 	client := rpc.NewClient(cliConf)
-	client.Use(client.GoogleSREBreaker())
+	client.Use(interceptors.GoogleSREBreaker(client.GetBreakers()))
 	demoRPC := demo.NewDemoClient(client.GetConn())
 	now := time.Now()
 	for i := 0; i < 1000; i++ {
