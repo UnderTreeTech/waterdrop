@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (c *Client) breaker() grpc.UnaryClientInterceptor {
+func (c *Client) GoogleSREBreaker() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		return c.breakers.Do(
 			method,

@@ -66,7 +66,7 @@ type Client struct {
 	unaryInterceptors []grpc.UnaryClientInterceptor
 }
 
-func NewClient(config *ClientConfig) *grpc.ClientConn {
+func NewClient(config *ClientConfig) *Client {
 	cli := &Client{
 		config:   config,
 		breakers: breaker.NewBreakerGroup(),
@@ -89,7 +89,7 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		Timeout: config.KeepAliveTimeout,
 	})
 
-	cli.Use(cli.recovery(), cli.breaker(), cli.trace(), cli.logger())
+	cli.Use(cli.recovery(), cli.trace(), cli.logger())
 	cli.clientOptions = append(
 		cli.clientOptions,
 		keepaliveOpts,
@@ -98,7 +98,7 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		// use WithDefaultServiceConfig to fix golinter staticcheck error
 		// maybe it's better to use balancer config struct, you can get more detail at here: https://github.com/grpc/grpc-go/issues/3003
 		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"`+config.Balancer+`"}`),
-		cli.WithUnaryServerChain(cli.unaryInterceptors...),
+		cli.WithUnaryServerChain(),
 	)
 
 	cc, err := grpc.DialContext(ctx, config.Target, cli.clientOptions...)
@@ -106,17 +106,19 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		panic(fmt.Sprintf("dial peer service fail, target %s, error %s", config.Target, err.Error()))
 	}
 
-	return cc
+	cli.conn = cc
+	return cli
 }
 
 // ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
 //
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryClient(one, two, three) will execute one before two before three.
-func (c *Client) ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
-	n := len(interceptors)
-
+func (c *Client) ChainUnaryClient() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		interceptors := c.unaryInterceptors
+		n := len(interceptors)
+
 		chainer := func(currentInter grpc.UnaryClientInterceptor, currentInvoker grpc.UnaryInvoker) grpc.UnaryInvoker {
 			return func(currentCtx context.Context, currentMethod string, currentReq, currentRepl interface{}, currentConn *grpc.ClientConn, currentOpts ...grpc.CallOption) error {
 				return currentInter(currentCtx, currentMethod, currentReq, currentRepl, currentConn, currentInvoker, currentOpts...)
@@ -136,8 +138,8 @@ func (c *Client) ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) g
 //
 // WithUnaryServerChain is a grpc.Client dial option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
-func (c *Client) WithUnaryServerChain(interceptors ...grpc.UnaryClientInterceptor) grpc.DialOption {
-	return grpc.WithUnaryInterceptor(c.ChainUnaryClient(interceptors...))
+func (c *Client) WithUnaryServerChain() grpc.DialOption {
+	return grpc.WithUnaryInterceptor(c.ChainUnaryClient())
 }
 
 // Use attaches a global interceptor to the client. ie. the interceptor attached through Use() will be
@@ -154,4 +156,9 @@ func (c *Client) Use(interceptors ...grpc.UnaryClientInterceptor) {
 	copy(mergedInterceptors[len(c.unaryInterceptors):], interceptors)
 
 	c.unaryInterceptors = mergedInterceptors
+}
+
+// GetConn return the client connection
+func (c *Client) GetConn() *grpc.ClientConn {
+	return c.conn
 }

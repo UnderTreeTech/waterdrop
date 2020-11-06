@@ -93,13 +93,12 @@ func NewServer(config *ServerConfig) *Server {
 		MaxConnectionAge:      config.MaxLifeTime,
 	})
 
-	srv.Use(srv.recovery(), srv.trace(), srv.logger(), srv.validate())
+	srv.Use(srv.recovery(), srv.trace(), srv.logger())
 	if config.EnableMetric {
 		srv.Use(srv.Metric())
 	}
 
-	unaryOpts := srv.WithUnaryServerChain(srv.unaryInterceptors...)
-	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, unaryOpts)
+	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, srv.WithUnaryServerChain())
 	srv.server = grpc.NewServer(srv.serverOptions...)
 
 	return srv
@@ -158,10 +157,11 @@ func (s *Server) Server() *grpc.Server {
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
 // will see context changes of one and two.
-func (s *Server) ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	n := len(interceptors)
-
+func (s *Server) ChainUnaryServer() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		interceptors := s.unaryInterceptors
+		n := len(interceptors)
+
 		chainer := func(currentInter grpc.UnaryServerInterceptor, currentHandler grpc.UnaryHandler) grpc.UnaryHandler {
 			return func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
 				return currentInter(currentCtx, currentReq, info, currentHandler)
@@ -181,8 +181,8 @@ func (s *Server) ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) g
 //
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
-func (s *Server) WithUnaryServerChain(interceptors ...grpc.UnaryServerInterceptor) grpc.ServerOption {
-	return grpc.UnaryInterceptor(s.ChainUnaryServer(interceptors...))
+func (s *Server) WithUnaryServerChain() grpc.ServerOption {
+	return grpc.UnaryInterceptor(s.ChainUnaryServer())
 }
 
 // Use attaches a global interceptor to the server. ie. the interceptor attached through Use() will be

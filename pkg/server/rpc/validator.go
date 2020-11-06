@@ -29,7 +29,7 @@ import (
 var v = validator.New()
 
 // validate request params
-func (s *Server) validate() grpc.UnaryServerInterceptor {
+func (s *Server) Validate() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		if err = v.Struct(req); err != nil {
 			return
