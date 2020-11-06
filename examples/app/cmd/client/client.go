@@ -26,7 +26,6 @@ import (
 
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
-	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
 	"github.com/UnderTreeTech/protobuf/user"
 
@@ -116,12 +115,14 @@ func main() {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
 	}
 	fmt.Println(cliConf)
-	client := demo.NewDemoClient(rpc.NewClient(cliConf))
+	client := rpc.NewClient(cliConf)
+	client.Use(client.GoogleSREBreaker())
+	demoRPC := demo.NewDemoClient(client.GetConn())
 	now := time.Now()
-	for i := 0; i < 1; i++ {
-		_, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
+	for i := 0; i < 1000; i++ {
+		_, err := demoRPC.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
-			fmt.Println("err", status.ExtractStatus(err).Message())
+			//fmt.Println("err", status.ExtractStatus(err).Message())
 		}
 	}
 	fmt.Println(time.Since(now))
