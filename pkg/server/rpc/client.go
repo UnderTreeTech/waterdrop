@@ -66,7 +66,7 @@ type Client struct {
 	unaryInterceptors []grpc.UnaryClientInterceptor
 }
 
-func NewClient(config *ClientConfig) *grpc.ClientConn {
+func NewClient(config *ClientConfig) *Client {
 	cli := &Client{
 		config:   config,
 		breakers: breaker.NewBreakerGroup(),
@@ -106,7 +106,8 @@ func NewClient(config *ClientConfig) *grpc.ClientConn {
 		panic(fmt.Sprintf("dial peer service fail, target %s, error %s", config.Target, err.Error()))
 	}
 
-	return cc
+	cli.conn = cc
+	return cli
 }
 
 // ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
@@ -155,4 +156,9 @@ func (c *Client) Use(interceptors ...grpc.UnaryClientInterceptor) {
 	copy(mergedInterceptors[len(c.unaryInterceptors):], interceptors)
 
 	c.unaryInterceptors = mergedInterceptors
+}
+
+// GetConn return the client connection
+func (c *Client) GetConn() *grpc.ClientConn {
+	return c.conn
 }
