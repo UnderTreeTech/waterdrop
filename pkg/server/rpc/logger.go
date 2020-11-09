@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (s *Server) logger() grpc.UnaryServerInterceptor {
+func loggerForUnaryServer(config *ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		now := time.Now()
 		var ip string
@@ -63,7 +63,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 			log.String("error", estatus.Message()),
 		)
 
-		if duration >= s.config.SlowRequestDuration {
+		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-access-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-access-log", fields...)
@@ -73,7 +73,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 	}
 }
 
-func (c *Client) logger() grpc.UnaryClientInterceptor {
+func loggerForUnaryClient(config *ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		now := time.Now()
 
@@ -107,7 +107,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 			log.String("error", estatus.Message()),
 		)
 
-		if duration >= c.config.SlowRequestDuration {
+		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-request-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-request-log", fields...)
