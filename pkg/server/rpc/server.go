@@ -95,7 +95,7 @@ func NewServer(config *ServerConfig) *Server {
 		MaxConnectionAge:      config.MaxLifeTime,
 	})
 
-	srv.Use(srv.recovery(), srv.trace(), srv.logger())
+	srv.Use(recoveryForUnaryServer(srv.config), traceForUnaryServer(), loggerForUnaryServer(srv.config))
 	if config.EnableMetric {
 		srv.Use(interceptors.Metric())
 	}

@@ -89,7 +89,7 @@ func NewClient(config *ClientConfig) *Client {
 		Timeout: config.KeepAliveTimeout,
 	})
 
-	cli.Use(cli.recovery(), cli.trace(), cli.logger())
+	cli.Use(recoveryForUnaryClient(cli.config), traceForUnaryClient(), loggerForUnaryClient(cli.config))
 	cli.clientOptions = append(
 		cli.clientOptions,
 		keepaliveOpts,
