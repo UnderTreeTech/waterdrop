@@ -91,7 +91,7 @@ func loggerForUnaryClient(config *ClientConfig) grpc.UnaryClientInterceptor {
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
 		var peerIP string
-		if estatus.Code() != status.ServiceUnavailable.Code() {
+		if peerInfo.Addr != nil {
 			peerIP = peerInfo.Addr.String()
 		}
 		fields := make([]log.Field, 0, 8)
