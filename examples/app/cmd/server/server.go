@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats"
+	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/server/grpc"
 
@@ -41,8 +42,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 )
 
@@ -53,6 +52,7 @@ func main() {
 
 	conf.Init()
 	defer initLog().Sync()
+	// you can commnet this line, then it will use default mock trace
 	defer jaeger.Init()()
 	defer dao.NewDao().Close()
 

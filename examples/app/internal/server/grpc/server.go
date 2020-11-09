@@ -53,7 +53,7 @@ func New() *ServerInfo {
 	server := rpc.NewServer(srvConfig)
 	registerServers(server.Server(), &service.Service{})
 
-	server.Use(interceptors.Validate())
+	server.Use(interceptors.ValidateForUnaryServer())
 
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())
