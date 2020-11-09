@@ -34,8 +34,8 @@ type Mock struct {
 	Age   int32  `validate:"required,gte=1,lte=60"`
 }
 
-func TestValidate(t *testing.T) {
-	interceptor := Validate()
+func TestValidateForUnaryServer(t *testing.T) {
+	interceptor := ValidateForUnaryServer()
 	handler := func(ctx context.Context, req interface{}) (resp interface{}, err error) {
 		return nil, nil
 	}
