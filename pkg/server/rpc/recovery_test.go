@@ -30,8 +30,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestServerRecovery(t *testing.T) {
-	interceptor := srv.recovery()
+func TestRecoveryForUnaryServer(t *testing.T) {
+	interceptor := recoveryForUnaryServer(defaultServerConfig())
 	handler := func(ctx context.Context, req interface{}) (resp interface{}, err error) {
 		mockSlice := []int{1, 2, 3}
 		fmt.Println(mockSlice[4])
@@ -49,11 +49,8 @@ func TestServerRecovery(t *testing.T) {
 	})
 }
 
-func TestClientRecovery(t *testing.T) {
-	cliConfig := defaultClientConfig()
-	cliConfig.Target = srvAddr
-	client := NewClient(cliConfig)
-	interceptor := client.recovery()
+func TestRecoveryForUnaryClient(t *testing.T) {
+	interceptor := recoveryForUnaryClient(defaultClientConfig())
 	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) (err error) {
 		mockSlice := []int{1, 2, 3}
 		fmt.Println(mockSlice[4])

@@ -20,7 +20,6 @@ package rpc
 
 import (
 	"context"
-	"time"
 
 	"google.golang.org/grpc/peer"
 
@@ -33,7 +32,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (s *Server) trace() grpc.UnaryServerInterceptor {
+func traceForUnaryServer() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		ctx, opt := trace.FromIncomingContext(ctx)
 		span, ctx := trace.StartSpanFromContext(ctx, info.FullMethod, opt)
@@ -42,32 +41,7 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		if peer, ok := peer.FromContext(ctx); ok {
 			ext.PeerAddress.Set(span, peer.Addr.String())
 		}
-
-		// adjust request timeout
-		timeout := s.config.Timeout
-		if deadline, ok := ctx.Deadline(); ok {
-			derivedTimeout := time.Until(deadline)
-			// reduce 5ms network transmission time for every request
-			if derivedTimeout-5*time.Millisecond > 0 {
-				derivedTimeout = derivedTimeout - 5*time.Millisecond
-			}
-
-			if timeout > derivedTimeout {
-				timeout = derivedTimeout
-			}
-		}
-
-		// if zero timeout config means never timeout
-		var cancel func()
-		if timeout > 0 {
-			ctx, cancel = context.WithTimeout(ctx, timeout)
-		} else {
-			cancel = func() {}
-		}
-		defer func() {
-			span.Finish()
-			cancel()
-		}()
+		defer span.Finish()
 
 		resp, err = handler(ctx, req)
 		if err != nil {
@@ -80,33 +54,13 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 	}
 }
 
-func (c *Client) trace() grpc.UnaryClientInterceptor {
+func traceForUnaryClient() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		ctx, md := trace.FromOutgoingContext(ctx)
 		span, ctx := trace.StartSpanFromContext(ctx, method)
 		ext.Component.Set(span, "grpc")
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-
-		// adjust request timeout
-		timeout := c.config.Timeout
-		if deadline, ok := ctx.Deadline(); ok {
-			derivedTimeout := time.Until(deadline)
-			if timeout > derivedTimeout {
-				timeout = derivedTimeout
-			}
-		}
-
-		// if zero timeout config means never timeout
-		var cancel func()
-		if timeout > 0 {
-			ctx, cancel = context.WithTimeout(ctx, timeout)
-		} else {
-			cancel = func() {}
-		}
-		defer func() {
-			span.Finish()
-			cancel()
-		}()
+		defer span.Finish()
 
 		trace.MetadataInjector(ctx, md)
 
@@ -116,7 +70,6 @@ func (c *Client) trace() grpc.UnaryClientInterceptor {
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "error"), log.Int("code", estatus.Code()), log.String("message", estatus.Message()))
 		}
-
 		return
 	}
 }

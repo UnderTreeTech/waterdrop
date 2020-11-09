@@ -21,6 +21,7 @@ package rpc
 import (
 	"context"
 	"runtime"
+	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
@@ -31,7 +32,7 @@ import (
 
 const size = 4 << 10
 
-func (s *Server) recovery() grpc.UnaryServerInterceptor {
+func recoveryForUnaryServer(config *ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
 			if rerr := recover(); rerr != nil {
@@ -42,12 +43,35 @@ func (s *Server) recovery() grpc.UnaryServerInterceptor {
 			}
 		}()
 
+		// adjust request timeout
+		timeout := config.Timeout
+		if deadline, ok := ctx.Deadline(); ok {
+			derivedTimeout := time.Until(deadline)
+			// reduce 5ms network transmission time for every request
+			if derivedTimeout-5*time.Millisecond > 0 {
+				derivedTimeout = derivedTimeout - 5*time.Millisecond
+			}
+
+			if timeout > derivedTimeout {
+				timeout = derivedTimeout
+			}
+		}
+
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
+		defer cancel()
+
 		resp, err = handler(ctx, req)
 		return
 	}
 }
 
-func (c *Client) recovery() grpc.UnaryClientInterceptor {
+func recoveryForUnaryClient(config *ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		defer func() {
 			if rerr := recover(); rerr != nil {
@@ -57,6 +81,24 @@ func (c *Client) recovery() grpc.UnaryClientInterceptor {
 				err = status.ServerErr
 			}
 		}()
+
+		// adjust request timeout
+		timeout := config.Timeout
+		if deadline, ok := ctx.Deadline(); ok {
+			derivedTimeout := time.Until(deadline)
+			if timeout > derivedTimeout {
+				timeout = derivedTimeout
+			}
+		}
+
+		// if zero timeout config means never timeout
+		var cancel func()
+		if timeout > 0 {
+			ctx, cancel = context.WithTimeout(ctx, timeout)
+		} else {
+			cancel = func() {}
+		}
+		defer cancel()
 
 		err = invoker(ctx, method, req, reply, cc, opts...)
 		return
