@@ -31,23 +31,27 @@ import (
 )
 
 var srv = NewServer(defaultServerConfig())
-var srvAddr string
 
 func TestMain(m *testing.M) {
 	defer log.New(nil).Sync()
-	grpc_testing.RegisterTestServiceServer(srv.server, &grpc_testing.UnimplementedTestServiceServer{})
-	net := srv.Start()
-	srvAddr = net.String()
+
 	code := m.Run()
 	os.Exit(code)
 }
 
-func TestServerStop(t *testing.T) {
+func TestStart(t *testing.T) {
+	grpc_testing.RegisterTestServiceServer(srv.server, &grpc_testing.UnimplementedTestServiceServer{})
+	net := srv.Start()
+	assert.Equal(t, "[::]:20812", net.String())
+	assert.Equal(t, "tcp", net.Network())
+}
+
+func TestStop(t *testing.T) {
 	go func() {
 		time.Sleep(1 * time.Second)
 		err := srv.Stop(context.Background())
 		assert.Equal(t, err, nil)
 	}()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(200 * time.Millisecond)
 }
