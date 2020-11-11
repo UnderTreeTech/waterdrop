@@ -22,15 +22,16 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/server"
+
 	"github.com/alibaba/sentinel-golang/core/flow"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/ratelimit/setinel"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http/ratelimit/sentinel"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares/ratelimit/sentinel"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +53,7 @@ func main() {
 	)
 	setinel.InitSentinel(config)
 
-	srv := http.NewServer(nil)
+	srv := server.New(nil)
 	srv.Use(sentinel.Sentinel())
 
 	g := srv.Group("/api")

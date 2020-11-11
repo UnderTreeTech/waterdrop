@@ -23,9 +23,10 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/UnderTreeTech/protobuf/demo"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
+	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
@@ -46,13 +47,13 @@ func main() {
 	etcd := etcd.New(etcdConf)
 	resolver.Register(etcd)
 
-	cliConf := &rpc.ClientConfig{}
+	cliConf := &config.ClientConfig{}
 	if err := conf.Unmarshal("client.rpc.demo", cliConf); err != nil {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
 	}
 
-	client := demo.NewDemoClient(rpc.NewClient(cliConf).GetConn())
-	for i := 0; i < 100; i++ {
+	client := demo.NewDemoClient(client.New(cliConf).GetConn())
+	for i := 0; i < 10; i++ {
 		reply, err := client.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
 			fmt.Println("error", err)
