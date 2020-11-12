@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestSentinelUnaryClientInterceptor(t *testing.T) {
+func TestSentinelUnaryClient(t *testing.T) {
 	interceptor := SentinelForUnaryClient()
 	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		return nil
@@ -86,7 +86,7 @@ func TestSentinelUnaryClientInterceptor(t *testing.T) {
 	})
 }
 
-func TestSentinelUnaryServerInterceptor(t *testing.T) {
+func TestSentinelUnaryServer(t *testing.T) {
 	interceptor := SentinelForUnaryServer()
 	handler := func(ctx context.Context, req interface{}) (resp interface{}, err error) {
 		return nil, nil

@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestPanic(t *testing.T) {
+func TestRecovery(t *testing.T) {
 	engine := gin.New()
 	engine.Use(Recovery())
 

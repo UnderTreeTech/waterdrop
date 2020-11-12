@@ -17,3 +17,9 @@
  */
 
 package middlewares
+
+import "testing"
+
+func TestMetric(t *testing.T) {
+
+}

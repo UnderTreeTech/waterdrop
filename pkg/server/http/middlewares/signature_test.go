@@ -17,3 +17,9 @@
  */
 
 package middlewares
+
+import "testing"
+
+func TestSignature(t *testing.T) {
+
+}

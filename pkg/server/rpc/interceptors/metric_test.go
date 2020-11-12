@@ -17,3 +17,9 @@
  */
 
 package interceptors
+
+import "testing"
+
+func TestMetric(t *testing.T) {
+
+}

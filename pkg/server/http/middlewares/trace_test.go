@@ -48,7 +48,7 @@ func newJaegerClient() (opentracing.Tracer, func()) {
 	return tracer, func() { closer.Close() }
 }
 
-func TestMockTrace(t *testing.T) {
+func TestTrace(t *testing.T) {
 	engine := gin.New()
 
 	engine.Use(Trace(config.DefaultServerConfig()))

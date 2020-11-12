@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestGoogleSREBreakerUnaryClientInterceptor(t *testing.T) {
+func TestGoogleSREBreaker(t *testing.T) {
 	interceptor := GoogleSREBreaker(breaker.NewBreakerGroup())
 	invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
 		return nil
