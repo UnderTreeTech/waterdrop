@@ -16,7 +16,7 @@
  *
  */
 
-package http
+package server
 
 import (
 	"context"
@@ -24,52 +24,36 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/websocket"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
-type ServerConfig struct {
-	Addr string
-
-	Timeout time.Duration
-	Mode    string
-
-	SlowRequestDuration time.Duration
-	WatchConfig         bool
-
-	EnableMetric bool
-}
-
-func defaultServerConfig() *ServerConfig {
-	return &ServerConfig{
-		Addr:                "0.0.0.0:9000",
-		Mode:                gin.ReleaseMode,
-		Timeout:             time.Millisecond * 1000,
-		SlowRequestDuration: 500 * time.Millisecond,
-	}
-}
-
 type Server struct {
 	*gin.Engine
 	Server *http.Server
-	config *ServerConfig
+	config *config.ServerConfig
 }
 
-func NewServer(config *ServerConfig) *Server {
-	if config == nil {
-		config = defaultServerConfig()
+func New(cfg *config.ServerConfig) *Server {
+	if cfg == nil {
+		cfg = config.DefaultServerConfig()
 	}
 
-	gin.SetMode(config.Mode)
+	gin.SetMode(cfg.Mode)
 	srv := &Server{
 		Engine: gin.New(),
-		config: config,
+		config: cfg,
 	}
 
-	srv.Use(srv.recovery(), srv.trace(), srv.logger())
-	if config.EnableMetric {
-		srv.Use(srv.Metric())
+	srv.Use(middlewares.Recovery(), middlewares.Trace(srv.config), middlewares.Logger(srv.config))
+	if cfg.EnableMetric {
+		srv.Use(middlewares.Metric())
 	}
 
 	return srv
@@ -107,7 +91,7 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // upgrade http to websocket
-func (s *Server) Upgrade(ws *WebSocket) gin.IRoutes {
+func (s *Server) Upgrade(ws *websocket.WebSocket) gin.IRoutes {
 	return s.GET(ws.Path, func(c *gin.Context) {
 		ws.Upgrade(c.Writer, c.Request)
 	})

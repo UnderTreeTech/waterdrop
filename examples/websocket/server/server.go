@@ -20,13 +20,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
-	"github.com/gorilla/websocket"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/server"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
+	ws "github.com/UnderTreeTech/waterdrop/pkg/server/http/websocket"
+	"github.com/gorilla/websocket"
 )
 
 var pong = []byte("pong")
@@ -37,8 +40,8 @@ func main() {
 
 	defer log.New(nil).Sync()
 
-	srv := http.NewServer(nil)
-	srv.Upgrade(http.NewWebSocket("/ws", func(ws *http.WebSocket) {
+	srv := server.New(nil)
+	srv.Upgrade(ws.NewWebSocket("/ws", func(ws *ws.WebSocket) {
 		ws.SetPingHandler(func(message string) error {
 			ws.SetReadDeadline(time.Now().Add(time.Second * 10))
 			return ws.WriteControl(websocket.PongMessage, pong, time.Now().Add(time.Second))

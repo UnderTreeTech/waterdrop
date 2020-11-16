@@ -16,30 +16,24 @@
  *
  */
 
-package interceptors
+package middlewares
 
 import (
-	"context"
+	"strconv"
+	"time"
 
-	"github.com/go-playground/validator/v10"
-
-	"google.golang.org/grpc"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+	"github.com/gin-gonic/gin"
 )
 
-var v = validator.New()
-
-// validate request params
-func ValidateForUnaryServer() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		if err = v.Struct(req); err != nil {
-			return
+func Metric() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		now := time.Now()
+		c.Next()
+		appkey := c.Request.Header.Get("appkey")
+		if appkey != "" {
+			metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, appkey, strconv.Itoa(c.Writer.Status()))
+			metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, appkey)
 		}
-		return handler(ctx, req)
 	}
-}
-
-// GetValidator returns the underlying validator engine which powers the
-// StructValidator implementation.
-func GetValidator() *validator.Validate {
-	return v
 }

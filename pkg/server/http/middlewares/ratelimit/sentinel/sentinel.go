@@ -21,7 +21,7 @@ package sentinel
 import (
 	"net/http"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http/ratelimit"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares/ratelimit"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 

@@ -22,6 +22,12 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/server"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares"
+
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 
@@ -32,17 +38,15 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http"
 )
 
 type ServerInfo struct {
-	Server      *http.Server
+	Server      *server.Server
 	ServiceInfo *registry.ServiceInfo
 }
 
 func New() *ServerInfo {
-	srvConfig := &http.ServerConfig{}
+	srvConfig := &config.ServerConfig{}
 	parseConfig("server.http", srvConfig)
 	if srvConfig.WatchConfig {
 		conf.OnChange(func(config *conf.Config) {
@@ -50,9 +54,9 @@ func New() *ServerInfo {
 		})
 	}
 
-	server := http.NewServer(srvConfig)
+	server := server.New(srvConfig)
 
-	//middlewares(server)
+	registerMiddlewares(server)
 	router(server)
 
 	addr := server.Start()
@@ -67,26 +71,26 @@ func New() *ServerInfo {
 	return &ServerInfo{Server: server, ServiceInfo: serviceInfo}
 }
 
-func parseConfig(configName string, srvConfig *http.ServerConfig) {
+func parseConfig(configName string, srvConfig *config.ServerConfig) {
 	if err := conf.Unmarshal(configName, srvConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal http server config fail, err msg %s", err.Error()))
 	}
 }
 
-func middlewares(s *http.Server) {
+func registerMiddlewares(s *server.Server) {
 	//jwt token middleware
 	//s.Use(jwt.JWT())
-	s.Use(s.Header())
+	s.Use(middlewares.Header())
 
-	signClientConfig := &http.ClientConfig{}
+	signClientConfig := &config.ClientConfig{}
 	if err := conf.Unmarshal("client.http.app", signClientConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal signature client config fail, err msg %s", err.Error()))
 	}
-	signVerify := http.NewSignatureVerify(signClientConfig, dao.NewRedis())
+	signVerify := middlewares.NewSignatureVerify(signClientConfig, dao.NewRedis())
 	s.Use(signVerify.Signature())
 }
 
-func router(s *http.Server) {
+func router(s *server.Server) {
 	g := s.Group("/api")
 	{
 		g.GET("/app/secrets", getAppInfo)

@@ -16,12 +16,17 @@
  *
  */
 
-package rpc
+package client
 
 import (
 	"context"
 	"fmt"
-	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/metadata"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
@@ -30,43 +35,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ClientConfig struct {
-	DialTimeout time.Duration
-	Block       bool
-	Balancer    string
-	Target      string
-
-	Timeout time.Duration
-
-	KeepAliveInterval time.Duration
-	KeepAliveTimeout  time.Duration
-
-	SlowRequestDuration time.Duration
-}
-
-func defaultClientConfig() *ClientConfig {
-	return &ClientConfig{
-		DialTimeout: 5 * time.Second,
-		Block:       true,
-		Balancer:    "round_robin",
-
-		Timeout: 500 * time.Millisecond,
-
-		KeepAliveInterval: 60 * time.Second,
-		KeepAliveTimeout:  20 * time.Second,
-	}
-}
-
 type Client struct {
 	conn          *grpc.ClientConn
-	config        *ClientConfig
+	config        *config.ClientConfig
 	clientOptions []grpc.DialOption
 	breakers      *breaker.BreakerGroup
 
 	unaryInterceptors []grpc.UnaryClientInterceptor
 }
 
-func NewClient(config *ClientConfig) *Client {
+func New(config *config.ClientConfig) *Client {
 	cli := &Client{
 		config:   config,
 		breakers: breaker.NewBreakerGroup(),
@@ -89,7 +67,7 @@ func NewClient(config *ClientConfig) *Client {
 		Timeout: config.KeepAliveTimeout,
 	})
 
-	cli.Use(cli.recovery(), cli.trace(), cli.logger())
+	cli.Use(interceptors.RecoveryForUnaryClient(cli.config), interceptors.TraceForUnaryClient(), interceptors.LoggerForUnaryClient(cli.config))
 	cli.clientOptions = append(
 		cli.clientOptions,
 		keepaliveOpts,
@@ -147,7 +125,7 @@ func (c *Client) WithUnaryServerChain() grpc.DialOption {
 // For example, this is the right place for a logger or error management interceptor.
 func (c *Client) Use(interceptors ...grpc.UnaryClientInterceptor) {
 	finalSize := len(c.unaryInterceptors) + len(interceptors)
-	if finalSize >= int(_abortIndex) {
+	if finalSize >= metadata.MaxInterceptors {
 		panic("waterdrop: server use too many interceptors")
 	}
 

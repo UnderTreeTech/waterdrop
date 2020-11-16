@@ -16,7 +16,7 @@
  *
  */
 
-package http
+package metadata
 
 import (
 	"net/http"
@@ -25,34 +25,32 @@ import (
 )
 
 const (
-	_contentType        = "Content-Type"
-	_json               = "application/json;charset=utf-8"
-	_userAgent          = "User-Agent"
-	_waterdropUserAgent = "waterdrop"
-	_appkey             = "Appkey"
+	HeaderContentType    = "Content-Type"
+	HeaderUserAgent      = "User-Agent"
+	HeaderAppkey         = "Appkey"
+	HeaderTimestamp      = "Timestamp"
+	HeaderSign           = "Sign"
+	HeaderNonce          = "Nonce"
+	HeaderAcceptLanguage = "Accept-Language"
+	HeaderHttpTimeout    = "X-Request-Timeout"
+	HeaderHttpTraceId    = "X-Trace-Id"
 
-	_timestamp      = "Timestamp"
-	_sign           = "Sign"
-	_nonce          = "Nonce"
-	_acceptLanguage = "Accept-Language"
-	_locale         = "zh-CN"
+	DefaultContentTypeJson = "application/json;charset=utf-8"
+	DefaultUserAgentVal    = "waterdrop"
+	DefaultLocale          = "zh-CN"
+	DefaultRequestTimeout  = 10
+	DefaultNonceLen        = 16
+	DefaultSecretURL       = "/api/app/secret"
+	DefaultSkipsURL        = "/api/app/skips"
+	DefaultAppkeyLen       = 16
 
-	_httpHeaderTimeout = "X-Request-Timeout"
-	_httpHeaderTraceId = "X-Trace-Id"
-
-	_requestTimeout = 10
-	_nonceLen       = 16
-	_secretURL      = "/api/app/secret"
-	_skipsURL       = "/api/app/skips"
-	_appkeyLen      = 16
-
-	_maxBytes = 1 << 20 // 1 MiB
+	DefaultMaxBytes = 1 << 20 // 1 MiB
 )
 
 // get timeout from request header
 // similar as grpc
-func getTimeout(req *http.Request) time.Duration {
-	to := req.Header.Get(_httpHeaderTimeout)
+func GetTimeout(req *http.Request) time.Duration {
+	to := req.Header.Get(HeaderHttpTimeout)
 	timeout, err := strconv.ParseInt(to, 10, 64)
 	//reduce 5ms network transmission time for every request
 	if err == nil && timeout > 5 {

@@ -16,35 +16,37 @@
  *
  */
 
-package rpc
+package interceptors
 
 import (
 	"context"
+	"runtime"
 	"time"
 
-	"google.golang.org/grpc/peer"
-
-	"github.com/opentracing/opentracing-go/ext"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
-	"github.com/UnderTreeTech/waterdrop/pkg/trace"
-	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"google.golang.org/grpc"
 )
 
-func (s *Server) trace() grpc.UnaryServerInterceptor {
+const size = 4 << 10
+
+func RecoveryForUnaryServer(config *config.ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ctx, opt := trace.FromIncomingContext(ctx)
-		span, ctx := trace.StartSpanFromContext(ctx, info.FullMethod, opt)
-		ext.Component.Set(span, "grpc")
-		ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
-		if peer, ok := peer.FromContext(ctx); ok {
-			ext.PeerAddress.Set(span, peer.Addr.String())
-		}
+		defer func() {
+			if rerr := recover(); rerr != nil {
+				stack := make([]byte, size)
+				stack = stack[:runtime.Stack(stack, true)]
+				log.Error(ctx, "panic request", log.Any("req", req), log.Any("err", rerr), log.Bytes("stack", stack))
+				err = status.ServerErr
+			}
+		}()
 
 		// adjust request timeout
-		timeout := s.config.Timeout
+		timeout := config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
 			derivedTimeout := time.Until(deadline)
 			// reduce 5ms network transmission time for every request
@@ -64,31 +66,26 @@ func (s *Server) trace() grpc.UnaryServerInterceptor {
 		} else {
 			cancel = func() {}
 		}
-		defer func() {
-			span.Finish()
-			cancel()
-		}()
+		defer cancel()
 
 		resp, err = handler(ctx, req)
-		if err != nil {
-			estatus := status.ExtractStatus(err)
-			ext.Error.Set(span, true)
-			span.LogFields(log.String("event", "error"), log.Int("code", estatus.Code()), log.String("message", estatus.Message()))
-		}
-
 		return
 	}
 }
 
-func (c *Client) trace() grpc.UnaryClientInterceptor {
+func RecoveryForUnaryClient(config *config.ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-		ctx, md := trace.FromOutgoingContext(ctx)
-		span, ctx := trace.StartSpanFromContext(ctx, method)
-		ext.Component.Set(span, "grpc")
-		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		defer func() {
+			if rerr := recover(); rerr != nil {
+				stack := make([]byte, size)
+				stack = stack[:runtime.Stack(stack, true)]
+				log.Error(ctx, "panic request", log.Any("req", req), log.Any("err", rerr), log.Bytes("stack", stack))
+				err = status.ServerErr
+			}
+		}()
 
 		// adjust request timeout
-		timeout := c.config.Timeout
+		timeout := config.Timeout
 		if deadline, ok := ctx.Deadline(); ok {
 			derivedTimeout := time.Until(deadline)
 			if timeout > derivedTimeout {
@@ -103,20 +100,9 @@ func (c *Client) trace() grpc.UnaryClientInterceptor {
 		} else {
 			cancel = func() {}
 		}
-		defer func() {
-			span.Finish()
-			cancel()
-		}()
-
-		trace.MetadataInjector(ctx, md)
+		defer cancel()
 
 		err = invoker(ctx, method, req, reply, cc, opts...)
-		if err != nil {
-			estatus := status.ExtractStatus(err)
-			ext.Error.Set(span, true)
-			span.LogFields(log.String("event", "error"), log.Int("code", estatus.Code()), log.String("message", estatus.Message()))
-		}
-
 		return
 	}
 }

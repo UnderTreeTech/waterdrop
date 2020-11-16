@@ -16,10 +16,14 @@
  *
  */
 
-package http
+package middlewares
 
 import (
 	"context"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+
+	md "github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
 
 	"google.golang.org/grpc/metadata"
 
@@ -28,7 +32,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 )
 
-func (s *Server) trace() gin.HandlerFunc {
+func Trace(config *config.ServerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, opt := tracer.HeaderExtractor(c.Request.Context(), c.Request.Header)
 		span, ctx := tracer.StartSpanFromContext(ctx, c.Request.Method+" "+c.Request.URL.Path, opt)
@@ -39,8 +43,8 @@ func (s *Server) trace() gin.HandlerFunc {
 		ext.PeerHostIPv4.SetString(span, c.ClientIP())
 
 		// adjust request timeout
-		timeout := s.config.Timeout
-		reqTimeout := getTimeout(c.Request)
+		timeout := config.Timeout
+		reqTimeout := md.GetTimeout(c.Request)
 		if reqTimeout > 0 && timeout > reqTimeout {
 			timeout = reqTimeout
 		}
@@ -60,7 +64,7 @@ func (s *Server) trace() gin.HandlerFunc {
 		}()
 
 		c.Request = c.Request.WithContext(ctx)
-		c.Writer.Header().Set(_httpHeaderTraceId, tracer.TraceID(ctx))
+		c.Writer.Header().Set(md.HeaderHttpTraceId, tracer.TraceID(ctx))
 
 		c.Next()
 	}

@@ -16,12 +16,13 @@
  *
  */
 
-package http
+package websocket
 
 import (
+	"net/http"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/gorilla/websocket"
-	"net/http"
 )
 
 type WebSocketHandler func(*WebSocket)

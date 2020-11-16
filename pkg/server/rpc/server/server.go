@@ -16,15 +16,17 @@
  *
  */
 
-package rpc
+package server
 
 import (
 	"context"
 	"fmt"
 	"log"
-	"math"
 	"net"
-	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
@@ -35,68 +37,35 @@ import (
 	"google.golang.org/grpc"
 )
 
-// borrow from gin
-var _abortIndex int8 = math.MaxInt8 / 2
-
-type ServerConfig struct {
-	Addr string
-
-	Timeout        time.Duration
-	IdleTimeout    time.Duration
-	MaxLifeTime    time.Duration
-	ForceCloseWait time.Duration
-
-	KeepAliveInterval time.Duration
-	KeepAliveTimeout  time.Duration
-
-	SlowRequestDuration time.Duration
-	WatchConfig         bool
-
-	EnableMetric bool
-}
-
 type Server struct {
 	server *grpc.Server
-	config *ServerConfig
+	config *config.ServerConfig
 
 	serverOptions     []grpc.ServerOption
 	unaryInterceptors []grpc.UnaryServerInterceptor
 }
 
-func defaultServerConfig() *ServerConfig {
-	return &ServerConfig{
-		Addr:                "0.0.0.0:20812",
-		Timeout:             time.Second,
-		IdleTimeout:         180 * time.Second,
-		MaxLifeTime:         2 * time.Hour,
-		ForceCloseWait:      20 * time.Second,
-		KeepAliveInterval:   60 * time.Second,
-		KeepAliveTimeout:    20 * time.Second,
-		SlowRequestDuration: 500 * time.Millisecond,
-	}
-}
-
-func NewServer(config *ServerConfig) *Server {
-	if config == nil {
-		config = defaultServerConfig()
+func New(cfg *config.ServerConfig) *Server {
+	if cfg == nil {
+		cfg = config.DefaultServerConfig()
 	}
 
 	srv := &Server{
-		config:            config,
+		config:            cfg,
 		serverOptions:     make([]grpc.ServerOption, 0),
 		unaryInterceptors: make([]grpc.UnaryServerInterceptor, 0),
 	}
 
 	keepaliveOpts := grpc.KeepaliveParams(keepalive.ServerParameters{
-		MaxConnectionIdle:     config.IdleTimeout,
-		MaxConnectionAgeGrace: config.ForceCloseWait,
-		Time:                  config.KeepAliveInterval,
-		Timeout:               config.KeepAliveTimeout,
-		MaxConnectionAge:      config.MaxLifeTime,
+		MaxConnectionIdle:     cfg.IdleTimeout,
+		MaxConnectionAgeGrace: cfg.ForceCloseWait,
+		Time:                  cfg.KeepAliveInterval,
+		Timeout:               cfg.KeepAliveTimeout,
+		MaxConnectionAge:      cfg.MaxLifeTime,
 	})
 
-	srv.Use(srv.recovery(), srv.trace(), srv.logger())
-	if config.EnableMetric {
+	srv.Use(interceptors.RecoveryForUnaryServer(srv.config), interceptors.TraceForUnaryServer(), interceptors.LoggerForUnaryServer(srv.config))
+	if cfg.EnableMetric {
 		srv.Use(interceptors.Metric())
 	}
 
@@ -192,7 +161,7 @@ func (s *Server) WithUnaryServerChain() grpc.ServerOption {
 // For example, this is the right place for a logger or error management interceptor.
 func (s *Server) Use(interceptors ...grpc.UnaryServerInterceptor) {
 	finalSize := len(s.unaryInterceptors) + len(interceptors)
-	if finalSize >= int(_abortIndex) {
+	if finalSize >= metadata.MaxInterceptors {
 		panic("waterdrop: server use too many interceptors")
 	}
 

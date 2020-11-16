@@ -16,17 +16,19 @@
  *
  */
 
-package http
+package middlewares
 
 import (
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) logger() gin.HandlerFunc {
+func Logger(config *config.ServerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
 		var quota float64
@@ -53,7 +55,7 @@ func (s *Server) logger() gin.HandlerFunc {
 			log.String("error", c.Errors.ByType(gin.ErrorTypePrivate).String()),
 		)
 
-		if duration >= s.config.SlowRequestDuration {
+		if duration >= config.SlowRequestDuration {
 			log.Warn(c.Request.Context(), "http-slow-access-log", fields...)
 		} else {
 			log.Info(c.Request.Context(), "http-access-log", fields...)

@@ -22,6 +22,10 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/server"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
@@ -33,16 +37,15 @@ import (
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/service"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
 )
 
 type ServerInfo struct {
-	Server      *rpc.Server
+	Server      *server.Server
 	ServiceInfo *registry.ServiceInfo
 }
 
 func New() *ServerInfo {
-	srvConfig := &rpc.ServerConfig{}
+	srvConfig := &config.ServerConfig{}
 	parseConfig("server.rpc", srvConfig)
 	if srvConfig.WatchConfig {
 		conf.OnChange(func(config *conf.Config) {
@@ -50,10 +53,10 @@ func New() *ServerInfo {
 		})
 	}
 
-	server := rpc.NewServer(srvConfig)
+	server := server.New(srvConfig)
 	registerServers(server.Server(), &service.Service{})
 
-	server.Use(interceptors.Validate())
+	server.Use(interceptors.ValidateForUnaryServer())
 
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())
@@ -71,7 +74,7 @@ func registerServers(g *grpc.Server, s *service.Service) {
 	demo.RegisterDemoServer(g, s)
 }
 
-func parseConfig(configName string, srvConfig *rpc.ServerConfig) {
+func parseConfig(configName string, srvConfig *config.ServerConfig) {
 	if err := conf.Unmarshal(configName, srvConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}

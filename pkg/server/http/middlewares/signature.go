@@ -16,7 +16,7 @@
  *
  */
 
-package http
+package middlewares
 
 import (
 	"bytes"
@@ -30,6 +30,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/client"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/database/redis"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -57,14 +63,14 @@ type SignVerify struct {
 	keys      map[string]string
 	skips     []string
 	r         *redis.Redis
-	client    *Client
+	client    *client.Client
 	secretURL string
 	skipsURL  string
 	timeout   int
 }
 
-func NewSignatureVerify(config *ClientConfig, r *redis.Redis) *SignVerify {
-	client := NewClient(config)
+func NewSignatureVerify(config *config.ClientConfig, r *redis.Redis) *SignVerify {
+	client := client.New(config)
 	sv := &SignVerify{
 		keys: make(map[string]string),
 		//keys: map[string]string{
@@ -73,22 +79,22 @@ func NewSignatureVerify(config *ClientConfig, r *redis.Redis) *SignVerify {
 		skips:     make([]string, 0),
 		r:         r,
 		client:    client,
-		secretURL: _secretURL,
-		skipsURL:  _skipsURL,
-		timeout:   _requestTimeout,
+		secretURL: metadata.DefaultSecretURL,
+		skipsURL:  metadata.DefaultSkipsURL,
+		timeout:   metadata.DefaultRequestTimeout,
 	}
 	return sv
 }
 
 func (s *SignVerify) verify(c *gin.Context) error {
 	ctx := c.Request.Context()
-	nonce := c.Request.Header.Get(_nonce)
-	if _nonceLen != len(c.Request.Header.Get(_nonce)) {
+	nonce := c.Request.Header.Get(metadata.HeaderNonce)
+	if metadata.DefaultNonceLen != len(c.Request.Header.Get(metadata.HeaderNonce)) {
 		log.Warn(ctx, "invalid nonce", log.String("nonce", nonce))
 		return status.RequestErr
 	}
 
-	timestamp, err := strconv.Atoi(c.Request.Header.Get(_timestamp))
+	timestamp, err := strconv.Atoi(c.Request.Header.Get(metadata.HeaderTimestamp))
 	if err != nil {
 		log.Warn(ctx, "invalid timestamp", log.String("timestamp", c.Request.Header.Get("timestamp")))
 		return status.RequestErr
@@ -118,9 +124,9 @@ func (s *SignVerify) verify(c *gin.Context) error {
 
 func (s *SignVerify) validSign(c *gin.Context) error {
 	ctx := c.Request.Context()
-	sign := c.Request.Header.Get(_sign)
-	nonce := c.Request.Header.Get(_nonce)
-	ts := c.Request.Header.Get(_timestamp)
+	sign := c.Request.Header.Get(metadata.HeaderSign)
+	nonce := c.Request.Header.Get(metadata.HeaderNonce)
+	ts := c.Request.Header.Get(metadata.HeaderTimestamp)
 
 	secret, err := s.appSecret(c)
 	if err != nil {
@@ -133,7 +139,7 @@ func (s *SignVerify) validSign(c *gin.Context) error {
 	query := c.Request.URL.Query().Encode()
 	body := ""
 	if http.MethodGet != c.Request.Method {
-		if c.Request.ContentLength > _maxBytes {
+		if c.Request.ContentLength > metadata.DefaultMaxBytes {
 			return status.PayloadTooLarge
 		}
 
@@ -142,7 +148,7 @@ func (s *SignVerify) validSign(c *gin.Context) error {
 			bodyBytes = make([]byte, c.Request.ContentLength, c.Request.ContentLength)
 			_, err = io.ReadFull(c.Request.Body, bodyBytes)
 		} else {
-			bodyBytes, err = ioutil.ReadAll(io.LimitReader(c.Request.Body, _maxBytes))
+			bodyBytes, err = ioutil.ReadAll(io.LimitReader(c.Request.Body, metadata.DefaultMaxBytes))
 		}
 
 		if err != nil {
@@ -171,7 +177,7 @@ func (s *SignVerify) validSign(c *gin.Context) error {
 }
 
 func (s *SignVerify) appSecret(c *gin.Context) (string, error) {
-	appkey := c.Request.Header.Get(_appkey)
+	appkey := c.Request.Header.Get(metadata.HeaderAppkey)
 	s.lock.RLock()
 	secret, ok := s.keys[appkey]
 	s.lock.RUnlock()
@@ -206,8 +212,8 @@ func (s *SignVerify) fetchAppSecret(c *gin.Context) (string, error) {
 	}
 
 	params := url.Values{}
-	params.Set("appkey", c.Request.Header.Get(_appkey))
-	req := &Request{
+	params.Set("appkey", c.Request.Header.Get(metadata.HeaderAppkey))
+	req := &client.Request{
 		URI: s.secretURL,
 	}
 

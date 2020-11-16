@@ -16,10 +16,12 @@
  *
  */
 
-package http
+package middlewares
 
 import (
 	"net/http"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xstring"
 
@@ -32,19 +34,19 @@ import (
 )
 
 // Header middleware is commonly used for p2p communication, like ios/android application, or server to server call
-func (s *Server) Header() gin.HandlerFunc {
+func Header() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 		if c.Request.Method != http.MethodGet {
-			if "application/json" != xstring.StripContentType(c.Request.Header.Get(_contentType)) {
-				log.Warn(ctx, "invalid content-type", log.String("content-type", c.Request.Header.Get(_contentType)))
+			if "application/json" != xstring.StripContentType(c.Request.Header.Get(metadata.HeaderContentType)) {
+				log.Warn(ctx, "invalid content-type", log.String("content-type", c.Request.Header.Get(metadata.HeaderContentType)))
 				c.AbortWithStatusJSON(http.StatusBadRequest, xreply.Reply(ctx, nil, status.RequestErr))
 				return
 			}
 		}
 
-		appkey := c.Request.Header.Get(_appkey)
-		if _appkeyLen != len(appkey) {
+		appkey := c.Request.Header.Get(metadata.HeaderAppkey)
+		if metadata.DefaultAppkeyLen != len(appkey) {
 			log.Warn(ctx, "fake appkey", log.String("appkey", appkey))
 			c.AbortWithStatusJSON(http.StatusBadRequest, xreply.Reply(ctx, nil, status.AppKeyInvalid))
 		}

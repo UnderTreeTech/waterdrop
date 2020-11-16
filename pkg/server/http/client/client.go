@@ -16,7 +16,7 @@
  *
  */
 
-package http
+package client
 
 import (
 	"context"
@@ -28,6 +28,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+
+	md "github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
@@ -46,18 +50,6 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-type ClientConfig struct {
-	HostURL             string
-	Timeout             time.Duration
-	SlowRequestDuration time.Duration
-
-	EnableSign  bool
-	EnableDebug bool
-
-	Key    string
-	Secret string
-}
-
 type Request struct {
 	URI         string
 	QueryParams url.Values
@@ -67,11 +59,11 @@ type Request struct {
 
 type Client struct {
 	client   *resty.Client
-	config   *ClientConfig
+	config   *config.ClientConfig
 	breakers *breaker.BreakerGroup
 }
 
-func NewClient(config *ClientConfig) *Client {
+func New(config *config.ClientConfig) *Client {
 	cli := resty.New()
 
 	cli.SetTimeout(config.Timeout)
@@ -96,24 +88,24 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 
 	if c.config.EnableSign {
 		ts := strconv.Itoa(int(xtime.GetCurrentUnixTime()))
-		nonce := xstring.RandomString(_nonceLen)
+		nonce := xstring.RandomString(md.DefaultNonceLen)
 		sign, err := c.sign(ctx, method, ts, nonce, req)
 		if err != nil {
 			return nil, err
 		}
 
-		request.SetHeader(_sign, sign)
-		request.SetHeader(_nonce, nonce)
-		request.SetHeader(_timestamp, ts)
+		request.SetHeader(md.HeaderSign, sign)
+		request.SetHeader(md.HeaderNonce, nonce)
+		request.SetHeader(md.HeaderTimestamp, ts)
 	}
 
 	if method != http.MethodGet {
-		request.SetHeader(_contentType, _json)
+		request.SetHeader(md.HeaderContentType, md.DefaultContentTypeJson)
 	}
 
-	request.SetHeader(_appkey, c.config.Key)
-	request.SetHeader(_userAgent, _waterdropUserAgent)
-	request.SetHeader(_acceptLanguage, _locale)
+	request.SetHeader(md.HeaderAppkey, c.config.Key)
+	request.SetHeader(md.HeaderUserAgent, md.DefaultUserAgentVal)
+	request.SetHeader(md.HeaderAcceptLanguage, md.DefaultLocale)
 
 	return request, nil
 }
@@ -142,7 +134,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				cancel()
 			}()
 
-			request.SetHeader(_httpHeaderTimeout, strconv.Itoa(int(timeout)))
+			request.SetHeader(md.HeaderHttpTimeout, strconv.Itoa(int(timeout)))
 			request.SetContext(ctx)
 
 			trace.MetadataInjector(ctx, metadata.MD(request.Header))

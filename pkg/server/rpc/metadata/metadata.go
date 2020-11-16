@@ -16,23 +16,10 @@
  *
  */
 
-package http
+package metadata
 
-import (
-	"strconv"
-	"time"
+import "math"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
-	"github.com/gin-gonic/gin"
+const (
+	MaxInterceptors = math.MaxInt8 / 2
 )
-
-func (s *Server) Metric() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		now := time.Now()
-		c.Next()
-
-		appkey := c.Request.Header.Get("appkey")
-		metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, appkey, strconv.Itoa(c.Writer.Status()))
-		metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, appkey)
-	}
-}

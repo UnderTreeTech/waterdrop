@@ -16,30 +16,31 @@
  *
  */
 
-package interceptors
+package xcollection
 
 import (
-	"context"
+	"testing"
+	"time"
 
-	"github.com/go-playground/validator/v10"
-
-	"google.golang.org/grpc"
+	"github.com/go-playground/assert/v2"
 )
 
-var v = validator.New()
+func TestRollingWindow(t *testing.T) {
+	bucketSize := 10
+	bucketDuration := time.Millisecond * 100
+	window := NewRollingWindow(bucketSize, bucketDuration)
 
-// validate request params
-func ValidateForUnaryServer() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		if err = v.Struct(req); err != nil {
-			return
-		}
-		return handler(ctx, req)
+	for i := 0; i < bucketSize; i++ {
+		window.Add(1)
+		time.Sleep(bucketDuration)
 	}
-}
 
-// GetValidator returns the underlying validator engine which powers the
-// StructValidator implementation.
-func GetValidator() *validator.Validate {
-	return v
+	var total int64
+	var success float64
+	window.Reduce(func(bucket *Bucket) {
+		success += bucket.Sum
+		total += bucket.Count
+	})
+
+	assert.Equal(t, int64(success), total)
 }

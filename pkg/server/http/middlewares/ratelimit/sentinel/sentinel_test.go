@@ -27,7 +27,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http/ratelimit"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares/ratelimit"
 
 	"github.com/go-playground/assert/v2"
 

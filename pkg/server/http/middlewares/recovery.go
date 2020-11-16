@@ -16,7 +16,7 @@
  *
  */
 
-package http
+package middlewares
 
 import (
 	"bytes"
@@ -29,7 +29,6 @@ import (
 	"strings"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,7 +39,7 @@ var (
 	slash     = []byte("/")
 )
 
-func (s *Server) recovery() gin.HandlerFunc {
+func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {

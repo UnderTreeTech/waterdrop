@@ -16,11 +16,13 @@
  *
  */
 
-package rpc
+package interceptors
 
 import (
 	"context"
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
@@ -31,7 +33,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (s *Server) logger() grpc.UnaryServerInterceptor {
+func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		now := time.Now()
 		var ip string
@@ -63,7 +65,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 			log.String("error", estatus.Message()),
 		)
 
-		if duration >= s.config.SlowRequestDuration {
+		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-access-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-access-log", fields...)
@@ -73,7 +75,7 @@ func (s *Server) logger() grpc.UnaryServerInterceptor {
 	}
 }
 
-func (c *Client) logger() grpc.UnaryClientInterceptor {
+func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		now := time.Now()
 
@@ -91,7 +93,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
 		var peerIP string
-		if estatus.Code() != status.ServiceUnavailable.Code() {
+		if peerInfo.Addr != nil {
 			peerIP = peerInfo.Addr.String()
 		}
 		fields := make([]log.Field, 0, 8)
@@ -107,7 +109,7 @@ func (c *Client) logger() grpc.UnaryClientInterceptor {
 			log.String("error", estatus.Message()),
 		)
 
-		if duration >= c.config.SlowRequestDuration {
+		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-request-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-request-log", fields...)

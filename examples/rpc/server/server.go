@@ -27,6 +27,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/server"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/stats"
 
 	"google.golang.org/grpc/resolver"
@@ -45,7 +49,6 @@ import (
 
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc"
 )
 
 func main() {
@@ -56,7 +59,7 @@ func main() {
 	conf.Init()
 	defer log.New(nil).Sync()
 
-	srvConfig := &rpc.ServerConfig{}
+	srvConfig := &config.ServerConfig{}
 	parseConfig("server.rpc", srvConfig)
 	if srvConfig.WatchConfig {
 		conf.OnChange(func(config *conf.Config) {
@@ -64,7 +67,7 @@ func main() {
 		})
 	}
 
-	server := rpc.NewServer(srvConfig)
+	server := server.New(srvConfig)
 	registerServers(server.Server(), &Service{})
 
 	addr := server.Start()
@@ -95,7 +98,7 @@ func registerServers(g *grpc.Server, s *Service) {
 	demo.RegisterDemoServer(g, s)
 }
 
-func parseConfig(configName string, srvConfig *rpc.ServerConfig) {
+func parseConfig(configName string, srvConfig *config.ServerConfig) {
 	if err := conf.Unmarshal(configName, srvConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
