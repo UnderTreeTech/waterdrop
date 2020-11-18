@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-// ExternalIP get external ip.
+// ExternalIP return external ip
 func ExternalIP() (res []string) {
 	inters, err := net.Interfaces()
 	if err != nil {
@@ -59,7 +59,7 @@ func ExternalIP() (res []string) {
 	return
 }
 
-// InternalIP get internal ip.
+// InternalIP return internal ip
 func InternalIP() string {
 	inters, err := net.Interfaces()
 	if err != nil {

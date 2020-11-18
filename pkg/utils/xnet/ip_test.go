@@ -16,11 +16,26 @@
  *
  */
 
-package xtime
+package xnet
 
-import "time"
+import (
+	"net"
+	"testing"
 
-// GetCurrentUnixTime return current unix time
-func GetCurrentUnixTime() int64 {
-	return time.Now().Unix()
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInternalIP(t *testing.T) {
+	ip := InternalIP()
+	assert.True(t, len(ip) > 0)
+}
+
+func TestExternalIP(t *testing.T) {
+	ip := ExternalIP()
+	assert.True(t, len(ip) >= 0)
+}
+
+func TestIsUp(t *testing.T) {
+	up := isUp(net.FlagUp)
+	assert.Equal(t, true, up)
 }
