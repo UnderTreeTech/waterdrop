@@ -29,6 +29,12 @@ var now = &Time{
 	Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.Local),
 }
 
+func TestMain(m *testing.M) {
+	cstSh, _ := time.LoadLocation("Asia/Shanghai")
+	t := now.In(cstSh)
+	now.Time = t
+}
+
 func TestNow(t *testing.T) {
 	n := Now()
 	assert.IsType(t, n.Time, time.Time{})
@@ -61,7 +67,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
-	beginOfYear := int64(1577808000)
+	beginOfYear := now.Year()
 	endOfYear := beginOfYear + 365*86400 - 1
 	if now.Leap() {
 		endOfYear += 86400
