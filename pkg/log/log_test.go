@@ -21,6 +21,8 @@ package log
 import (
 	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLog(t *testing.T) {
@@ -40,7 +42,29 @@ func TestLog(t *testing.T) {
 		String("shanghai", "xuhui"),
 	)
 
-	Error(context.Background(), "division zero") //KVString("shanghai", "xuhui"),
+	Error(context.Background(), "division zero", String("shanghai", "xuhui"))
 
-	//Panic(context.Background(), "memory leaky", String("stop", "yes"))
+	assert.Panics(t, func() {
+		Panic(context.Background(), "memory leaky", String("stop", "yes"))
+	})
+
+	Infof("info",
+		Int64("age", 10),
+		String("hello", "world"),
+		Any("any", []string{"shanghai", "xuhui"}),
+	)
+
+	Warnf("warn",
+		String("john", "sun"),
+	)
+
+	Debugf("debug",
+		String("shanghai", "xuhui"),
+	)
+
+	Errorf("division zero", String("shanghai", "xuhui"))
+
+	assert.Panics(t, func() {
+		Panicf("memory leaky", String("stop", "yes"))
+	})
 }
