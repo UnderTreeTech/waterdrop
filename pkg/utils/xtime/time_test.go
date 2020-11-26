@@ -26,7 +26,7 @@ import (
 )
 
 var now = &Time{
-	Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.Local),
+	Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.UTC),
 }
 
 func TestNow(t *testing.T) {
@@ -61,24 +61,20 @@ func TestFormat(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
-	cstSh, _ := time.LoadLocation("Asia/Shanghai")
-	shNow := now.In(cstSh)
-	now.Time = shNow
-
-	beginOfYear := int64(1577808000)
+	beginOfYear := int64(1577836800)
 	endOfYear := beginOfYear + 365*86400 - 1
 	if now.Leap() {
 		endOfYear += 86400
 	}
-	beginOfMonth := int64(1604160000)
+	beginOfMonth := int64(1604188800)
 	endOfMonth := beginOfMonth + 30*86400 - 1
-	beginOfWeek := int64(1605974400)
+	beginOfWeek := int64(1606003200)
 	endOfWeek := beginOfWeek + 7*86400 - 1
-	beginOfDay := int64(1606320000)
+	beginOfDay := int64(1606348800)
 	endOfDay := beginOfDay + 86400 - 1
-	beginOfHour := int64(1606370400)
+	beginOfHour := int64(1606399200)
 	endOfHour := beginOfHour + 60*60 - 1
-	beginOfMinute := int64(1606371000)
+	beginOfMinute := int64(1606399800)
 	endOfMinute := beginOfMinute + 59
 
 	assert.Equal(t, now.BeginOfYear().CurrentUnixTime(), beginOfYear)
