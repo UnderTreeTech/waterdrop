@@ -87,7 +87,7 @@ func (c *Client) NewRequest(ctx context.Context, method string, req *Request, re
 	request.SetResult(reply)
 
 	if c.config.EnableSign {
-		ts := strconv.Itoa(int(xtime.GetCurrentUnixTime()))
+		ts := strconv.Itoa(int(xtime.Now().CurrentUnixTime()))
 		nonce := xstring.RandomString(md.DefaultNonceLen)
 		sign, err := c.sign(ctx, method, ts, nonce, req)
 		if err != nil {
