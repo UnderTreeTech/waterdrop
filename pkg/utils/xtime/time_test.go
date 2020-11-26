@@ -19,7 +19,6 @@
 package xtime
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -28,13 +27,6 @@ import (
 
 var now = &Time{
 	Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.Local),
-}
-
-func TestMain(m *testing.M) {
-	cstSh, _ := time.LoadLocation("Asia/Shanghai")
-	t := now.In(cstSh)
-	now.Time = t
-	os.Exit(m.Run())
 }
 
 func TestNow(t *testing.T) {
@@ -69,6 +61,10 @@ func TestFormat(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
+	cstSh, _ := time.LoadLocation("Asia/Shanghai")
+	shNow := now.In(cstSh)
+	now.Time = shNow
+
 	beginOfYear := int64(1577808000)
 	endOfYear := beginOfYear + 365*86400 - 1
 	if now.Leap() {
