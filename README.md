@@ -30,11 +30,9 @@ The former is suitable for final consistent business locks, while the latter is 
 - Status: Global error handling for error conversion between HTTP/RPC
 - Dashboard: Build metrics dashboard based on Grafana, to be implemented
 - Breaker: Support [alibaba sentinel](github.com/alibaba/sentinel-golang), 
-[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/) and 
-[netflix hystrix](https://github.com/afex/hystrix-go)
+[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/)
 - Middlewares & Interceptors: HTTP/RPC Server common middleware, such as token bucket/leaky bucket flow limiting, 
 request signature, etc., to be implemented
-- Cron: Timed task, based on [cron](github.com/robfig/cron), to be implemented
 
 
 ## Installation
