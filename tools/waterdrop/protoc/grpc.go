@@ -19,39 +19,18 @@
 package protoc
 
 import (
-	"os/exec"
-
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/utils"
-
 	"github.com/urfave/cli/v2"
 )
 
-//Notice that you must execute `go get github.com/gogo/protobuf` at $GOPATH/src dir first
-// cd $GOPATH/src
-// go get -u github.com/gogo/protobuf
 const (
-	_genGoFastAddress = "go get github.com/gogo/protobuf/protoc-gen-gofast"
 	//默认proto生成在.proto文件所在目录
-	_grpcProtocCmd = `protoc --proto_path=%s:%s:%s --gofast_out=plugins=grpc:.`
+	_grpcProtocCmd = `protoc --proto_path=%s:%s:%s --go_out=plugins=grpc:.`
 )
 
 func generateGRPC(ctx *cli.Context) error {
-	if err := installGogoProtoc(); err != nil {
-		return err
-	}
 
 	if err := doGenerate(ctx, _grpcProtocCmd); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func installGogoProtoc() error {
-	if _, err := exec.LookPath("protoc-gen-gofast"); err != nil {
-		if err = utils.ExecuteGoGet(_genGoFastAddress); err != nil {
-			return err
-		}
 	}
 
 	return nil

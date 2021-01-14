@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/extensions/gogoproto"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/tag"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 
 	// nolint:staticcheck
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
@@ -20,7 +20,7 @@ func GetJSONFieldName(field *descriptor.FieldDescriptorProto) string {
 		return ""
 	}
 	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, gogoproto.E_Jsontag)
+		v, err := proto.GetExtension(field.Options, nil)
 		if err == nil && v.(*string) != nil {
 			ret := *(v.(*string))
 			i := strings.Index(ret, ",")
@@ -39,6 +39,7 @@ func GetFormOrJSONName(field *descriptor.FieldDescriptorProto) string {
 	if field == nil {
 		return ""
 	}
+	//fmt.Printf("field is %+v", field)
 	tags := tag.GetMoreTags(field)
 	if tags != nil {
 		tag := reflect.StructTag(*tags)

@@ -26,9 +26,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-//Notice that you must execute `go get -u github.com/gogo/protobuf` at $GOPATH/src dir first
-// cd $GOPATH/src
-// go get -u github.com/gogo/protobuf
 const (
 	_getSwaggerGen = "go get github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/protoc-gen-swagger"
 	//默认proto生成在.proto文件所在目录

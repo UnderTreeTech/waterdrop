@@ -32,6 +32,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// download protoc: https://github.com/protocolbuffers/protobuf/releases.
+// copy protoc and include directory to GOPATH/bin
+// go get -u github.com/golang/protobuf/protoc-gen-go
 func checkProtocEnv() (err error) {
 	if _, err = exec.LookPath("protoc"); err != nil {
 		err = errors.New("You haven't installed Protobuf yet，Please visit this page to install with your own system：https://github.com/protocolbuffers/protobuf/releases")
