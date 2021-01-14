@@ -20,7 +20,6 @@ package xstring
 
 import (
 	"math/rand"
-	"reflect"
 	"strings"
 	"time"
 	"unsafe"
@@ -59,10 +58,12 @@ func StripContentType(contentType string) string {
 
 // StringToBytes converts string to byte slice without a memory allocation.
 func StringToBytes(s string) (b []byte) {
-	sh := *(*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	bh.Data, bh.Len, bh.Cap = sh.Data, sh.Len, sh.Len
-	return b
+	return *(*[]byte)(unsafe.Pointer(
+		&struct {
+			string
+			Cap int
+		}{s, len(s)},
+	))
 }
 
 // BytesToString converts byte slice to string without a memory allocation.

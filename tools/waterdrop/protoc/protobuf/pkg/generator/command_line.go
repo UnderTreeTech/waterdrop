@@ -8,8 +8,7 @@ import (
 type ParamsBase struct {
 	ImportPrefix string            // String to prefix to imported package file names.
 	ImportMap    map[string]string // Mapping from .proto file name to import path.
-	//Tpl          bool              // generate service implementation template
-	ExplicitHTTP bool // Only generate for method that add http option
+	ExplicitHTTP bool              // Only generate for method that add http option
 }
 
 type GeneratorParamsInterface interface {
