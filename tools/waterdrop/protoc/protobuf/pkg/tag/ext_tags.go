@@ -1,8 +1,8 @@
 package tag
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
 )
 
 func GetMoreTags(field *descriptor.FieldDescriptorProto) *string {
@@ -10,8 +10,8 @@ func GetMoreTags(field *descriptor.FieldDescriptorProto) *string {
 		return nil
 	}
 	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, nil)
-		if err == nil && v.(*string) != nil {
+		v := proto.GetExtension(field.Options, nil)
+		if v.(*string) != nil {
 			return v.(*string)
 		}
 	}

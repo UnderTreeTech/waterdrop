@@ -7,21 +7,18 @@ import (
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/tag"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 
-	// nolint:staticcheck
-
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
 )
 
-// GetJSONFieldName get name from gogoproto.jsontag
-// else the original name
+// GetJSONFieldName get name from the original name
 func GetJSONFieldName(field *descriptor.FieldDescriptorProto) string {
 	if field == nil {
 		return ""
 	}
 	if field.Options != nil {
-		v, err := proto.GetExtension(field.Options, nil)
-		if err == nil && v.(*string) != nil {
+		v := proto.GetExtension(field.Options, nil)
+		if v.(*string) != nil {
 			ret := *(v.(*string))
 			i := strings.Index(ret, ",")
 			if i != -1 {
@@ -132,8 +129,4 @@ func GetFieldRequired(
 		}
 	}
 	return required
-}
-
-func MakeIndentStr(i int) string {
-	return strings.Repeat(" ", i)
 }
