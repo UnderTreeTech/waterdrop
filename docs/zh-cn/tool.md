@@ -8,6 +8,8 @@ Clone [waterdrop](https://github.com/UnderTreeTech/waterdrop) 代码，进入too
 
 Notice：waterdrop采用 [gogo protobuf](https://github.com/golang/protobuf) 做为pb生成工具
 
+安装protoc-gen-go：执行命令 go get -u github.com/golang/protobuf/protoc-gen-go
+
 ## pb代码生成器
 
 执行 `waterdrop protoc --grpc your.proto` 即可生成pb代码 
