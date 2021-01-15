@@ -22,7 +22,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/database/mysql"
+	"github.com/UnderTreeTech/waterdrop/pkg/database/sql"
 
 	"github.com/Masterminds/squirrel"
 )
@@ -57,8 +57,8 @@ func (d *dao) Rollback(ctx context.Context) error {
 	return tx.Rollback()
 }
 
-func (d *dao) GetTxFromCtx(ctx context.Context) (*mysql.Tx, error) {
-	tx, ok := ctx.Value(txKey{}).(*mysql.Tx)
+func (d *dao) GetTxFromCtx(ctx context.Context) (*sql.Tx, error) {
+	tx, ok := ctx.Value(txKey{}).(*sql.Tx)
 	if !ok {
 		return nil, errors.New("assert tx err")
 	}

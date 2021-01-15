@@ -26,13 +26,13 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
-	"github.com/UnderTreeTech/waterdrop/pkg/database/mysql"
+	"github.com/UnderTreeTech/waterdrop/pkg/database/sql"
 )
 
 var d *dao
 
 type dao struct {
-	db    *mysql.DB
+	db    *sql.DB
 	redis *redis.Redis
 }
 
@@ -53,13 +53,13 @@ func (d *dao) Close() {
 	d.redis.Close()
 }
 
-func NewMySQL() *mysql.DB {
-	config := &mysql.Config{}
+func NewMySQL() *sql.DB {
+	config := &sql.Config{}
 	if err := conf.Unmarshal("mysql", config); err != nil {
 		panic(fmt.Sprintf("unmarshal mysql config fail,err msg %s", err.Error()))
 	}
 	log.Infof("db config", log.Any("config", config))
-	db := mysql.New(config)
+	db := sql.NewMySQL(config)
 
 	return db
 }

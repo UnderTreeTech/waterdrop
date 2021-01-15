@@ -28,7 +28,7 @@ import (
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/model"
 
 	"github.com/Masterminds/squirrel"
-	"github.com/UnderTreeTech/waterdrop/pkg/database/mysql"
+	"github.com/UnderTreeTech/waterdrop/pkg/database/sql"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 )
 
@@ -197,7 +197,7 @@ func (d *dao) FindShops(ctx context.Context, condition map[string]interface{}) (
 
 	// run query
 	log.Info(ctx, "sql", log.String("event", "FindShops"), log.String("sql", fmt.Sprint(sqlStr, args)))
-	var rows *mysql.Rows
+	var rows *sql.Rows
 	if tx, txErr := d.GetTxFromCtx(ctx); txErr != nil {
 		if force {
 			rows, err = d.db.Master().Query(ctx, sqlStr, args...)

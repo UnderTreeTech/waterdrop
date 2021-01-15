@@ -44,9 +44,24 @@
 
 [mysql]
     dbName = "saas_test"
+    driverName = "mysql"
     addr = "127.0.0.1:3306"
     dsn = "root@tcp(127.0.0.1:3306)/saas?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"
     readDSN = ["root@tcp(127.0.0.1:3306)/saas?timeout=1s&readTimeout=1s&writeTimeout=1s&parseTime=true&loc=Local&charset=utf8mb4,utf8"]
+    active = 20
+    idle = 10
+    idleTimeout ="4h"
+    queryTimeout = "200ms"
+    execTimeout = "300ms"
+    tranTimeout = "400ms"
+    slowQueryDuration = "250ms"
+
+[postgres]
+    dbName = "db_global"
+    driverName = "postgres"
+    addr = "127.0.0.1:3306"
+    dsn = "user=SYSTEM password=123456 dbname=db_global host=10.206.83.79 port=54321 sslmode=disable TimeZone=Asia/Shanghai"
+    readDSN = ["user=SYSTEM password=123456 dbname=db_global host=10.206.83.79 port=54321 sslmode=disable TimeZone=Asia/Shanghai"]
     active = 20
     idle = 10
     idleTimeout ="4h"
