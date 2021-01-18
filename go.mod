@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/squirrel v1.4.0
 	github.com/Shopify/sarama v1.27.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345
+	github.com/UnderTreeTech/protobuf v0.0.0-20210114031945-c3954be20f41
 	github.com/alibaba/sentinel-golang v1.0.0-M2
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect

@@ -11,6 +11,8 @@ github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d h1:G0m3OIz70MZUW
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345 h1:TARcdA4JZ1B7ndb068XPTqP4hgnJA7uXzsclr50U5Eo=
 github.com/UnderTreeTech/protobuf v0.0.0-20200819073955-77c6ad3d6345/go.mod h1:9glM/EzSqsL5OHRxFOcZe3gIcMU0p3Ay01DKtaAVIJ8=
+github.com/UnderTreeTech/protobuf v0.0.0-20210114031945-c3954be20f41 h1:rEveHe3A8ot9MVsAFkTgPUul0mR/dPFUdvCADv4YI78=
+github.com/UnderTreeTech/protobuf v0.0.0-20210114031945-c3954be20f41/go.mod h1:9glM/EzSqsL5OHRxFOcZe3gIcMU0p3Ay01DKtaAVIJ8=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
