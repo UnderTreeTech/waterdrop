@@ -109,8 +109,8 @@ func (l *Logger) SetLevel(level string) {
 	}
 }
 
-func (l *Logger) Sync() {
-	l.logger.Sync()
+func (l *Logger) Sync() error {
+	return l.logger.Sync()
 }
 
 func Debug(ctx context.Context, msg string, fields ...Field) {
