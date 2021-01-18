@@ -16,7 +16,7 @@
  *
  */
 
-package mysql
+package sql
 
 import (
 	"context"
@@ -39,7 +39,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/go-sql-driver/mysql"
 )
 
 var (
@@ -52,6 +51,21 @@ var (
 	// this error until a Scan.
 	ErrNoRows = sql.ErrNoRows
 )
+
+// Config mysql config.
+type Config struct {
+	DBName            string        //db name
+	DriverName        string        // driver name
+	DSN               string        // write data source name.
+	ReadDSN           []string      // read data source name.
+	Active            int           // pool
+	Idle              int           // pool
+	IdleTimeout       time.Duration // connect max life time.
+	QueryTimeout      time.Duration // query sql timeout
+	ExecTimeout       time.Duration // execute sql timeout
+	TranTimeout       time.Duration // transaction sql timeout
+	SlowQueryDuration time.Duration // slow query duration
+}
 
 // DB database.
 type DB struct {
@@ -149,7 +163,7 @@ func Open(c *Config) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	addr := parseDSNAddr(c.DSN)
+	addr := parseDSNAddr(c.DriverName, c.DSN)
 	breakers := breaker.NewBreakerGroup()
 	writeBreaker := breakers.Get(addr)
 	w := &conn{DB: d, conf: c, addr: addr, breaker: writeBreaker}
@@ -159,7 +173,7 @@ func Open(c *Config) (*DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		addr = parseDSNAddr(rd)
+		addr = parseDSNAddr(c.DriverName, rd)
 		readBreaker := breakers.Get(addr)
 		r := &conn{DB: d, conf: c, addr: addr, breaker: readBreaker}
 		rs = append(rs, r)
@@ -171,16 +185,17 @@ func Open(c *Config) (*DB, error) {
 	return db, nil
 }
 
-func connect(c *Config, dataSourceName string) (*sql.DB, error) {
-	d, err := sql.Open("mysql", dataSourceName)
+func connect(c *Config, dataSourceName string) (db *sql.DB, err error) {
+	db, err = sql.Open(c.DriverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
-	d.SetMaxOpenConns(c.Active)
-	d.SetMaxIdleConns(c.Idle)
-	d.SetConnMaxLifetime(c.IdleTimeout)
 
-	return d, nil
+	db.SetMaxOpenConns(c.Active)
+	db.SetMaxIdleConns(c.Idle)
+	db.SetConnMaxLifetime(c.IdleTimeout)
+
+	return db, nil
 }
 
 // Begin starts a transaction. The isolation level is dependent on the driver.
@@ -712,14 +727,31 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 }
 
 // parseDSNAddr parse dsn name and return addr.
-func parseDSNAddr(dsn string) (addr string) {
-	cfg, err := mysql.ParseDSN(dsn)
-	if err != nil {
-		// just ignore parseDSN error, mysql client will return error for us when connect.
-		return ""
-	}
+func parseDSNAddr(driverName string, dsn string) (addr string) {
+	//switch driverName {
+	//case "mysql":
+	//	cfg, err := mysql.ParseDSN(dsn)
+	//	if err != nil {
+	//		// just ignore parseDSN error, mysql client will return error for us when connect.
+	//		return
+	//	}
+	//	addr = cfg.Addr
+	//case "postgres":
+	//	var cfg *pgx.ConnConfig
+	//
+	//	cfg, err := pgx.ParseConfig(dsn)
+	//	if err != nil {
+	//		return
+	//	}
+	//	result := regexp.MustCompile("(time_zone|TimeZone)=(.*?)($|&| )").FindStringSubmatch(dsn)
+	//	if len(result) > 2 {
+	//		cfg.RuntimeParams["timezone"] = result[2]
+	//	}
+	//	addr = cfg.Config.Host + ":" + strconv.Itoa(int(cfg.Config.Port))
+	//default:
+	//}
 
-	return cfg.Addr
+	return
 }
 
 func slowLog(ctx context.Context, statement string, now time.Time, slowQueryDuration time.Duration) {
