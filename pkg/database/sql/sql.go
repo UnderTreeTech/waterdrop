@@ -313,7 +313,7 @@ func (db *conn) begin(ctx context.Context) (tx *Tx, err error) {
 	defer slowLog(ctx, "begin", now, db.conf.SlowQueryDuration)
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.transaction")
 	ext.PeerAddress.Set(span, db.addr)
-	ext.Component.Set(span, "mysql")
+	ext.Component.Set(span, db.conf.DriverName)
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
 
@@ -335,10 +335,10 @@ func (db *conn) exec(ctx context.Context, query string, args ...interface{}) (re
 	now := time.Now()
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.exec")
 	ext.PeerAddress.Set(span, db.addr)
-	ext.Component.Set(span, "mysql")
+	ext.Component.Set(span, db.conf.DriverName)
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
-	ext.DBStatement.Set(span, fmt.Sprint(query, args))
+	ext.DBStatement.Set(span, query)
 	defer func() {
 		span.Finish()
 		slowLog(ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), now, db.conf.SlowQueryDuration)
@@ -362,7 +362,7 @@ func (db *conn) ping(ctx context.Context) (err error) {
 
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.ping")
 	ext.PeerAddress.Set(span, db.addr)
-	ext.Component.Set(span, "mysql")
+	ext.Component.Set(span, db.conf.DriverName)
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
 	defer span.Finish()
@@ -416,10 +416,10 @@ func (db *conn) query(ctx context.Context, query string, args ...interface{}) (r
 
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.query")
 	ext.PeerAddress.Set(span, db.addr)
-	ext.Component.Set(span, "mysql")
+	ext.Component.Set(span, db.conf.DriverName)
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
-	ext.DBStatement.Set(span, fmt.Sprint(query, args))
+	ext.DBStatement.Set(span, query)
 
 	defer func() {
 		span.Finish()
@@ -449,10 +449,10 @@ func (db *conn) queryRow(ctx context.Context, query string, args ...interface{})
 
 	span, ctx := trace.StartSpanFromContext(ctx, "conn.queryrow")
 	ext.PeerAddress.Set(span, db.addr)
-	ext.Component.Set(span, "mysql")
+	ext.Component.Set(span, db.conf.DriverName)
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 	ext.DBInstance.Set(span, db.conf.DBName)
-	ext.DBStatement.Set(span, fmt.Sprint(query, args))
+	ext.DBStatement.Set(span, query)
 
 	if err := db.breaker.Allow(); err != nil {
 		return &Row{db: db, span: span, err: err}
@@ -492,15 +492,15 @@ func (s *Stmt) Exec(ctx context.Context, args ...interface{}) (res sql.Result, e
 
 	if s.tx {
 		if s.span != nil {
-			ext.DBStatement.Set(s.span, fmt.Sprint(s.query, args))
+			ext.DBStatement.Set(s.span, s.query)
 		}
 	} else {
 		span, _ := trace.StartSpanFromContext(ctx, "stmt.exec")
 		ext.PeerAddress.Set(span, s.db.addr)
-		ext.Component.Set(span, "mysql")
+		ext.Component.Set(span, s.db.conf.DriverName)
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 		ext.DBInstance.Set(span, s.db.conf.DBName)
-		ext.DBStatement.Set(span, fmt.Sprint(s.query, args))
+		ext.DBStatement.Set(span, s.query)
 
 		defer span.Finish()
 	}
@@ -535,15 +535,15 @@ func (s *Stmt) Query(ctx context.Context, args ...interface{}) (rows *Rows, err 
 	defer slowLog(ctx, fmt.Sprintf("Query query(%s) args(%+v)", s.query, args), now, s.db.conf.SlowQueryDuration)
 	if s.tx {
 		if s.span != nil {
-			ext.DBStatement.Set(s.span, fmt.Sprint(s.query, args))
+			ext.DBStatement.Set(s.span, s.query)
 		}
 	} else {
 		span, _ := trace.StartSpanFromContext(ctx, "stmt.query")
 		ext.PeerAddress.Set(span, s.db.addr)
-		ext.Component.Set(span, "mysql")
+		ext.Component.Set(span, s.db.conf.DriverName)
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 		ext.DBInstance.Set(span, s.db.conf.DBName)
-		ext.DBStatement.Set(span, fmt.Sprint(s.query, args))
+		ext.DBStatement.Set(span, s.query)
 
 		defer span.Finish()
 	}
@@ -588,15 +588,15 @@ func (s *Stmt) QueryRow(ctx context.Context, args ...interface{}) (row *Row) {
 
 	if s.tx {
 		if s.span != nil {
-			ext.DBStatement.Set(s.span, fmt.Sprint(s.query, args))
+			ext.DBStatement.Set(s.span, s.query)
 		}
 	} else {
 		span, _ := trace.StartSpanFromContext(ctx, "stmt.queryrow")
 		ext.PeerAddress.Set(span, s.db.addr)
-		ext.Component.Set(span, "mysql")
+		ext.Component.Set(span, s.db.conf.DriverName)
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 		ext.DBInstance.Set(span, s.db.conf.DBName)
-		ext.DBStatement.Set(span, fmt.Sprint(s.query, args))
+		ext.DBStatement.Set(span, s.query)
 
 		s.span = span
 	}
@@ -647,7 +647,7 @@ func (tx *Tx) Exec(query string, args ...interface{}) (res sql.Result, err error
 	defer slowLog(tx.ctx, fmt.Sprintf("Exec query(%s) args(%+v)", query, args), now, tx.db.conf.SlowQueryDuration)
 
 	if tx.span != nil {
-		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
+		ext.DBStatement.Set(tx.span, query)
 	}
 
 	res, err = tx.tx.ExecContext(tx.ctx, query, args...)
@@ -662,7 +662,7 @@ func (tx *Tx) Query(query string, args ...interface{}) (rows *Rows, err error) {
 	defer slowLog(tx.ctx, fmt.Sprintf("Query query(%s) args(%+v)", query, args), now, tx.db.conf.SlowQueryDuration)
 
 	if tx.span != nil {
-		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
+		ext.DBStatement.Set(tx.span, query)
 	}
 
 	var rs *sql.Rows
@@ -683,7 +683,7 @@ func (tx *Tx) QueryRow(query string, args ...interface{}) *Row {
 	defer slowLog(tx.ctx, fmt.Sprintf("QueryRow query(%s) args(%+v)", query, args), time.Now(), tx.db.conf.SlowQueryDuration)
 
 	if tx.span != nil {
-		ext.DBStatement.Set(tx.span, fmt.Sprint(query, args))
+		ext.DBStatement.Set(tx.span, query)
 	}
 
 	r := tx.tx.QueryRowContext(tx.ctx, query, args...)
