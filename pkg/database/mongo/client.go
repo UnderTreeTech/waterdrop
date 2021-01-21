@@ -39,21 +39,23 @@ type Config struct {
 }
 
 type DB struct {
-	*qmgo.Database
-	*Config
+	db     *qmgo.Database
+	config *Config
+	close  func() error
 }
 
 var collections = sync.Map{}
 
 // Open return database instance handler
-func Open(config *Config) (*DB, func() error) {
+func Open(config *Config) *DB {
 	cli, close := client(config)
 	dbHandler := cli.Database(config.DBName)
 	db := &DB{
-		Database: dbHandler,
-		Config:   config,
+		db:     dbHandler,
+		config: config,
+		close:  close,
 	}
-	return db, close
+	return db
 }
 
 // GetCollection return collection handler
@@ -63,13 +65,17 @@ func (d *DB) GetCollection(name string) *Collection {
 	}
 
 	collection := &Collection{
-		conn:   d.Collection(name),
-		config: d.Config,
+		conn:   d.db.Collection(name),
+		config: d.config,
 		name:   name,
 	}
 	collections.Store(name, collection)
 
 	return collection
+}
+
+func (d *DB) Close() error {
+	return d.close()
 }
 
 // client return mongodb connection instance handler
