@@ -39,8 +39,8 @@ type Logger struct {
 }
 
 type Config struct {
-	AddCaller  bool
-	CallerSkip int
+	CallerSkip        int
+	DisableStacktrace bool
 
 	Level string
 
@@ -53,43 +53,37 @@ type Config struct {
 
 func newLogger(config *Config) *Logger {
 	zapConfig := zap.NewProductionConfig()
-
-	l := &Logger{}
-	l.level = zapConfig.Level
-
 	zapConfig.OutputPaths = config.OutputPath
 	zapConfig.ErrorOutputPaths = config.ErrorOutputPath
 	zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	zapConfig.DisableStacktrace = config.DisableStacktrace
 
-	opts := make([]zap.Option, 0)
-	opts = append(opts, zap.AddStacktrace(zap.ErrorLevel))
-	if config.AddCaller {
-		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
-	}
-
+	l := &Logger{}
+	l.level = zapConfig.Level
 	if err := l.level.UnmarshalText([]byte(config.Level)); err != nil {
 		panic(fmt.Sprintf("unmarshal log level fail, err msg %s", err.Error()))
 	}
 
+	opts := make([]zap.Option, 0)
+	opts = append(opts, zap.AddCallerSkip(config.CallerSkip))
 	logger, err := zapConfig.Build(opts...)
 	if err != nil {
 		panic(fmt.Sprintf("build log fail, err msg %s", err.Error()))
 	}
 
 	l.logger = logger
-
 	return l
 }
 
 func defaultConfig() *Config {
 	return &Config{
-		AddCaller:       true,
-		CallerSkip:      1,
-		Level:           "debug",
-		Debug:           false,
-		OutputPath:      []string{"stdout"},
-		ErrorOutputPath: []string{"stderr"},
+		DisableStacktrace: false,
+		CallerSkip:        1,
+		Level:             "debug",
+		Debug:             false,
+		OutputPath:        []string{"stdout"},
+		ErrorOutputPath:   []string{"stderr"},
 	}
 }
 
