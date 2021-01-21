@@ -37,8 +37,8 @@ var (
 	defaultDelimiter = "."
 	defaultConfTag   = "conf"
 
-	confPath string
-	//watchConfig bool
+	confPath    string
+	watchConfig bool
 
 	defaultConfig *Config
 )
@@ -55,13 +55,13 @@ type Parser interface {
 
 func init() {
 	flag.StringVar(&confPath, "conf", "", "default config path")
-	//flag.BoolVar(&watchConfig, "watch", true, "default watch config param")
+	flag.BoolVar(&watchConfig, "watch", false, "default watch config param")
 }
 
 func Init() {
 	if confPath != "" {
 		defaultConfig = New()
-		provider := file.NewFileProvider(confPath, true)
+		provider := file.NewFileProvider(confPath, watchConfig)
 		parser := toml.NewTOMLParser()
 		if err := defaultConfig.Load(provider, parser); err != nil {
 			panic(fmt.Sprintf("load config fail,err msg %s", err.Error()))
