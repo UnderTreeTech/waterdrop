@@ -29,7 +29,7 @@ import (
 const (
 	_getSwaggerGen = "go get github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/protoc-gen-swagger"
 	//默认proto生成在.proto文件所在目录
-	_swaggerProtoc = `protoc --proto_path=%s:%s:%s --swagger_out=:.`
+	_swaggerProtoc = `protoc -I=%s -I=%s --swagger_out=:.`
 )
 
 func installSwaggerProtoc() error {

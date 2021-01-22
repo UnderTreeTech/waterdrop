@@ -21,13 +21,11 @@ package protoc
 import (
 	"errors"
 	"fmt"
+	"go/build"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/utils"
 
 	"github.com/urfave/cli/v2"
 )
@@ -50,10 +48,15 @@ func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 	}
 
 	pwd, _ := os.Getwd()
-	gosrc := path.Join(utils.Gopath(), "src")
-	ext := path.Join(utils.Gopath(), "pkg/mod")
-	cmdLine := fmt.Sprintf(protocCmd, pwd, gosrc, ext)
+	// case go path
+	gosrc := filepath.Join(build.Default.GOPATH, "src")
+	_, err = os.Stat(gosrc)
+	if err != nil {
+		fmt.Println("src directory does not exist, please create it in your GOPATH")
+		return nil
+	}
 
+	cmdLine := fmt.Sprintf(protocCmd, gosrc, pwd)
 	args := strings.Split(cmdLine, " ")
 	args = append(args, files...)
 	cmd := exec.Command(args[0], args[1:]...)
