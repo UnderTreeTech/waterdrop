@@ -1,2 +1,2 @@
 ## protobuf
-This package is copied from [go-kratos](github.com/go-kratos/kratos). Thanks for go-kratos authors.
+This package is based on [go-kratos](https://github.com/go-kratos/kratos/tree/v1.0.x/tool/protobuf/pkg). Thanks for go-kratos authors.

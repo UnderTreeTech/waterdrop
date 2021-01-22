@@ -1,0 +1,41 @@
+[server]
+    [server.http]
+        addr = "0.0.0.0:20827"
+        timeout = "2s"
+        mode = "debug"
+        slowRequestDuration = "500ms"
+        watchConfig = true
+        enableMetric = true
+
+[mongo]
+    dbName = "waterdrop"
+    addr = "127.0.0.1:27017"
+    dsn = "mongodb://user:password@127.0.0.1:27017/?connect=direct"
+    #specifies that maximum number of connections allowed in the driver's connection pool to each server.
+    maxPoolSize = 100
+    #specifies the minimum number of connections allowed in the driver's connection pool to each server. If
+    minPoolSize = 50
+    slowQueryDuration = "250ms"
+
+[log]
+    callerSkip = 1
+    disableStacktrace = true
+    level = "debug"
+    #outputPath = ["stdout","./logs/run.log"]
+    outputPath = ["stdout"]
+    errorOutputPath = ["stderr"]
+    watchConfig = true
+
+[trace]
+    [trace.jaeger]
+        serviceName = "waterdrop"
+        enableRPCMetrics = true
+        #sampler config
+        samplerType = "const"
+        samplerParam = 1
+        #report config
+        agentAddr = "127.0.0.1:6831"
+        reporterLogSpans = false
+        reporterBufferFlushInterval = "2s"
+        #option config
+        maxTagValueLength = 5120
