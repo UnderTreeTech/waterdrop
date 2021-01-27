@@ -25,12 +25,13 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.0
 	github.com/gomodule/redigo v1.8.2
-	github.com/google/go-cmp v0.5.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/mitchellh/mapstructure v1.3.3
+	github.com/olivere/elastic v6.2.35+incompatible // indirect
+	github.com/olivere/elastic/v7 v7.0.22
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
@@ -60,6 +61,8 @@ require (
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.21.0
 	gopkg.in/fsnotify.v1 v1.4.7
+	gopkg.in/olivere/elastic.v5 v5.0.86
+	gopkg.in/olivere/elastic.v6 v6.2.35
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
