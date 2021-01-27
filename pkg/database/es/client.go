@@ -71,8 +71,6 @@ func NewClient(config *Config) interface{} {
 	default:
 		panic(fmt.Sprintf("Unsupport es version %s.Currently it must be configed as v5, v6 or v7 ", config.Version))
 	}
-
-	return nil
 }
 
 func clientV5(config *Config) *ClientV5 {
