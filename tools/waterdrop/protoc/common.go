@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -49,10 +50,26 @@ func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 
 	pwd, _ := os.Getwd()
 	// case go path
-	gosrc := filepath.Join(build.Default.GOPATH, "src")
+	var contectflag string
+	// gopath setting could be many params, such as
+	// {
+	// 		win  : 	"C:\go\src;D:\go\src"
+	// 		linux: 	"/home/go:/root/go"
+	// }
+	if runtime.GOOS == "windows" {
+		contectflag = ";"
+	} else {
+		contectflag = ":"
+	}
+	gosrcarr := strings.Split(build.Default.GOPATH, contectflag)
+	if len(gosrcarr) < 1 {
+		fmt.Println("gopath directory does not exist, please create it in your GOPATH")
+		return nil
+	}
+	gosrc := filepath.Join(gosrcarr[0], "src")
 	_, err = os.Stat(gosrc)
 	if err != nil {
-		fmt.Println("src directory does not exist, please create it in your GOPATH")
+		fmt.Printf("src directory does not exist, please create it in your GOPATH: %v", gosrcarr[0])
 		return nil
 	}
 
