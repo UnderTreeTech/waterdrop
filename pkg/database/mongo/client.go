@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type DB struct {
+	client *qmgo.Client
 	db     *qmgo.Database
 	config *Config
 	close  func() error
@@ -51,6 +52,7 @@ func Open(config *Config) *DB {
 	cli, close := client(config)
 	dbHandler := cli.Database(config.DBName)
 	db := &DB{
+		client: cli,
 		db:     dbHandler,
 		config: config,
 		close:  close,
@@ -74,8 +76,14 @@ func (d *DB) GetCollection(name string) *Collection {
 	return collection
 }
 
+// Close close the db connection
 func (d *DB) Close() error {
 	return d.close()
+}
+
+// Ping ping mongo to keepalive
+func (d *DB) Ping() error {
+	return d.client.Ping(2)
 }
 
 // client return mongodb connection instance handler
