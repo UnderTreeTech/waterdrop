@@ -45,6 +45,10 @@ func SpanFromContext(ctx context.Context) opentracing.Span {
 	return opentracing.SpanFromContext(ctx)
 }
 
+func ContextWithSpan(ctx context.Context, span opentracing.Span) context.Context {
+	return opentracing.ContextWithSpan(ctx, span)
+}
+
 // rpc: FromIncomingContext
 func FromIncomingContext(ctx context.Context) (context.Context, opentracing.StartSpanOption) {
 	md, ok := metadata.FromIncomingContext(ctx)
