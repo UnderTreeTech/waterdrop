@@ -63,7 +63,6 @@ type Config struct {
 type EtcdRegistry struct {
 	client   *clientv3.Client
 	services sync.Map
-	peers    sync.Map
 	config   *Config
 }
 
@@ -208,11 +207,6 @@ func (e *EtcdRegistry) updateAddrs(cc resolver.ClientConn, prefix string, servic
 
 	if len(newAddrs) > 0 {
 		cc.UpdateState(resolver.State{Addresses: newAddrs})
-		addrs := make([]string, len(newAddrs))
-		for index, addr := range newAddrs {
-			addrs[index] = addr.Addr
-		}
-		e.peers.Store(watchKey, addrs)
 	}
 
 	return nil
@@ -255,8 +249,4 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 
 	log.Infof(fmt.Sprintf("resolver %d peer service", len(addrs)), log.Any("services", addrs))
 	return addrs
-}
-
-func (e *EtcdRegistry) Peers() sync.Map {
-	return e.peers
 }
