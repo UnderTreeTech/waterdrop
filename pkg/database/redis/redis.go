@@ -140,7 +140,7 @@ func (r *Redis) slowLog(ctx context.Context, statement string, now time.Time) {
 	}
 }
 
-func (r *Redis) Pipeline(ctx context.Context, commands map[string][]interface{}) ([]interface{}, error) {
+func (r *Redis) Pipeline(ctx context.Context, commands []string, args [][]interface{}) ([]interface{}, error) {
 	span, ctx := trace.StartSpanFromContext(ctx, "redis.pipeline")
 	span = span.SetTag("db.index", r.conf.DBIndex)
 	ext.Component.Set(span, "redis")
@@ -161,8 +161,8 @@ func (r *Redis) Pipeline(ctx context.Context, commands map[string][]interface{})
 		r.slowLog(ctx, "pipeline", now)
 	}()
 
-	for cmd, args := range commands {
-		err = conn.Send(cmd, args...)
+	for index, command := range commands {
+		err = conn.Send(command, args[index]...)
 		if err != nil {
 			return nil, err
 		}
