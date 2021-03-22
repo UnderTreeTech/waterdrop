@@ -139,3 +139,49 @@ func (r *Redis) slowLog(ctx context.Context, statement string, now time.Time) {
 		log.Warn(ctx, "slow-redis-query", log.String("statement", statement), log.Duration("op_time", elapse))
 	}
 }
+
+func (r *Redis) Pipeline(ctx context.Context, commands map[string][]interface{}) ([]interface{}, error) {
+	span, ctx := trace.StartSpanFromContext(ctx, "redis.pipeline")
+	span = span.SetTag("db.index", r.conf.DBIndex)
+	ext.Component.Set(span, "redis")
+	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+	ext.PeerAddress.Set(span, r.conf.Addr)
+	ext.DBInstance.Set(span, r.conf.DBName)
+
+	conn, err := r.pool.GetContext(ctx)
+	if err != nil {
+		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, "pipeline", err.Error())
+		return nil, err
+	}
+
+	now := time.Now()
+	defer func() {
+		conn.Close()
+		span.Finish()
+		r.slowLog(ctx, "pipeline", now)
+	}()
+
+	for cmd, args := range commands {
+		err = conn.Send(cmd, args...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = conn.Flush()
+	if err != nil {
+		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, "pipeline", err.Error())
+		return nil, err
+	}
+
+	replyNum := len(commands)
+	replies := make([]interface{}, replyNum)
+	for i := 0; i < replyNum; i++ {
+		reply, _ := conn.Receive()
+		replies[i] = reply
+	}
+
+	metric.RedisClientReqDuration.Observe(time.Since(now).Seconds(), r.conf.DBName, r.conf.Addr, "pipeline")
+
+	return replies, nil
+}
