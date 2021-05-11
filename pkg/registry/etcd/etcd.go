@@ -247,6 +247,6 @@ func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Add
 		addrs = append(addrs, addr)
 	}
 
-	log.Infof(fmt.Sprintf("resolver %d peer service", len(addrs)), log.Any("services", addrs))
+	log.Debugf(fmt.Sprintf("resolver %d peer service", len(addrs)), log.Any("services", addrs))
 	return addrs
 }

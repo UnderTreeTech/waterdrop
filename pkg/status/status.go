@@ -25,8 +25,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
-
 	gstatus "google.golang.org/grpc/status"
 
 	// nolint:staticcheck
@@ -169,7 +167,6 @@ func (s *Status) Details() []interface{} {
 func errToStatus(code string) *Status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
-		log.Errorf("internal_error", log.String("error", code))
 		return ServerErr
 	}
 
