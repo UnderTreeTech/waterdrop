@@ -116,12 +116,18 @@
     bizType = 1 #business type
 
 [log]
+    name = "run.log"
+    dir = "."
     addCaller = true
-    callerSkip = 1
     level = "debug"
-    #outputPath = ["stdout","./logs/run.log"]
-    outputPath = ["stdout"]
-    errorOutputPath = ["stderr"]
+    callerSkip = 1
+    flushInterval= "1s"
+    debug = true
+    enableAsyncLog = false
+    disableStacktrace = false
+    maxSize = 500 # maximum 500M log size
+    maxAge = 30 # retain maximum 30 days
+    maxBackup = 100 # retian maximum 100 log
     watchConfig = true
 
 [trace]

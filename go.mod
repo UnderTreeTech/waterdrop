@@ -30,6 +30,7 @@ require (
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/mitchellh/mapstructure v1.3.3
+	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic v6.2.35+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.22
 	github.com/opentracing/opentracing-go v1.2.0
@@ -42,14 +43,14 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20200122045848-3419fae592fc // indirect
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	go.etcd.io/etcd v0.0.0-20200402134248-51bdeb39e698
 	go.mongodb.org/mongo-driver v1.4.0
-	go.uber.org/zap v1.15.0
+	go.uber.org/zap v1.17.1-0.20210608235150-aa3e73ec0896
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
@@ -64,5 +65,4 @@ require (
 	gopkg.in/olivere/elastic.v5 v5.0.86
 	gopkg.in/olivere/elastic.v6 v6.2.35
 	gopkg.in/yaml.v2 v2.3.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

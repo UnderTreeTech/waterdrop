@@ -45,7 +45,7 @@ func main() {
 		config.FlowRules,
 		&flow.Rule{
 			Resource:               "GET:/api/ping",
-			Threshold:              1.0,
+			Threshold:              1000.0,
 			TokenCalculateStrategy: flow.Direct,
 			ControlBehavior:        flow.Reject,
 			StatIntervalInMs:       1000,
