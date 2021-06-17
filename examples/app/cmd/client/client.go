@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
+
 	rpcConfig "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
 	httpConfig "github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
@@ -31,8 +33,6 @@ import (
 	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
 
 	httpClient "github.com/UnderTreeTech/waterdrop/pkg/server/http/client"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
 	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/protobuf/user"
@@ -125,7 +125,7 @@ func main() {
 	rpcCli.Use(interceptors.GoogleSREBreaker(rpcCli.GetBreakers()))
 	demoRPC := demo.NewDemoClient(rpcCli.GetConn())
 	now := time.Now()
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		_, err := demoRPC.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
 			//fmt.Println("err", status.ExtractStatus(err).Message())
