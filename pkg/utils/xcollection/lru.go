@@ -88,6 +88,9 @@ func (c *LRUCache) Get(key Key) (value interface{}, ok bool) {
 
 // Remove removes the provided key from the cache.
 func (c *LRUCache) Remove(key Key) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.cache == nil {
 		return
 	}
