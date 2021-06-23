@@ -18,7 +18,10 @@
 
 package xcollection
 
-import "container/list"
+import (
+	"container/list"
+	"sync"
+)
 
 // Cache is an LRU cache. It is not safe for concurrent access.
 type LRUCache struct {
@@ -32,6 +35,8 @@ type LRUCache struct {
 
 	ll    *list.List
 	cache map[interface{}]*list.Element
+
+	mu sync.Mutex
 }
 
 type Key interface{}
@@ -54,10 +59,9 @@ func NewLRU(maxEntries int) *LRUCache {
 
 // Add adds a value to the cache.
 func (c *LRUCache) Add(key Key, value interface{}) {
-	if c.cache == nil {
-		c.cache = make(map[interface{}]*list.Element)
-		c.ll = list.New()
-	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if ee, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(ee)
 		ee.Value.(*entry).value = value
@@ -72,9 +76,9 @@ func (c *LRUCache) Add(key Key, value interface{}) {
 
 // Get looks up a key's value from the cache.
 func (c *LRUCache) Get(key Key) (value interface{}, ok bool) {
-	if c.cache == nil {
-		return
-	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if ele, hit := c.cache[key]; hit {
 		c.ll.MoveToFront(ele)
 		return ele.Value.(*entry).value, true
@@ -94,6 +98,9 @@ func (c *LRUCache) Remove(key Key) {
 
 // RemoveOldest removes the oldest item from the cache.
 func (c *LRUCache) RemoveOldest() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.cache == nil {
 		return
 	}
@@ -114,6 +121,9 @@ func (c *LRUCache) removeElement(e *list.Element) {
 
 // Len returns the number of items in the cache.
 func (c *LRUCache) Len() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.cache == nil {
 		return 0
 	}
@@ -122,6 +132,9 @@ func (c *LRUCache) Len() int {
 
 // Clear purges all stored items from the cache.
 func (c *LRUCache) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.OnEvicted != nil {
 		for _, e := range c.cache {
 			kv := e.Value.(*entry)
