@@ -20,7 +20,6 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
 
@@ -34,6 +33,5 @@ func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *empt
 }
 func (s *Service) SayHelloURL(ctx context.Context, req *demo.HelloReq) (reply *demo.HelloResp, err error) {
 	reply = &demo.HelloResp{Content: "Hello " + req.Name}
-	time.Sleep(time.Millisecond * 999)
 	return reply, ecode.AppKeyInvalid
 }

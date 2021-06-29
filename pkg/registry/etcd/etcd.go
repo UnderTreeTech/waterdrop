@@ -26,10 +26,11 @@ import (
 	"sync"
 	"time"
 
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
+
 	"google.golang.org/grpc/attributes"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/mvcc/mvccpb"
 	"google.golang.org/grpc/resolver"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
