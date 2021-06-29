@@ -55,7 +55,6 @@ require (
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/sys v0.0.0-20200817155316-9781c653f443 // indirect
-	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6
 	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
