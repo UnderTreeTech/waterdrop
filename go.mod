@@ -8,7 +8,7 @@ require (
 	github.com/Shopify/sarama v1.27.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/UnderTreeTech/protobuf v0.0.0-20210114031945-c3954be20f41
-	github.com/alibaba/sentinel-golang v1.0.0-M2
+	github.com/alibaba/sentinel-golang v1.0.2
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/prometheus/client_golang v1.5.1
 	github.com/prometheus/common v0.10.0 // indirect
 	github.com/prometheus/procfs v0.1.3 // indirect
-	github.com/qiniu/qmgo v0.9.2-0.20210116045627-f966f5d97284
+	github.com/qiniu/qmgo v0.9.4
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -49,8 +49,8 @@ require (
 	github.com/uber/jaeger-lib v2.2.0+incompatible // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	go.etcd.io/etcd v0.0.0-20200402134248-51bdeb39e698
-	go.mongodb.org/mongo-driver v1.4.0
-	go.uber.org/zap v1.17.1-0.20210608235150-aa3e73ec0896
+	go.mongodb.org/mongo-driver v1.5.1
+	go.uber.org/zap v1.18.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
