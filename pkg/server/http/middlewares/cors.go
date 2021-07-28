@@ -23,7 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CORSConfig = cors.Config
+type CORSConfig cors.Config
 
 // default cors handler
 func DefaultCORS() gin.HandlerFunc {
@@ -32,5 +32,5 @@ func DefaultCORS() gin.HandlerFunc {
 
 // customer cors handler by config
 func NewCORS(config CORSConfig) gin.HandlerFunc {
-	return cors.New(config)
+	return cors.New(cors.Config(config))
 }
