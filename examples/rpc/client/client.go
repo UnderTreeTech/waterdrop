@@ -26,7 +26,7 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
-	"github.com/UnderTreeTech/protobuf/demo"
+	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"

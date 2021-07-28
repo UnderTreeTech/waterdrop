@@ -34,8 +34,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/service"
+	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
 )
 

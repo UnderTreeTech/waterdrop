@@ -27,6 +27,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/server"
@@ -47,7 +49,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/UnderTreeTech/protobuf/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/registry"
 )
 
