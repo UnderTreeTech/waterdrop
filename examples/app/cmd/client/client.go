@@ -34,8 +34,8 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
-	"github.com/UnderTreeTech/protobuf/demo"
-	"github.com/UnderTreeTech/protobuf/user"
+	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
+	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 

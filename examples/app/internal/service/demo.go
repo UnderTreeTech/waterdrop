@@ -24,7 +24,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
 
-	"github.com/UnderTreeTech/protobuf/demo"
+	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
 	"github.com/golang/protobuf/ptypes/empty"
 )
 

@@ -18,9 +18,8 @@
 
 package service
 
-import "github.com/UnderTreeTech/protobuf/stardust"
+import "github.com/UnderTreeTech/waterdrop/examples/proto/user"
 
-// Service service.
 type Service struct {
-	stardust stardust.StarDustClient
+	user user.UserClient
 }

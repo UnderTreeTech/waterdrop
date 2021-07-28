@@ -1,0 +1,81 @@
+/*
+ *
+ * Copyright 2021 waterdrop authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+// 定义项目 API 的 proto 文件 可以同时描述 gRPC 和 HTTP API
+// protobuf 文件参考:
+//  - https://developers.google.com/protocol-buffers/
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package service.user.v1;
+
+option go_package = ".;user";
+
+//Service Definition
+service User {
+  rpc GetStaffInfo(StaffInfoReq) returns (StaffInfoReply);
+  rpc DelStaff(StaffInfoReq) returns (.google.protobuf.Empty);
+  rpc GetAppSecret(AppReq) returns (AppReply);
+  rpc GetAppSkipUrls(AppReq) returns (SkipUrlsReply);
+  rpc TestValidator(ValidateReq) returns (.google.protobuf.Empty);
+}
+
+message StaffInfoReq {
+  int64 id = 1;
+  int64 shop_id = 2;
+}
+
+message StaffInfoReply {
+  int64 id = 1;
+  string staff_name = 2;
+  string nick_name = 3;
+  string mobile = 4;
+  string birthday = 5;
+  string gender = 6;
+}
+
+message AppReq {
+  string sappkey = 1;
+}
+
+message AppReply {
+  string appkey = 1;
+  string appsecret = 2;
+}
+
+message SkipUrlsReply {
+  repeated string urls = 1;
+}
+
+message ValidateReq {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+  int32 sex = 4;
+  int32 age = 5;
+  repeated Address addr = 6;
+}
+
+message Address {
+  string mobile = 1;
+  string address = 2;
+  AppReq app = 3;
+  SkipUrlsReply reply = 4;
+  repeated AppReply resp = 5;
+}
