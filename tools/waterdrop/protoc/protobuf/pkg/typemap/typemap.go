@@ -16,8 +16,8 @@ package typemap
 import (
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // Registry is the place of descriptors resolving

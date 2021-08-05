@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/utils"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/siddontang/go/ioutil2"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // GetVersionPrefix 根据go包名获取api版本前缀

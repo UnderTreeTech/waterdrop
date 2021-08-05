@@ -15,9 +15,11 @@ import (
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/naming"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/utils"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/pkg/errors"
+
+	plugin "google.golang.org/protobuf/types/pluginpb"
+
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 type Base struct {
@@ -263,7 +265,9 @@ func (t *Base) IsOwnPackage(protoName string) bool {
 	def := t.Reg.MessageDefinition(protoName)
 	if def == nil {
 		gen.Fail("could not find message for", protoName)
+		return false
 	}
+
 	return def.File.GetPackage() == t.PackageName
 }
 
@@ -273,6 +277,7 @@ func (t *Base) GoTypeName(protoName string) string {
 	def := t.Reg.MessageDefinition(protoName)
 	if def == nil {
 		gen.Fail("could not find message for", protoName)
+		return ""
 	}
 
 	var prefix string
