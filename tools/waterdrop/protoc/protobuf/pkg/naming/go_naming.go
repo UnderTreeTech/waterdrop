@@ -3,7 +3,7 @@ package naming
 import (
 	"path"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // GoFileName returns the output name for the generated Go file.

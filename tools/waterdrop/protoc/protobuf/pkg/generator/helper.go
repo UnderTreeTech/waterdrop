@@ -7,8 +7,8 @@ import (
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/tag"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/protobuf/proto"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // GetJSONFieldName get name from the original name

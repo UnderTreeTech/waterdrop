@@ -9,9 +9,9 @@ import (
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/pkg/typemap"
 
 	// nolint:staticcheck
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"google.golang.org/genproto/googleapis/api/annotations"
+	"google.golang.org/protobuf/proto"
+	descriptor "google.golang.org/protobuf/types/descriptorpb"
 )
 
 // HTTPInfo http info for method
@@ -112,10 +112,7 @@ func (t *Base) GetHttpInfoCached(file *descriptor.FileDescriptorProto,
 
 // ParseBMMethod parse BMMethodDescriptor form method descriptor proto
 func ParseBMMethod(method *descriptor.MethodDescriptorProto) (*googleMethodOptionInfo, error) {
-	ext, err := proto.GetExtension(method.GetOptions(), annotations.E_Http)
-	if err != nil {
-		return nil, fmt.Errorf("get extension error: %s", err)
-	}
+	ext := proto.GetExtension(method.GetOptions(), annotations.E_Http)
 	rule := ext.(*annotations.HttpRule)
 	var httpMethod string
 	var pathPattern string
