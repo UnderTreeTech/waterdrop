@@ -21,9 +21,10 @@ package xreply
 import (
 	"context"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
 type response struct {
@@ -32,7 +33,7 @@ type response struct {
 	Data    interface{} `json:"data"`
 }
 
-var emptyReply = &empty.Empty{}
+var emptyReply = &emptypb.Empty{}
 
 func Reply(ctx context.Context, data interface{}, err error) interface{} {
 	var reply *response

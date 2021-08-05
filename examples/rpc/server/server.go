@@ -27,6 +27,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
@@ -40,8 +42,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-
-	"github.com/golang/protobuf/ptypes/empty"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
 
@@ -115,8 +115,8 @@ func startStats() {
 
 type Service struct{}
 
-func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *empty.Empty, err error) {
-	reply = &empty.Empty{}
+func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *emptypb.Empty, err error) {
+	reply = &emptypb.Empty{}
 	return reply, nil
 }
 func (s *Service) SayHelloURL(ctx context.Context, req *demo.HelloReq) (reply *demo.HelloResp, err error) {

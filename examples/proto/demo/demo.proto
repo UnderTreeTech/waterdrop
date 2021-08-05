@@ -28,7 +28,7 @@ package service.demo.v1;
 
 // NOTE: 最后请删除这些无用的注释 (゜-゜)つロ
 
-option go_package = ".;demo";
+option go_package = "./;demo";
 
 service Demo {
   rpc SayHello(HelloReq) returns (.google.protobuf.Empty);
