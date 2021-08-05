@@ -25,7 +25,7 @@ import "google/protobuf/empty.proto";
 
 package service.user.v1;
 
-option go_package = ".;user";
+option go_package = "./;user";
 
 //Service Definition
 service User {

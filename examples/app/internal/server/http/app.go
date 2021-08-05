@@ -23,12 +23,13 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/protobuf/types/known/emptypb"
+
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/model"
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/utils"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -120,7 +121,7 @@ func validateApp(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(0, Response{Code: 0, Message: "ok", Data: &empty.Empty{}})
+	ctx.JSON(0, Response{Code: 0, Message: "ok", Data: &emptypb.Empty{}})
 }
 
 type Response struct {

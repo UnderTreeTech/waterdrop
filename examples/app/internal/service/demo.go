@@ -22,14 +22,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
+	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/ecode"
 	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
-func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *empty.Empty, err error) {
-	reply = &empty.Empty{}
+func (s *Service) SayHello(ctx context.Context, req *demo.HelloReq) (reply *emptypb.Empty, err error) {
+	reply = &emptypb.Empty{}
 	return reply, nil
 }
 func (s *Service) SayHelloURL(ctx context.Context, req *demo.HelloReq) (reply *demo.HelloResp, err error) {

@@ -25,12 +25,11 @@ import (
 	"strconv"
 	"sync"
 
-	gstatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/anypb"
 
-	// nolint:staticcheck
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/any"
+	gstatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+
 	spb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/codes"
 )
@@ -85,7 +84,7 @@ type Status struct {
 
 // New returns a Status representing c and msg.
 func new(c int, msg string) *Status {
-	return &Status{s: &spb.Status{Code: int32(c), Message: msg, Details: make([]*any.Any, 0)}}
+	return &Status{s: &spb.Status{Code: int32(c), Message: msg, Details: make([]*anypb.Any, 0)}}
 }
 
 // FromProto returns a Status representing s.
@@ -134,7 +133,7 @@ func (s *Status) WithDetails(details ...proto.Message) (*Status, error) {
 	// s.Code() != OK implies that s.Proto() != nil.
 	p := s.Proto()
 	for _, detail := range details {
-		any, err := ptypes.MarshalAny(detail)
+		any, err := anypb.New(detail)
 		if err != nil {
 			return nil, err
 		}
@@ -152,12 +151,12 @@ func (s *Status) Details() []interface{} {
 	}
 	details := make([]interface{}, 0, len(s.s.Details))
 	for _, any := range s.s.Details {
-		detail := &ptypes.DynamicAny{}
-		if err := ptypes.UnmarshalAny(any, detail); err != nil {
+		detail, err := any.UnmarshalNew()
+		if err != nil {
 			details = append(details, err)
 			continue
 		}
-		details = append(details, detail.Message)
+		details = append(details, detail.ProtoReflect())
 	}
 
 	return details
