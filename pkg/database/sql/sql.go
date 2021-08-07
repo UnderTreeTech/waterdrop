@@ -22,8 +22,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/go-sql-driver/mysql"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 
@@ -728,28 +731,24 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 
 // parseDSNAddr parse dsn name and return addr.
 func parseDSNAddr(driverName string, dsn string) (addr string) {
-	//switch driverName {
-	//case "mysql":
-	//	cfg, err := mysql.ParseDSN(dsn)
-	//	if err != nil {
-	//		// just ignore parseDSN error, mysql client will return error for us when connect.
-	//		return
-	//	}
-	//	addr = cfg.Addr
-	//case "postgres":
-	//	var cfg *pgx.ConnConfig
-	//
-	//	cfg, err := pgx.ParseConfig(dsn)
-	//	if err != nil {
-	//		return
-	//	}
-	//	result := regexp.MustCompile("(time_zone|TimeZone)=(.*?)($|&| )").FindStringSubmatch(dsn)
-	//	if len(result) > 2 {
-	//		cfg.RuntimeParams["timezone"] = result[2]
-	//	}
-	//	addr = cfg.Config.Host + ":" + strconv.Itoa(int(cfg.Config.Port))
-	//default:
-	//}
+	switch driverName {
+	case "mysql":
+		cfg, err := mysql.ParseDSN(dsn)
+		if err != nil {
+			// just ignore parseDSN error, mysql client will return error for us when connect.
+			return
+		}
+		addr = cfg.Addr
+	case "postgres":
+		cfgKVs := make(map[string]string)
+		attrs := strings.Split(dsn, " ")
+		for _, attr := range attrs {
+			kv := strings.Split(attr, "=")
+			cfgKVs[kv[0]] = kv[1]
+		}
+		addr = cfgKVs["host"] + ":" + cfgKVs["port"]
+	default:
+	}
 
 	return
 }
