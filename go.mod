@@ -27,8 +27,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
-	github.com/olivere/elastic v6.2.35+incompatible // indirect
-	github.com/olivere/elastic/v7 v7.0.22
+	github.com/olivere/elastic/v7 v7.0.25
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
@@ -43,7 +42,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.0
 	go.etcd.io/etcd/client/v3 v3.5.0
 	go.mongodb.org/mongo-driver v1.5.1
-	go.uber.org/automaxprocs v1.4.0 // indirect
+	go.uber.org/automaxprocs v1.4.0
 	go.uber.org/zap v1.18.1
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/tools v0.1.2
@@ -51,7 +50,5 @@ require (
 	google.golang.org/grpc v1.39.1
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/fsnotify.v1 v1.4.7
-	gopkg.in/olivere/elastic.v5 v5.0.86
-	gopkg.in/olivere/elastic.v6 v6.2.35
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
