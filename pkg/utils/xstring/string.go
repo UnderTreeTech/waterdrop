@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -81,4 +83,9 @@ func RandomString(length int) string {
 	}
 
 	return sb.String()
+}
+
+// GenerateUUID creates a new random UUID4 and returns it as a string or panics.
+func GenerateUUID() string {
+	return uuid.NewString()
 }
