@@ -24,7 +24,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/lib/pq v1.8.0
-	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic/v7 v7.0.25
