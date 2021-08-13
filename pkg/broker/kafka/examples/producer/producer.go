@@ -36,7 +36,7 @@ func main() {
 		Addr:           []string{"your_instance_addr"},
 		Topic:          []string{"your_instance_topic"},
 		EnableSASLAuth: true,
-		SASLMechanism:  "your_sasl_mechanis", //PLAIN
+		SASLMechanism:  "your_sasl_mechanics", //PLAIN
 		SASLUser:       "your_sasl_user",
 		SASLPassword:   "your_sasl_password",
 		SASLHandshake:  true,

@@ -37,7 +37,7 @@ func main() {
 		Topic:          []string{"your_instance_topic"},
 		Gid:            "your_group_id",
 		EnableSASLAuth: true,
-		SASLMechanism:  "your_sasl_mechanis", //PLAIN
+		SASLMechanism:  "your_sasl_mechanics", //PLAIN
 		SASLUser:       "your_sasl_user",
 		SASLPassword:   "your_sasl_password",
 		SASLHandshake:  true,
