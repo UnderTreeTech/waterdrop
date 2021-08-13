@@ -119,6 +119,9 @@ func GenRsaKey(bits int) (string, string, error) {
 
 	publicKey := privateKey.PublicKey
 	publicStream, err := x509.MarshalPKIXPublicKey(&publicKey)
+	if err != nil {
+		return "", "", err
+	}
 	block2 := pem.Block{
 		Type:  "RSA PUBLIC KEY",
 		Bytes: publicStream,
