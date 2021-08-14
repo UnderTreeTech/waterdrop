@@ -43,6 +43,7 @@ var UTCmd = &cli.Command{
 	},
 }
 
+// run run generate unit test command
 func run(ctx *cli.Context) error {
 	var (
 		err    error

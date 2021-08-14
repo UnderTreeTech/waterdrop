@@ -64,8 +64,3 @@ func ConvertMethod(path string) (method string) {
 	}
 	return
 }
-
-//ConvertHump convert words to hump style
-func ConvertHump(words string) string {
-	return strings.ToUpper(words[0:1]) + words[1:]
-}

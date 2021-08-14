@@ -29,10 +29,8 @@ require (
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic/v7 v7.0.25
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/qiniu/qmgo v0.9.4
-	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0

@@ -44,6 +44,7 @@ type Parse struct {
 	}
 }
 
+// ParseArgs parse input args
 func ParseArgs(args []string, res *[]string, index int) (err error) {
 	if len(args) <= index {
 		return
@@ -79,6 +80,7 @@ func ParseArgs(args []string, res *[]string, index int) (err error) {
 	return ParseArgs(args, res, index)
 }
 
+// ParseFile parse files to Parse structs
 func ParseFile(files ...string) (parses []*Parse, err error) {
 	for _, file := range files {
 		var (
@@ -126,6 +128,7 @@ func ParseFile(files ...string) (parses []*Parse, err error) {
 	return
 }
 
+// parserParams parse ast field to params
 func parserParams(fields []*ast.Field) (params []*param) {
 	for _, field := range fields {
 		p := &param{}
@@ -144,6 +147,7 @@ func parserParams(fields []*ast.Field) (params []*param) {
 	return
 }
 
+// parseType parse ast expr to string
 func parseType(expr ast.Expr) string {
 	switch expr.(type) {
 	case *ast.Ident:
@@ -179,6 +183,7 @@ func parseType(expr ast.Expr) string {
 	return ""
 }
 
+// parseFuncType parse func type
 func parseFuncType(temp string, data *ast.FieldList) string {
 	var params = parserParams(data.List)
 	for i, param := range params {
@@ -192,6 +197,7 @@ func parseFuncType(temp string, data *ast.FieldList) string {
 	return temp
 }
 
+// parseImports parse import packages
 func parseImports(specs []ast.Spec) (params map[string]*param) {
 	params = make(map[string]*param)
 	for _, spec := range specs {

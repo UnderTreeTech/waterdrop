@@ -27,11 +27,13 @@ import (
 )
 
 const (
-	_getSwaggerGen = "go get github.com/UnderTreeTech/waterdrop/tools/waterdrop/protoc/protobuf/protoc-gen-swagger"
-	//默认proto生成在.proto文件所在目录
-	_swaggerProtoc = `protoc -I=%s -I=%s --swagger_out=:.`
+	// go get protoc-gen-swagger
+	_getSwaggerGen = "go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"
+	// default generate swagger json files to current directory
+	_swaggerProtoc = `protoc -I=%s -I=%s --swagger_out=logtostderr=true,generate_unbound_methods=true:.`
 )
 
+// installSwaggerProtoc install protoc-gen-swagger
 func installSwaggerProtoc() error {
 	if _, err := exec.LookPath("protoc-gen-swagger"); err != nil {
 		if err := utils.ExecuteGoGet(_getSwaggerGen); err != nil {
@@ -41,6 +43,7 @@ func installSwaggerProtoc() error {
 	return nil
 }
 
+// generateSwagger generate swagger json file
 func generateSwagger(ctx *cli.Context) error {
 	if err := installSwaggerProtoc(); err != nil {
 		return err

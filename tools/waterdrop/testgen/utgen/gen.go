@@ -27,6 +27,7 @@ import (
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/testgen/common"
 )
 
+// genTest gen test funcs
 func genTest(parses []*common.Parse) (err error) {
 	for _, p := range parses {
 		if err = genUTTest(p); err != nil {
@@ -36,6 +37,7 @@ func genTest(parses []*common.Parse) (err error) {
 	return
 }
 
+// genUTTest gen unit test codes
 func genUTTest(p *common.Parse) (err error) {
 	var (
 		buffer bytes.Buffer

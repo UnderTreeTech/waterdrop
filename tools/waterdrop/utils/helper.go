@@ -30,6 +30,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// ExecuteGoGet execute go get command
 func ExecuteGoGet(address string) error {
 	args := strings.Split(address, " ")
 	cmd := exec.Command(args[0], args[1:]...)
@@ -39,6 +40,7 @@ func ExecuteGoGet(address string) error {
 	return cmd.Run()
 }
 
+// RunTool run tool commands
 func RunTool(ctx *cli.Context, dir string, args []string) (err error) {
 	cmd := toolPath(ctx.Command.Name)
 	toolCmd := &exec.Cmd{
@@ -64,6 +66,7 @@ func RunTool(ctx *cli.Context, dir string, args []string) (err error) {
 	return
 }
 
+// Gopath return go path directory
 func Gopath() (gp string) {
 	gopaths := strings.Split(os.Getenv("GOPATH"), string(filepath.ListSeparator))
 
@@ -93,6 +96,7 @@ func Gopath() (gp string) {
 	return build.Default.GOPATH
 }
 
+// toolPath return tool path
 func toolPath(toolName string) string {
 	gobin := Getenv("GOBIN")
 	if runtime.GOOS == "windows" {

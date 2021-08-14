@@ -27,7 +27,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var _installSwagger = `go get github.com/go-swagger/go-swagger/cmd/swagger`
+var _installSwagger = `go get -u github.com/go-swagger/go-swagger/cmd/swagger`
 
 var SwaggerCmd = &cli.Command{
 	Name:            "swagger",
@@ -37,6 +37,7 @@ var SwaggerCmd = &cli.Command{
 	UsageText:       "swagger",
 }
 
+// run execute swagger serve command
 func run(ctx *cli.Context) error {
 	if _, err := exec.LookPath("swagger"); err != nil {
 		if err = utils.ExecuteGoGet(_installSwagger); err != nil {
