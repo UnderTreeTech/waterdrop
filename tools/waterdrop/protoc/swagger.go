@@ -30,7 +30,7 @@ const (
 	// go get protoc-gen-swagger
 	_getSwaggerGen = "go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"
 	// default generate swagger json files to current directory
-	_swaggerProtoc = `protoc -I=%s -I=%s --swagger_out=logtostderr=true,generate_unbound_methods=true:.`
+	_swaggerProtoc = `protoc -I=%s -I=%s --swagger_out=logtostderr=true,generate_unbound_methods=true,disable_default_errors=true:.`
 )
 
 // installSwaggerProtoc install protoc-gen-swagger
