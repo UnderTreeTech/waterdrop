@@ -23,10 +23,11 @@ import (
 )
 
 const (
-	//默认proto生成在.proto文件所在目录
+	//default generate pb files to current directory
 	_grpcProtocCmd = `protoc -I=%s -I=%s --go_out=plugins=grpc:.`
 )
 
+// generateGRPC generate grpc pb files
 func generateGRPC(ctx *cli.Context) error {
 	if err := doGenerate(ctx, _grpcProtocCmd); err != nil {
 		return err

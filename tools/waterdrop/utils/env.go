@@ -50,6 +50,7 @@ func EnvFile() (string, error) {
 	return filepath.Join(dir, "go/env"), nil
 }
 
+// initEnvCache init environment cahce
 func initEnvCache() {
 	envCache.m = make(map[string]string)
 	file, _ := EnvFile()

@@ -33,6 +33,7 @@ import (
 
 const Version = "v0.1.0"
 
+// main tool entry point
 func main() {
 	app := cli.NewApp()
 	app.Name = "waterdrop"

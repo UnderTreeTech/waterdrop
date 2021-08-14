@@ -33,7 +33,8 @@ import (
 
 // download protoc: https://github.com/protocolbuffers/protobuf/releases.
 // copy protoc and include directory to GOPATH/bin
-// go get -u github.com/golang/protobuf/protoc-gen-go
+// install protoc-gen-go, go get -u github.com/golang/protobuf/protoc-gen-go
+// checkProtocEnv check if exist protoc
 func checkProtocEnv() (err error) {
 	if _, err = exec.LookPath("protoc"); err != nil {
 		err = errors.New("You haven't installed Protobuf yet，Please visit this page to install with your own system：https://github.com/protocolbuffers/protobuf/releases")
@@ -42,6 +43,7 @@ func checkProtocEnv() (err error) {
 	return nil
 }
 
+// doGenerate do generate file command
 func doGenerate(ctx *cli.Context, protocCmd string) (err error) {
 	files := ctx.Args().Slice()
 	if len(files) == 0 {

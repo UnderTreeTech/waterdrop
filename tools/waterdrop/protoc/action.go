@@ -22,6 +22,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// run run commands
 func run(ctx *cli.Context) (err error) {
 	if err = checkProtocEnv(); err != nil {
 		return
