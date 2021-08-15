@@ -23,6 +23,7 @@ import (
 	"sync"
 )
 
+// BufferPool buffer pool definition
 type BufferPool struct {
 	//alloc sets the initial capacity of new buffers to minimize calls to make()
 	alloc int
