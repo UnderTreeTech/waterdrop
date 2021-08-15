@@ -154,6 +154,7 @@ func FormatMilliDateTime(milliseconds int64) string {
 	return time.Unix(0, milliseconds*1e6).Format(DateTimeFormat)
 }
 
+// IsLeap check a leap year
 func IsLeap(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
 }
