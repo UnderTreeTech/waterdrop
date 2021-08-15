@@ -20,10 +20,12 @@ package xsync
 
 import "sync"
 
+// WaitGroupWrapper wrap wait group
 type WaitGroupWrapper struct {
 	sync.WaitGroup
 }
 
+// Wrap wrap func to wait group
 func (wg *WaitGroupWrapper) Wrap(cb func()) {
 	wg.Add(1)
 	go func() {
