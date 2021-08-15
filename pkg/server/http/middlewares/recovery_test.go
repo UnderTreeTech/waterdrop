@@ -26,7 +26,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gin-gonic/gin"
 

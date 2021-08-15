@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 )

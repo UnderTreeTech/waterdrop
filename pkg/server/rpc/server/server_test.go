@@ -26,7 +26,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/test/grpc_testing"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"

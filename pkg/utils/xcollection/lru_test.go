@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 )
 
 type simpleStruct struct {
@@ -93,8 +93,8 @@ func TestClear(t *testing.T) {
 		lru.Add(fmt.Sprintf("myKey%d", i), 1234)
 	}
 	lru.Clear()
-	assert.Equal(t, lru.ll, nil)
-	assert.Equal(t, lru.cache, nil)
+	assert.Nil(t, lru.ll)
+	assert.Nil(t, lru.cache)
 }
 
 func TestLRULen(t *testing.T) {
