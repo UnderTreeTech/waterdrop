@@ -26,12 +26,8 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/server"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares"
-
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-
-	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
@@ -77,18 +73,7 @@ func parseConfig(configName string, srvConfig *config.ServerConfig) {
 	}
 }
 
-func registerMiddlewares(s *server.Server) {
-	//jwt token middleware
-	//s.Use(jwt.JWT())
-	s.Use(middlewares.Header())
-
-	signClientConfig := &config.ClientConfig{}
-	if err := conf.Unmarshal("client.http.app", signClientConfig); err != nil {
-		panic(fmt.Sprintf("unmarshal signature client config fail, err msg %s", err.Error()))
-	}
-	signVerify := middlewares.NewSignatureVerify(signClientConfig, dao.NewRedis())
-	s.Use(signVerify.Signature())
-}
+func registerMiddlewares(s *server.Server) {}
 
 func router(s *server.Server) {
 	g := s.Group("/api")

@@ -23,10 +23,6 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares/ratelimit"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/status"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/utils/xreply"
-
 	"github.com/alibaba/sentinel-golang/api"
 	"github.com/alibaba/sentinel-golang/core/base"
 	"github.com/gin-gonic/gin"
@@ -46,10 +42,7 @@ func Sentinel(opts ...ratelimit.Option) gin.HandlerFunc {
 			if limitOption.Fallback != nil {
 				limitOption.Fallback(c)
 			} else {
-				c.AbortWithStatusJSON(
-					http.StatusTooManyRequests,
-					xreply.Reply(c.Request.Context(), nil, status.LimitExceed),
-				)
+				c.AbortWithStatus(http.StatusTooManyRequests)
 			}
 			return
 		}
