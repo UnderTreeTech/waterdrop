@@ -24,14 +24,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 	"github.com/gin-gonic/gin"
 
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	jconfig "github.com/uber/jaeger-client-go/config"
 )
 

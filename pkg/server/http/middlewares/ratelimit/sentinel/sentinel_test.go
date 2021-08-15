@@ -29,7 +29,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/middlewares/ratelimit"
 
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/gin-gonic/gin"
 
