@@ -43,6 +43,7 @@ type GoogleSreBreakerConfig struct {
 	BucketSize int
 }
 
+// defaultGoogleSreBreakerConfig default google sre breaker config
 func defaultGoogleSreBreakerConfig() *GoogleSreBreakerConfig {
 	return &GoogleSreBreakerConfig{
 		K:          1.5,
@@ -51,6 +52,7 @@ func defaultGoogleSreBreakerConfig() *GoogleSreBreakerConfig {
 	}
 }
 
+// newGoogleSreBreaker new a google sre breaker
 func newGoogleSreBreaker(config *GoogleSreBreakerConfig) *googleSreBreaker {
 	if config == nil {
 		config = defaultGoogleSreBreakerConfig()
@@ -69,6 +71,7 @@ func newGoogleSreBreaker(config *GoogleSreBreakerConfig) *googleSreBreaker {
 	return breaker
 }
 
+// Allow check the if the request can be successfully execute
 func (gsb *googleSreBreaker) Allow() error {
 	success, total := gsb.summary()
 	googleAccepts := gsb.k * success
@@ -92,6 +95,7 @@ func (gsb *googleSreBreaker) Allow() error {
 	return nil
 }
 
+// summary summarize the buckets data
 func (gsb *googleSreBreaker) summary() (success float64, total int64) {
 	gsb.rw.Reduce(func(bucket *xcollection.Bucket) {
 		success += bucket.Sum
@@ -101,10 +105,12 @@ func (gsb *googleSreBreaker) summary() (success float64, total int64) {
 	return
 }
 
+// Accept indicate request execute successfully
 func (gsb *googleSreBreaker) Accept() {
 	gsb.rw.Add(1)
 }
 
+// Reject indicate request is denied
 func (gsb *googleSreBreaker) Reject() {
 	gsb.rw.Add(0)
 }

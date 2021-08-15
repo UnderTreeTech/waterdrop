@@ -46,12 +46,14 @@ type Proba struct {
 	lock sync.Mutex
 }
 
+// NewProba return Proba pointer
 func NewProba() *Proba {
 	return &Proba{
 		r: rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
+// TrueOnProba check if input proba less than pseudo-random number
 func (p *Proba) TrueOnProba(proba float64) bool {
 	p.lock.Lock()
 	reject := p.r.Float64() < proba
@@ -64,12 +66,14 @@ type BreakerGroup struct {
 	breakers map[string]Breaker
 }
 
+// NewBreakerGroup return a breaker group pointer
 func NewBreakerGroup() *BreakerGroup {
 	return &BreakerGroup{
 		breakers: make(map[string]Breaker),
 	}
 }
 
+// Get return a break associate with the name
 func (bg *BreakerGroup) Get(name string) Breaker {
 	bg.mutex.RLock()
 	breaker, ok := bg.breakers[name]
@@ -89,6 +93,7 @@ func (bg *BreakerGroup) Get(name string) Breaker {
 	return breaker
 }
 
+// Do execute the input func and stats the breaker result
 func (bg *BreakerGroup) Do(name string, run func() error, accept func(error) bool) error {
 	breaker := bg.Get(name)
 	err := func() error {
