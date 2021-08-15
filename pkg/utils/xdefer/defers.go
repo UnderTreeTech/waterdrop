@@ -20,17 +20,20 @@ package xdefer
 
 import "sync"
 
+// Defers wrap defer func
 type Defers struct {
 	callbacks []func() error
 	m         sync.Mutex
 }
 
+// New return a Defers pointer
 func New() *Defers {
 	return &Defers{
 		callbacks: make([]func() error, 0),
 	}
 }
 
+// Add add a func to Defers
 func (d *Defers) Add(fns ...func() error) {
 	d.m.Lock()
 	defer d.m.Unlock()
@@ -38,6 +41,7 @@ func (d *Defers) Add(fns ...func() error) {
 	d.callbacks = append(d.callbacks, fns...)
 }
 
+// Close close defer funcs in Defers
 func (d *Defers) Close() {
 	d.m.Lock()
 	defer d.m.Unlock()

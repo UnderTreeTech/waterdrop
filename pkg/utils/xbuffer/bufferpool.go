@@ -23,6 +23,7 @@ import (
 	"sync"
 )
 
+// BufferPool buffer pool definition
 type BufferPool struct {
 	//alloc sets the initial capacity of new buffers to minimize calls to make()
 	alloc int
@@ -41,11 +42,13 @@ func NewBufferPool(alloc int) *BufferPool {
 	}
 }
 
+// Get gets a Buffer from the BufferPool
 func (bp *BufferPool) Get() *bytes.Buffer {
 	buffer := bp.pool.Get().(*bytes.Buffer)
 	return buffer
 }
 
+// Put returns the given Buffer to the BufferPool
 func (bp *BufferPool) Put(buffer *bytes.Buffer) {
 	if buffer.Cap() <= bp.alloc {
 		buffer.Reset()

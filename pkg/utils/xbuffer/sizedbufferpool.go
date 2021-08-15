@@ -20,6 +20,7 @@ package xbuffer
 
 import "bytes"
 
+// SizedBufferPool sized buffer pool definition
 type SizedBufferPool struct {
 	pool  chan *bytes.Buffer
 	size  int
