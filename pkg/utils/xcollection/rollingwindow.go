@@ -23,6 +23,8 @@ import (
 	"time"
 )
 
+// RollingWindow is a window Accumulator implementation that uses some
+// duration of time to determine the content of the window
 type RollingWindow struct {
 	mutex            sync.RWMutex
 	win              *window
@@ -32,6 +34,8 @@ type RollingWindow struct {
 	lastWindowTime   int
 }
 
+// NewRollingWindow manages a window with rolling time durations
+// The given duration will be used to bucket data within the window
 func NewRollingWindow(bucketSize int, bucketDuration time.Duration) *RollingWindow {
 	rw := &RollingWindow{
 		bucketSize:     bucketSize,
@@ -42,6 +46,7 @@ func NewRollingWindow(bucketSize int, bucketDuration time.Duration) *RollingWind
 	return rw
 }
 
+// Add a value to the window using a time bucketing strategy
 func (rw *RollingWindow) Add(v float64) {
 	rw.mutex.Lock()
 	rw.updateWindowOffset()
@@ -49,6 +54,7 @@ func (rw *RollingWindow) Add(v float64) {
 	rw.mutex.Unlock()
 }
 
+// Reduce the window to a single value using a reduction function
 func (rw *RollingWindow) Reduce(fn func(*Bucket)) {
 	rw.mutex.RLock()
 	adjustedTime := int(time.Now().UnixNano() / rw.bucketDuration.Nanoseconds())
@@ -64,6 +70,7 @@ func (rw *RollingWindow) Reduce(fn func(*Bucket)) {
 	rw.mutex.RUnlock()
 }
 
+// updateWindowOffset update window offset to keep consistent
 func (rw *RollingWindow) updateWindowOffset() {
 	adjustedTime := int(time.Now().UnixNano() / rw.bucketDuration.Nanoseconds())
 	windowOffset := adjustedTime % rw.bucketSize
@@ -85,12 +92,14 @@ func (rw *RollingWindow) updateWindowOffset() {
 	}
 }
 
+// resetWindow reset all the window
 func (rw *RollingWindow) resetWindow() {
 	for _, bucket := range rw.win.buckets {
 		bucket.reset()
 	}
 }
 
+// resetBucket reset bucket
 func (rw *RollingWindow) resetBucket(offset int) {
 	distance := offset - rw.lastWindowOffset
 	// If the distance between current and last is negative then we've wrapped
@@ -105,11 +114,13 @@ func (rw *RollingWindow) resetBucket(offset int) {
 	}
 }
 
+// window represents a bucketed set of data
 type window struct {
 	buckets    []*Bucket
 	bucketSize int
 }
 
+// newWindow creates a Window with the given number of buckets
 func newWindow(size int) *window {
 	buckets := make([]*Bucket, 0, size)
 	for i := 0; i < size; i++ {
@@ -122,16 +133,19 @@ func newWindow(size int) *window {
 	}
 }
 
+// Bucket is a rolling window bucket
 type Bucket struct {
 	Sum   float64
 	Count int64
 }
 
+// add a value to the bucket
 func (b *Bucket) add(v float64) {
 	b.Sum += v
 	b.Count++
 }
 
+// reset bucket to initial status
 func (b *Bucket) reset() {
 	b.Sum = 0
 	b.Count = 0
