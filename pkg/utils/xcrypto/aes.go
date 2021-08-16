@@ -48,13 +48,16 @@ type AesCbcCrypto struct {
 }
 
 // NewAesCbcCrypto returns a aes cbc mode crypto
-func NewAesCbcCrypto(secret string) (*AesCbcCrypto, error) {
+func NewAesCbcCrypto(secret string, iv ...byte) (*AesCbcCrypto, error) {
 	b, err := aes.NewCipher([]byte(secret))
 	if err != nil {
 		return nil, err
 	}
 
-	iv := bytes.Repeat([]byte{0x00}, b.BlockSize())
+	if len(iv) == 0 {
+		iv = bytes.Repeat([]byte{0x00}, b.BlockSize())
+	}
+
 	cbc := &AesCbcCrypto{
 		block:     b,
 		blockSize: b.BlockSize(),
