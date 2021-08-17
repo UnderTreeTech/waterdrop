@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/service"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/server"
@@ -41,7 +43,9 @@ type ServerInfo struct {
 	ServiceInfo *registry.ServiceInfo
 }
 
-func New() *ServerInfo {
+var svc *service.Service
+
+func New(s *service.Service) *ServerInfo {
 	srvConfig := &config.ServerConfig{}
 	parseConfig("server.http", srvConfig)
 	if srvConfig.WatchConfig {
@@ -51,10 +55,9 @@ func New() *ServerInfo {
 	}
 
 	server := server.New(srvConfig)
-
 	registerMiddlewares(server)
 	router(server)
-
+	svc = s
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())
 	serviceInfo := &registry.ServiceInfo{

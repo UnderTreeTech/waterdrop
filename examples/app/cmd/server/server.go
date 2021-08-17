@@ -28,6 +28,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/examples/app/internal/service"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/stats"
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
@@ -56,17 +58,19 @@ func main() {
 	defer jaeger.Init()()
 	defer dao.NewDao().Close()
 
-	http := http.New()
-	rpc := grpc.New()
-
 	etcdConf := &etcd.Config{}
 	if err := conf.Unmarshal("etcd", etcdConf); err != nil {
 		panic(fmt.Sprintf("unmarshal etcd config fail, err msg %s", err.Error()))
 	}
 	etcd := etcd.New(etcdConf)
+	resolver.Register(etcd)
+
+	s := service.New()
+	http := http.New(s)
+	rpc := grpc.New(s)
+
 	etcd.Register(context.Background(), rpc.ServiceInfo)
 	etcd.Register(context.Background(), http.ServiceInfo)
-	resolver.Register(etcd)
 	startStats()
 
 	<-c

@@ -18,8 +18,41 @@
 
 package service
 
-import "github.com/UnderTreeTech/waterdrop/examples/proto/user"
+import (
+	"fmt"
+
+	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
+	rpcConfig "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
+
+	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
+	"github.com/UnderTreeTech/waterdrop/pkg/conf"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/client"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+)
 
 type Service struct {
 	user user.UserClient
+	http *client.Client
+}
+
+func New() *Service {
+	cliConf := &rpcConfig.ClientConfig{}
+	if err := conf.Unmarshal("client.rpc.user", cliConf); err != nil {
+		panic(fmt.Sprintf("unmarshal user client config fail, err msg %s", err.Error()))
+	}
+	rpcCli := rpcClient.New(cliConf)
+	rpcCli.Use(interceptors.GoogleSREBreaker(rpcCli.GetBreakers()))
+	userRPC := user.NewUserClient(rpcCli.GetConn())
+
+	httpCliConf := &config.ClientConfig{}
+	if err := conf.Unmarshal("client.http.app", httpCliConf); err != nil {
+		panic(fmt.Sprintf("unmarshal http client config fail, err msg %s", err.Error()))
+	}
+	httpCli := client.New(httpCliConf)
+
+	return &Service{
+		http: httpCli,
+		user: userRPC,
+	}
 }
