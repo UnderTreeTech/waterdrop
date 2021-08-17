@@ -20,8 +20,6 @@ package client
 
 import (
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -29,13 +27,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xcrypto"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 
-	md "github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
-
-	"google.golang.org/grpc/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
@@ -50,22 +48,27 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// Request request params
 type Request struct {
-	URI         string
-	QueryParams url.Values
-	Body        interface{}
-	PathParams  map[string]string
+	URI        string
+	QueryParam url.Values
+	Body       interface{}
+	PathParam  map[string]string
 }
 
+// RequestMiddleware http request middleware
+type RequestMiddleware func(client *Client) resty.RequestMiddleware
+
+// Client http client
 type Client struct {
 	client   *resty.Client
 	config   *config.ClientConfig
 	breakers *breaker.BreakerGroup
 }
 
+// New return a http client
 func New(config *config.ClientConfig) *Client {
 	cli := resty.New()
-
 	cli.SetTimeout(config.Timeout)
 	cli.SetDebug(config.EnableDebug)
 	cli.SetHostURL(config.HostURL)
@@ -77,47 +80,35 @@ func New(config *config.ClientConfig) *Client {
 	}
 }
 
-func (c *Client) NewRequest(ctx context.Context, method string, req *Request, reply interface{}) (*resty.Request, error) {
+// Use set client request middleware
+func (c *Client) Use(m RequestMiddleware) *Client {
+	rm := m(c)
+	c.client = c.client.OnBeforeRequest(rm)
+	return c
+}
+
+// NewRequest return a resty Request object
+func (c *Client) NewRequest(method string, req *Request, reply interface{}) *resty.Request {
 	request := c.client.NewRequest()
 	request.URL = req.URI
 	request.Method = method
-	request.SetQueryParamsFromValues(req.QueryParams)
+	request.SetQueryParamsFromValues(req.QueryParam)
 	request.SetBody(req.Body)
-	request.SetPathParams(req.PathParams)
+	request.SetPathParams(req.PathParam)
 	request.SetResult(reply)
-
-	if c.config.EnableSign {
-		ts := strconv.Itoa(int(xtime.Now().CurrentUnixTime()))
-		nonce := xstring.RandomString(md.DefaultNonceLen)
-		sign, err := c.sign(ctx, method, ts, nonce, req)
-		if err != nil {
-			return nil, err
-		}
-
-		request.SetHeader(md.HeaderSign, sign)
-		request.SetHeader(md.HeaderNonce, nonce)
-		request.SetHeader(md.HeaderTimestamp, ts)
-	}
-
 	if method != http.MethodGet {
-		request.SetHeader(md.HeaderContentType, md.DefaultContentTypeJson)
+		request.SetHeader(metadata.HeaderContentType, metadata.DefaultContentTypeJson)
 	}
-
-	request.SetHeader(md.HeaderAppkey, c.config.Key)
-	request.SetHeader(md.HeaderUserAgent, md.DefaultUserAgentVal)
-	request.SetHeader(md.HeaderAcceptLanguage, md.DefaultLocale)
-
-	return request, nil
+	request.SetHeader(metadata.HeaderAppkey, c.config.Key)
+	request.SetHeader(metadata.HeaderUserAgent, metadata.DefaultUserAgentVal)
+	request.SetHeader(metadata.HeaderAcceptLanguage, metadata.DefaultLocale)
+	return request
 }
 
+// execute send http request
 func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 	err := c.breakers.Do(request.URL,
 		func() error {
-			span, ctx := trace.StartSpanFromContext(ctx, request.Method+" "+request.URL)
-			ext.Component.Set(span, "http")
-			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-			ext.HTTPMethod.Set(span, request.Method)
-
 			// adjust request timeout
 			timeout := c.config.Timeout
 			if deadline, ok := ctx.Deadline(); ok {
@@ -127,26 +118,26 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				}
 			}
 
-			ctx = metadata.NewOutgoingContext(ctx, metadata.MD(request.Header))
-			ctx, cancel := context.WithTimeout(ctx, timeout)
+			request.SetHeader(metadata.HeaderHttpTimeout, strconv.Itoa(int(timeout.Milliseconds())))
+			span, sctx := trace.StartSpanFromContext(ctx, request.Method+" "+request.URL)
+			sctx = trace.HeaderInjector(sctx, request.Header)
+			ext.Component.Set(span, "http")
+			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+			ext.HTTPMethod.Set(span, request.Method)
+			ext.HTTPUrl.Set(span, request.URL)
+			sctx, cancel := context.WithTimeout(sctx, timeout)
+			request.SetContext(sctx)
 			defer func() {
 				span.Finish()
 				cancel()
 			}()
 
-			request.SetHeader(md.HeaderHttpTimeout, strconv.Itoa(int(timeout)))
-			request.SetContext(ctx)
-
-			trace.MetadataInjector(ctx, metadata.MD(request.Header))
-
 			now := time.Now()
 			var quota float64
-			if deadline, ok := ctx.Deadline(); ok {
+			if deadline, ok := sctx.Deadline(); ok {
 				quota = time.Until(deadline).Seconds()
 			}
-
 			response, err := request.Execute(request.Method, request.URL)
-			ext.HTTPUrl.Set(span, request.URL)
 			estatus := status.OK
 			if err != nil {
 				if uerr, ok := err.(*url.Error); ok {
@@ -179,9 +170,9 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			)
 
 			if duration >= c.config.SlowRequestDuration {
-				log.Warn(ctx, "http-slow-request-log", fields...)
+				log.Warn(sctx, "http-slow-request-log", fields...)
 			} else {
-				log.Info(ctx, "http-request-log", fields...)
+				log.Info(sctx, "http-request-log", fields...)
 			}
 
 			if estatus.Code() == status.OK.Code() {
@@ -194,6 +185,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 	return err
 }
 
+// accept calculate request success/failure ratio
 func accept(err error) bool {
 	if err != nil {
 		switch status.ExtractContextStatus(err).Code() {
@@ -205,70 +197,65 @@ func accept(err error) bool {
 			return true
 		}
 	}
-
 	return true
 }
 
+// Get http get request
 func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) error {
-	request, err := c.NewRequest(ctx, http.MethodGet, req, reply)
-	if err != nil {
-		return err
-	}
-
+	request := c.NewRequest(http.MethodGet, req, reply)
 	return c.execute(ctx, request)
 }
 
+// Post http post request
 func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) error {
-	request, err := c.NewRequest(ctx, http.MethodPost, req, reply)
-	if err != nil {
-		return err
-	}
-
+	request := c.NewRequest(http.MethodPost, req, reply)
 	return c.execute(ctx, request)
 }
 
+// Put http put request
 func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) error {
-	request, err := c.NewRequest(ctx, http.MethodPut, req, reply)
-	if err != nil {
-		return err
-	}
-
+	request := c.NewRequest(http.MethodPut, req, reply)
 	return c.execute(ctx, request)
 }
 
+// Delete http delete request
 func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) error {
-	request, err := c.NewRequest(ctx, http.MethodDelete, req, reply)
-	if err != nil {
-		return err
-	}
-
+	request := c.NewRequest(http.MethodDelete, req, reply)
 	return c.execute(ctx, request)
 }
 
+// Signature a example of RequestMiddleware
 // sign algorithm:md5(query params + body + secret + timestamp + nonce)
 // Notice:stuff body only when HTTP METHOD is not GET.
 // Encode query params to `"bar=baz&foo=quux"` sorted by key in any case
-func (c *Client) sign(ctx context.Context, method string, timestamp string, nonce string, req *Request) (string, error) {
-	sb := strings.Builder{}
-	query := req.QueryParams.Encode()
-	bodyStr := ""
-	if method != http.MethodGet {
-		jsonReq, err := json.Marshal(req.Body)
-		if err != nil {
-			return "", err
+func Signature(client *Client) resty.RequestMiddleware {
+	return func(cli *resty.Client, request *resty.Request) error {
+		ts := strconv.Itoa(int(xtime.Now().CurrentUnixTime()))
+		nonce := xstring.RandomString(metadata.DefaultNonceLen)
+		sb := strings.Builder{}
+		query := request.QueryParam.Encode()
+		bodyStr := ""
+		if request.Method != http.MethodGet {
+			jsonReq, err := json.Marshal(request.Body)
+			if err != nil {
+				return err
+			}
+			bodyStr = xstring.BytesToString(jsonReq)
 		}
-		bodyStr = xstring.BytesToString(jsonReq)
+
+		sb.WriteString(query)
+		sb.WriteString(bodyStr)
+		sb.WriteString(client.config.Secret)
+		sb.WriteString(ts)
+		sb.WriteString(nonce)
+		signStr := sb.String()
+		sign, err := xcrypto.HashToString(signStr, xcrypto.MD5, xcrypto.HEX)
+		if err != nil {
+			return err
+		}
+		request.SetHeader(metadata.HeaderSign, sign)
+		request.SetHeader(metadata.HeaderNonce, nonce)
+		request.SetHeader(metadata.HeaderTimestamp, ts)
+		return nil
 	}
-
-	sb.WriteString(query)
-	sb.WriteString(bodyStr)
-	sb.WriteString(c.config.Secret)
-	sb.WriteString(timestamp)
-	sb.WriteString(nonce)
-	signStr := sb.String()
-
-	digest := md5.Sum(xstring.StringToBytes(signStr))
-	sign := hex.EncodeToString(digest[:])
-	log.Debug(ctx, "signature info", log.String("sign_str", signStr), log.String("sign", sign))
-	return sign, nil
 }
