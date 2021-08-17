@@ -20,29 +20,27 @@ package trace
 
 import "strings"
 
-type Metadata struct {
+type CarrierMD struct {
 	md map[string][]string
 }
 
-func New() *Metadata {
-	return &Metadata{
-		md: make(map[string][]string),
-	}
-}
-
-func (md *Metadata) Set(key, val string) {
+// Set a key:value pair to the carrier. Multiple calls to Set() for the
+// same key leads to undefined behavior.
+func (cm CarrierMD) Set(key, val string) {
 	key = strings.ToLower(key)
-	md.md[key] = append(md.md[key], val)
+	cm.md[key] = append(cm.md[key], val)
 }
 
-func (md *Metadata) ForeachKey(handler func(key, val string) error) error {
-	for k, vals := range md.md {
+// ForeachKey returns TextMap contents via repeated calls to the `handler`
+// function. If any call to `handler` returns a non-nil error, ForeachKey
+// terminates and returns that error.
+func (cm CarrierMD) ForeachKey(handler func(key, val string) error) error {
+	for k, vals := range cm.md {
 		for _, v := range vals {
 			if err := handler(k, v); err != nil {
 				return err
 			}
 		}
 	}
-
 	return nil
 }
