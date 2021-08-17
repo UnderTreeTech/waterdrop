@@ -51,11 +51,7 @@ func New(cfg *config.ServerConfig) *Server {
 		config: cfg,
 	}
 
-	srv.Use(middlewares.Recovery(), middlewares.Trace(srv.config), middlewares.Logger(srv.config))
-	if cfg.EnableMetric {
-		srv.Use(middlewares.Metric())
-	}
-
+	srv.Use(middlewares.Recovery(), middlewares.Trace(srv.config), middlewares.Logger(srv.config), middlewares.Metric())
 	return srv
 }
 

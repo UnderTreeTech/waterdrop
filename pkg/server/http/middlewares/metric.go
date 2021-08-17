@@ -26,14 +26,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var namespace = "appkey"
+
+const _defaultNamespace = "default"
+
+// Metric http request metric middleware
 func Metric() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()
+
 		c.Next()
-		appkey := c.Request.Header.Get("appkey")
-		if appkey != "" {
-			metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, appkey, strconv.Itoa(c.Writer.Status()))
-			metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, appkey)
+
+		ns := c.Request.Header.Get(namespace)
+		if ns == "" {
+			ns = _defaultNamespace
 		}
+		metric.HTTPServerHandleCounter.Inc(c.FullPath(), c.Request.Method, ns, strconv.Itoa(c.Writer.Status()))
+		metric.HTTPServerReqDuration.Observe(time.Since(now).Seconds(), c.FullPath(), c.Request.Method, ns)
 	}
+}
+
+// SetHttpMetricNamespace set http metric namespace get from which http header
+// default namespace is get from http header: appkey
+func SetMetricNamespace(header string) {
+	namespace = header
 }

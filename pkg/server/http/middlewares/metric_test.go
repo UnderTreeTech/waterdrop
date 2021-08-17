@@ -18,8 +18,25 @@
 
 package middlewares
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestMetric(t *testing.T) {
+	engine := gin.New()
+	engine.Use(Metric())
+	engine.GET("/", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "normal")
+	})
 
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }
