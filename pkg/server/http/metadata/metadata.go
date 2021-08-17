@@ -38,16 +38,10 @@ const (
 	DefaultContentTypeJson = "application/json;charset=utf-8"
 	DefaultUserAgentVal    = "waterdrop"
 	DefaultLocale          = "zh-CN"
-	DefaultRequestTimeout  = 10
 	DefaultNonceLen        = 16
-	DefaultSecretURL       = "/api/app/secret"
-	DefaultSkipsURL        = "/api/app/skips"
-	DefaultAppkeyLen       = 16
-
-	DefaultMaxBytes = 1 << 20 // 1 MiB
 )
 
-// get timeout from request header
+// GetTimeout get timeout from request header
 // similar as grpc
 func GetTimeout(req *http.Request) time.Duration {
 	to := req.Header.Get(HeaderHttpTimeout)

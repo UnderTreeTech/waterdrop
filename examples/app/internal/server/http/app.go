@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
+
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/dao"
@@ -114,7 +116,9 @@ func getSkipUrls(ctx *gin.Context) {
 func validateApp(ctx *gin.Context) {
 	id := ctx.Params.ByName("id")
 	log.Info(ctx.Request.Context(), "", log.String("id", id))
-
+	if _, err := svc.DelStaff(ctx.Request.Context(), &user.StaffInfoReq{}); err != nil {
+		fmt.Println("rpc revoke del staff", err)
+	}
 	req := &ValidateReq{}
 	if err := ctx.Bind(req); err != nil {
 		log.Error(ctx.Request.Context(), "error", log.String("err_msg", err.Error()))

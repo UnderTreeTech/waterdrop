@@ -21,6 +21,8 @@ package interceptors
 import (
 	"context"
 
+	"google.golang.org/grpc/metadata"
+
 	"google.golang.org/grpc/peer"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -34,7 +36,7 @@ import (
 
 func TraceForUnaryServer() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ctx, opt := trace.FromIncomingContext(ctx)
+		opt := trace.FromIncomingContext(ctx)
 		span, ctx := trace.StartSpanFromContext(ctx, info.FullMethod, opt)
 		ext.Component.Set(span, "grpc")
 		ext.SpanKind.Set(span, ext.SpanKindRPCServerEnum)
@@ -56,14 +58,16 @@ func TraceForUnaryServer() grpc.UnaryServerInterceptor {
 
 func TraceForUnaryClient() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
-		ctx, md := trace.FromOutgoingContext(ctx)
+		md, ok := metadata.FromOutgoingContext(ctx)
+		if !ok {
+			md = metadata.New(nil)
+		}
 		span, ctx := trace.StartSpanFromContext(ctx, method)
 		ext.Component.Set(span, "grpc")
 		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 		defer span.Finish()
 
-		trace.MetadataInjector(ctx, md)
-
+		ctx = trace.MetadataInjector(ctx, md)
 		err = invoker(ctx, method, req, reply, cc, opts...)
 		if err != nil {
 			estatus := status.ExtractStatus(err)

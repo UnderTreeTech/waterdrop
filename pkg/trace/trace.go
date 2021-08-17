@@ -20,6 +20,7 @@ package trace
 
 import (
 	"context"
+	"net/http"
 
 	jaeger "github.com/uber/jaeger-client-go"
 
@@ -31,73 +32,73 @@ import (
 
 type NullStartSpanOption struct{}
 
-func (sso NullStartSpanOption) Apply(options *opentracing.StartSpanOptions) {}
+func (n NullStartSpanOption) Apply(options *opentracing.StartSpanOptions) {}
 
+// SetGlobalTracer set global trace instance
 func SetGlobalTracer(tracer opentracing.Tracer) {
 	opentracing.SetGlobalTracer(tracer)
 }
 
+// StartSpanFromContext start a span from current context
 func StartSpanFromContext(ctx context.Context, op string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	return opentracing.StartSpanFromContext(ctx, op, opts...)
 }
 
+// SpanFromContext return the span attached to current context
 func SpanFromContext(ctx context.Context) opentracing.Span {
 	return opentracing.SpanFromContext(ctx)
 }
 
-func ContextWithSpan(ctx context.Context, span opentracing.Span) context.Context {
-	return opentracing.ContextWithSpan(ctx, span)
-}
-
-// rpc: FromIncomingContext
-func FromIncomingContext(ctx context.Context) (context.Context, opentracing.StartSpanOption) {
+// FromIncomingContext extract trace info from span
+func FromIncomingContext(ctx context.Context) opentracing.StartSpanOption {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		md = metadata.New(nil)
-		ctx = metadata.NewIncomingContext(ctx, md)
 	}
 
-	sc, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, &Metadata{md: md})
+	sc, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, CarrierMD{md: md})
 	if err != nil {
-		return ctx, NullStartSpanOption{}
+		return NullStartSpanOption{}
 	}
-
-	return ctx, opentracing.ChildOf(sc)
+	return opentracing.ChildOf(sc)
 }
 
-// rpc: FromOutgoingContext
-func FromOutgoingContext(ctx context.Context) (context.Context, metadata.MD) {
-	md, ok := metadata.FromOutgoingContext(ctx)
-	if !ok {
-		md = metadata.New(nil)
-		ctx = metadata.NewOutgoingContext(ctx, md)
-	}
-
-	return ctx, md
-}
-
-// rpc: MetadataInjector
-func MetadataInjector(ctx context.Context, md metadata.MD) error {
+// MetadataInjector inject trace info to span
+func MetadataInjector(ctx context.Context, md metadata.MD) context.Context {
 	span := opentracing.SpanFromContext(ctx)
-	err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, &Metadata{md: md})
+	err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, CarrierMD{md: md})
 	if err != nil {
 		span.LogFields(log.String("event", "inject failed"), log.Error(err))
-		return err
+		return ctx
 	}
-
-	return nil
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
-// HTTP: HeaderExtractor
-func HeaderExtractor(ctx context.Context, carrier map[string][]string) (context.Context, opentracing.StartSpanOption) {
-	sc, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, &Metadata{md: carrier})
+type hdOutgoingKey struct{}
+
+// HeaderInjector inject trace info to span
+func HeaderInjector(ctx context.Context, carrier http.Header) context.Context {
+	md := opentracing.HTTPHeadersCarrier(carrier)
+	span := opentracing.SpanFromContext(ctx)
+	err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, md)
 	if err != nil {
-		return ctx, NullStartSpanOption{}
+		span.LogFields(log.String("event", "inject failed"), log.Error(err))
+		return ctx
 	}
-
-	return ctx, opentracing.ChildOf(sc)
+	return context.WithValue(ctx, hdOutgoingKey{}, carrier)
 }
 
+// HeaderExtractor extract trace info from span
+func HeaderExtractor(carrier http.Header) opentracing.StartSpanOption {
+	md := opentracing.HTTPHeadersCarrier(carrier)
+	sc, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, md)
+	if err != nil {
+		return NullStartSpanOption{}
+	}
+	return opentracing.ChildOf(sc)
+}
+
+// TraceID return trace id as string
 func TraceID(ctx context.Context) string {
 	sp := SpanFromContext(ctx)
 	if sp == nil {
@@ -107,6 +108,5 @@ func TraceID(ctx context.Context) string {
 	if jsc, ok := sp.Context().(jaeger.SpanContext); ok {
 		return jsc.TraceID().String()
 	}
-
 	return ""
 }

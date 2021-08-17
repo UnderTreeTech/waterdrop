@@ -20,13 +20,24 @@
 
 [client]
     [client.rpc]
-        [client.rpc.stardust]
+        [client.rpc.demo]
             key = "xHf74ZfV43cAUsUl"
             secret = "d0dbe915091d400bd8ee7f27f0791303"
             dialTimeout = "10s"
-            block = true
+            block = false
             balancer = "round_robin"
-            target = "etcd://default/service.user.v1"
+            target = "etcd://default/service.demo.v1"
+            timeout = "500ms"
+            keepAliveInterval = "60s"
+            keepAliveTimeout = "20s"
+            slowRequestDuration = "500ms"
+        [client.rpc.user]
+            key = "xHf74ZfV43cAUsUl"
+            secret = "d0dbe915091d400bd8ee7f27f0791303"
+            dialTimeout = "10s"
+            block = false
+            balancer = "round_robin"
+            target = "etcd://default/service.demo.v1"
             timeout = "500ms"
             keepAliveInterval = "60s"
             keepAliveTimeout = "20s"

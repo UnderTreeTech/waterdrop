@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/server"
@@ -44,7 +46,7 @@ type ServerInfo struct {
 	ServiceInfo *registry.ServiceInfo
 }
 
-func New() *ServerInfo {
+func New(s *service.Service) *ServerInfo {
 	srvConfig := &config.ServerConfig{}
 	parseConfig("server.rpc", srvConfig)
 	if srvConfig.WatchConfig {
@@ -54,14 +56,14 @@ func New() *ServerInfo {
 	}
 
 	server := server.New(srvConfig)
-	registerServers(server.Server(), &service.Service{})
+	registerServers(server.Server(), s)
 
 	server.Use(interceptors.ValidateForUnaryServer())
 
 	addr := server.Start()
 	_, port, _ := net.SplitHostPort(addr.String())
 	serviceInfo := &registry.ServiceInfo{
-		Name:    "service.user.v1",
+		Name:    "service.demo.v1",
 		Scheme:  "grpc",
 		Addr:    fmt.Sprintf("%s://%s:%s", "grpc", xnet.InternalIP(), port),
 		Version: "1.0.0",
@@ -72,6 +74,7 @@ func New() *ServerInfo {
 
 func registerServers(g *grpc.Server, s *service.Service) {
 	demo.RegisterDemoServer(g, s)
+	user.RegisterUserServer(g, s)
 }
 
 func parseConfig(configName string, srvConfig *config.ServerConfig) {

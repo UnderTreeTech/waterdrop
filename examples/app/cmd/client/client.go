@@ -26,17 +26,11 @@ import (
 
 	rpcConfig "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
-	httpConfig "github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
-
 	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
-
-	httpClient "github.com/UnderTreeTech/waterdrop/pkg/server/http/client"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
 
 	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
-	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
@@ -63,75 +57,21 @@ func main() {
 	etcd := etcd.New(etcdConf)
 	resolver.Register(etcd)
 
-	httpCliConf := &httpConfig.ClientConfig{}
-	if err := conf.Unmarshal("client.http.app", httpCliConf); err != nil {
-		panic(fmt.Sprintf("unmarshal http client config fail, err msg %s", err.Error()))
-	}
-	fmt.Println("http client conf", httpCliConf)
-	httpCli := httpClient.New(httpCliConf)
-	r := &httpClient.Request{
-		URI:        "/api/app/validate/{id}",
-		PathParams: map[string]string{"id": "1"},
-		//Body:       `{"email":"example@example.com","name":"John&Sun","password":"styd.cn","sex":2,"age":12,"addr":[{"mobile":"上海市徐汇区","address":"<a onblur='alert(secret)' href='http://www.google.com'>Google</a>","app":{"sappkey":"<p>md5hash</p>"},"reply":{"urls":["www.&baidu.com","www.g&oogle.com","&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;&#x3b;","u003cimg src=1 onerror=alert(/xss/)u003e"]},"resp":[{"app_key":"sha1hash","app_secret":"<href>rsa</href>"}]}]}`,
-		Body: &user.ValidateReq{
-			Email:    "example@example.com",
-			Name:     "John&Sun",
-			Password: "styd.cn",
-			Sex:      2,
-			Age:      12,
-			Addr: []*user.Address{
-				{
-					Address: "<a onblur='alert(secret)' href='http://www.google.com'>Google</a>",
-					Mobile:  "上海市徐汇区",
-					App: &user.AppReq{
-						Sappkey: "<p>md5hash</p>",
-					},
-					Reply: &user.SkipUrlsReply{
-						Urls: []string{"www.&baidu.com",
-							"www.g&oogle.com",
-							"&#x6a;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;&#x3a;&#x61;&#x6c;&#x65;&#x72;&#x74;&#x28;&#x31;&#x29;&#x3b;",
-							"u003cimg src=1 onerror=alert(/xss/)u003e",
-						},
-					},
-					Resp: []*user.AppReply{
-						{
-							Appkey:    "sha1hash",
-							Appsecret: "<href>rsa</href>",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	var result interface{}
-	for i := 0; i < 1; i++ {
-		go func() {
-			for j := 0; j < 1; j++ {
-				err := httpCli.Post(context.Background(), r, &result)
-				if err != nil {
-					fmt.Println("response", err)
-				}
-			}
-		}()
-	}
-
 	cliConf := &rpcConfig.ClientConfig{}
-	if err := conf.Unmarshal("client.rpc.stardust", cliConf); err != nil {
+	if err := conf.Unmarshal("client.rpc.demo", cliConf); err != nil {
 		panic(fmt.Sprintf("unmarshal demo client config fail, err msg %s", err.Error()))
 	}
 	fmt.Println(cliConf)
 	rpcCli := rpcClient.New(cliConf)
 	rpcCli.Use(interceptors.GoogleSREBreaker(rpcCli.GetBreakers()))
 	demoRPC := demo.NewDemoClient(rpcCli.GetConn())
-	now := time.Now()
-	for i := 0; i < 10; i++ {
+
+	for i := 0; i < 1; i++ {
 		_, err := demoRPC.SayHelloURL(context.Background(), &demo.HelloReq{Name: "John Sun"})
 		if err != nil {
-			//fmt.Println("err", status.ExtractStatus(err).Message())
+			fmt.Println("request error", err)
 		}
 	}
-	fmt.Println(time.Since(now))
 
 	time.Sleep(time.Hour * 30)
 }
