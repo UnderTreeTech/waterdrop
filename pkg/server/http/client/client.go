@@ -238,6 +238,34 @@ func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) (e
 	return
 }
 
+// RawGet http get request and return response body raw byte
+func (c *Client) RawGet(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodGet, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawPost http post request and return response body raw byte
+func (c *Client) RawPost(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodPost, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawPut http put request and return response body raw byte
+func (c *Client) RawPut(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodPut, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawDelete http delete request and return response body raw byte
+func (c *Client) RawDelete(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodDelete, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
 // Signature a example of RequestMiddleware
 // sign algorithm:md5(query params + body + secret + timestamp + nonce)
 // Notice:stuff body only when HTTP METHOD is not GET.
