@@ -95,7 +95,9 @@ func (c *Client) NewRequest(method string, req *Request, reply interface{}) *res
 	request.SetQueryParamsFromValues(req.QueryParam)
 	request.SetBody(req.Body)
 	request.SetPathParams(req.PathParam)
-	request.SetResult(reply)
+	if reply != nil {
+		request.SetResult(reply)
+	}
 	if method != http.MethodGet {
 		request.SetHeader(metadata.HeaderContentType, metadata.DefaultContentTypeJson)
 	}
@@ -106,8 +108,8 @@ func (c *Client) NewRequest(method string, req *Request, reply interface{}) *res
 }
 
 // execute send http request
-func (c *Client) execute(ctx context.Context, request *resty.Request) error {
-	err := c.breakers.Do(request.URL,
+func (c *Client) execute(ctx context.Context, request *resty.Request) (reply *resty.Response, err error) {
+	err = c.breakers.Do(request.URL,
 		func() error {
 			// adjust request timeout
 			timeout := c.config.Timeout
@@ -125,8 +127,14 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 			ext.HTTPMethod.Set(span, request.Method)
 			ext.HTTPUrl.Set(span, request.URL)
-			sctx, cancel := context.WithTimeout(sctx, timeout)
 			request.SetContext(sctx)
+			// zero timeout config means never timeout
+			var cancel func()
+			if timeout > 0 {
+				sctx, cancel = context.WithTimeout(sctx, timeout)
+			} else {
+				cancel = func() {}
+			}
 			defer func() {
 				span.Finish()
 				cancel()
@@ -137,13 +145,14 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			if deadline, ok := sctx.Deadline(); ok {
 				quota = time.Until(deadline).Seconds()
 			}
-			response, err := request.Execute(request.Method, request.URL)
+			var rerr error
+			reply, rerr = request.Execute(request.Method, request.URL)
 			estatus := status.OK
-			if err != nil {
-				if uerr, ok := err.(*url.Error); ok {
-					err = uerr.Unwrap()
+			if rerr != nil {
+				if uerr, ok := rerr.(*url.Error); ok {
+					rerr = uerr.Unwrap()
 				}
-				estatus = status.ExtractContextStatus(err)
+				estatus = status.ExtractContextStatus(rerr)
 			}
 
 			if estatus.Code() != status.OK.Code() {
@@ -163,8 +172,8 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 				log.Any("body", request.Body),
 				log.Float64("quota", quota),
 				log.Float64("duration", duration.Seconds()),
-				log.Bytes("reply", response.Body()),
-				log.Int("status", response.StatusCode()),
+				log.Bytes("reply", reply.Body()),
+				log.Int("status", reply.StatusCode()),
 				log.Int("code", estatus.Code()),
 				log.String("error", estatus.Message()),
 			)
@@ -181,8 +190,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			return estatus
 		},
 		accept)
-
-	return err
+	return
 }
 
 // accept calculate request success/failure ratio
@@ -201,27 +209,63 @@ func accept(err error) bool {
 }
 
 // Get http get request
-func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) error {
+// Notice that Get only applied to JSON and XML response MIME type
+func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.NewRequest(http.MethodGet, req, reply)
-	return c.execute(ctx, request)
+	_, err = c.execute(ctx, request)
+	return
 }
 
 // Post http post request
-func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) error {
+// Notice that Post only applied to JSON and XML response MIME type
+func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.NewRequest(http.MethodPost, req, reply)
-	return c.execute(ctx, request)
+	_, err = c.execute(ctx, request)
+	return
 }
 
 // Put http put request
-func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) error {
+// Notice that Put only applied to JSON and XML response MIME type
+func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.NewRequest(http.MethodPut, req, reply)
-	return c.execute(ctx, request)
+	_, err = c.execute(ctx, request)
+	return
 }
 
 // Delete http delete request
-func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) error {
+// Notice that Delete only applied to JSON and XML response MIME type
+func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.NewRequest(http.MethodDelete, req, reply)
-	return c.execute(ctx, request)
+	_, err = c.execute(ctx, request)
+	return
+}
+
+// RawGet http get request and return response body raw byte
+func (c *Client) RawGet(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodGet, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawPost http post request and return response body raw byte
+func (c *Client) RawPost(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodPost, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawPut http put request and return response body raw byte
+func (c *Client) RawPut(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodPut, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
+}
+
+// RawDelete http delete request and return response body raw byte
+func (c *Client) RawDelete(ctx context.Context, req *Request) (reply []byte, err error) {
+	request := c.NewRequest(http.MethodDelete, req, nil)
+	resp, err := c.execute(ctx, request)
+	return resp.Body(), err
 }
 
 // Signature a example of RequestMiddleware
