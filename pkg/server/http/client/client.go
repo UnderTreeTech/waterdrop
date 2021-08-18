@@ -125,8 +125,14 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) error {
 			ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 			ext.HTTPMethod.Set(span, request.Method)
 			ext.HTTPUrl.Set(span, request.URL)
-			sctx, cancel := context.WithTimeout(sctx, timeout)
 			request.SetContext(sctx)
+			// zero timeout config means never timeout
+			var cancel func()
+			if timeout > 0 {
+				sctx, cancel = context.WithTimeout(sctx, timeout)
+			} else {
+				cancel = func() {}
+			}
 			defer func() {
 				span.Finish()
 				cancel()
