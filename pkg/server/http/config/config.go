@@ -29,7 +29,6 @@ type ClientConfig struct {
 	Timeout             time.Duration
 	SlowRequestDuration time.Duration
 
-	EnableSign  bool
 	EnableDebug bool
 
 	Key    string
