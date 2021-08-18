@@ -95,7 +95,9 @@ func (c *Client) NewRequest(method string, req *Request, reply interface{}) *res
 	request.SetQueryParamsFromValues(req.QueryParam)
 	request.SetBody(req.Body)
 	request.SetPathParams(req.PathParam)
-	request.SetResult(reply)
+	if reply != nil {
+		request.SetResult(reply)
+	}
 	if method != http.MethodGet {
 		request.SetHeader(metadata.HeaderContentType, metadata.DefaultContentTypeJson)
 	}
