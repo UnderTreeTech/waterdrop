@@ -35,8 +35,6 @@ type ServerConfig struct {
 
 	SlowRequestDuration time.Duration
 	WatchConfig         bool
-
-	EnableMetric bool
 }
 
 func DefaultServerConfig() *ServerConfig {

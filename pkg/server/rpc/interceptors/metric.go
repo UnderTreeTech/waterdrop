@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Metric metric handler
 func Metric() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		now := time.Now()
@@ -41,11 +42,10 @@ func Metric() grpc.UnaryServerInterceptor {
 
 		// call server interceptor
 		resp, err = handler(ctx, req)
-		estatus := status.ExtractStatus(err)
 
+		estatus := status.ExtractStatus(err)
 		metric.UnaryServerHandleCounter.Inc(ip, info.FullMethod, estatus.Error())
 		metric.UnaryServerReqDuration.Observe(time.Since(now).Seconds(), ip, info.FullMethod)
-
 		return
 	}
 }

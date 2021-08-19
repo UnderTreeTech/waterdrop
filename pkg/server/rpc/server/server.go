@@ -64,14 +64,14 @@ func New(cfg *config.ServerConfig) *Server {
 		MaxConnectionAge:      cfg.MaxLifeTime,
 	})
 
-	srv.Use(interceptors.RecoveryForUnaryServer(srv.config), interceptors.TraceForUnaryServer(), interceptors.LoggerForUnaryServer(srv.config))
-	if cfg.EnableMetric {
-		srv.Use(interceptors.Metric())
-	}
-
+	srv.Use(
+		interceptors.RecoveryForUnaryServer(srv.config),
+		interceptors.TraceForUnaryServer(),
+		interceptors.LoggerForUnaryServer(srv.config),
+		interceptors.Metric(),
+	)
 	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, srv.WithUnaryServerChain())
 	srv.server = grpc.NewServer(srv.serverOptions...)
-
 	return srv
 }
 
