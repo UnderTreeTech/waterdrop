@@ -25,11 +25,13 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
+// mutex distributed lock based on etcd
 type mutex struct {
 	s *concurrency.Session
 	m *concurrency.Mutex
 }
 
+// NewMutex new lock
 func (er *EtcdRegistry) NewMutex(key string, opts ...concurrency.SessionOption) (m *mutex, err error) {
 	m = &mutex{}
 
@@ -43,6 +45,7 @@ func (er *EtcdRegistry) NewMutex(key string, opts ...concurrency.SessionOption) 
 	return
 }
 
+// Lock do lock op
 func (m *mutex) Lock(ctx context.Context, timeout time.Duration) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -50,13 +53,7 @@ func (m *mutex) Lock(ctx context.Context, timeout time.Duration) (err error) {
 	return m.m.Lock(ctx)
 }
 
-func (m *mutex) TryLock(ctx context.Context, timeout time.Duration) (err error) {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	return m.m.TryLock(ctx)
-}
-
+// Unlock release locked resource
 func (m *mutex) Unlock(ctx context.Context) (err error) {
 	err = m.m.Unlock(ctx)
 	if err != nil {
