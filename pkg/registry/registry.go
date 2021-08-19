@@ -31,9 +31,11 @@ const (
 type Registry interface {
 	Register(ctx context.Context, info *ServiceInfo) error
 	DeRegister(ctx context.Context, info *ServiceInfo) error
+	List(ctx context.Context, name string, scheme string) (services []*ServiceInfo, err error)
 	Close()
 }
 
+// ServiceInfo service metadata definition
 type ServiceInfo struct {
 	// Service Name
 	Name string `json:"name"`

@@ -52,6 +52,7 @@ var (
 	schemeGRPC = "grpc"
 )
 
+// Config etcd config
 type Config struct {
 	Prefix      string
 	Endpoints   []string
@@ -61,12 +62,14 @@ type Config struct {
 	Password    string
 }
 
+// EtcdRegistry etcd registry definition
 type EtcdRegistry struct {
 	client   *clientv3.Client
 	services sync.Map
 	config   *Config
 }
 
+// New new a etcd registry
 func New(config *Config) *EtcdRegistry {
 	if nil == config {
 		config = defaultConfig
@@ -89,6 +92,7 @@ func New(config *Config) *EtcdRegistry {
 	}
 }
 
+// Register register a service metadata to etcd
 func (e *EtcdRegistry) Register(ctx context.Context, info *registry.ServiceInfo) error {
 	err := e.register(ctx, info)
 	if err != nil {
@@ -108,6 +112,7 @@ func (e *EtcdRegistry) Register(ctx context.Context, info *registry.ServiceInfo)
 	return nil
 }
 
+// register register service
 func (e *EtcdRegistry) register(ctx context.Context, info *registry.ServiceInfo) error {
 	key := e.serviceKey(info)
 	val, _ := json.Marshal(info)
@@ -128,11 +133,13 @@ func (e *EtcdRegistry) register(ctx context.Context, info *registry.ServiceInfo)
 	return nil
 }
 
+// DeRegister remove a service metadata from etcd
 func (e *EtcdRegistry) DeRegister(ctx context.Context, info *registry.ServiceInfo) error {
 	key := e.serviceKey(info)
 	return e.deRegister(ctx, key)
 }
 
+// deRegister remove service
 func (e *EtcdRegistry) deRegister(ctx context.Context, key string) error {
 	if resp, err := e.client.Delete(ctx, key); err != nil {
 		log.Errorf("etcd delete fail", log.Any("del_resp", resp), log.String("service", key), log.String("error", err.Error()))
@@ -144,6 +151,27 @@ func (e *EtcdRegistry) deRegister(ctx context.Context, key string) error {
 	return nil
 }
 
+// List list services from etcd with name and scheme
+func (e *EtcdRegistry) List(ctx context.Context, name string, scheme string) (services []*registry.ServiceInfo, err error) {
+	target := fmt.Sprintf("/%s/%s/%s", e.config.Prefix, name, scheme)
+	resp, err := e.client.Get(ctx, target, clientv3.WithPrefix())
+	if err != nil {
+		log.Errorf("etcd list fail", log.String("name", name), log.String("scheme", scheme), log.String("error", err.Error()))
+		return
+	}
+
+	for _, kv := range resp.Kvs {
+		service := &registry.ServiceInfo{}
+		if err = json.Unmarshal(kv.Value, service); err != nil {
+			log.Warnf("unmarshal response fail", log.Bytes("reply", kv.Value), log.String("error", err.Error()))
+			continue
+		}
+		services = append(services, service)
+	}
+	return
+}
+
+// Close close connection to etcd and deRegister all service info
 func (e *EtcdRegistry) Close() {
 	var wg sync.WaitGroup
 
@@ -163,6 +191,7 @@ func (e *EtcdRegistry) Close() {
 }
 
 // Resolver Segment
+// Build watch service changes
 func (e *EtcdRegistry) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	go e.watch(cc, e.config.Prefix, target.Endpoint)
 	return e, nil
@@ -177,10 +206,12 @@ func (e *EtcdRegistry) Scheme() string {
 func (e *EtcdRegistry) ResolveNow(rn resolver.ResolveNowOptions) {
 }
 
+// serviceKey service key format in etcd
 func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
 	return fmt.Sprintf("/%s/%s/%s", e.config.Prefix, info.Name, info.Addr)
 }
 
+// watch etcd changes
 func (e *EtcdRegistry) watch(cc resolver.ClientConn, prefix string, serviceName string) {
 	e.updateAddrs(cc, prefix, serviceName)
 	watchKey := fmt.Sprintf("/%s/%s/", prefix, serviceName)
@@ -195,6 +226,7 @@ func (e *EtcdRegistry) watch(cc resolver.ClientConn, prefix string, serviceName 
 	}
 }
 
+// updateAddrs update service information for grpc balancer
 func (e *EtcdRegistry) updateAddrs(cc resolver.ClientConn, prefix string, serviceName string) (err error) {
 	watchKey := fmt.Sprintf("/%s/%s/", prefix, serviceName)
 	peers, err := e.client.Get(context.Background(), watchKey, clientv3.WithPrefix())
@@ -205,7 +237,6 @@ func (e *EtcdRegistry) updateAddrs(cc resolver.ClientConn, prefix string, servic
 
 	services := e.parse(peers)
 	newAddrs := e.getAddrs(services)
-
 	if len(newAddrs) > 0 {
 		cc.UpdateState(resolver.State{Addresses: newAddrs})
 	}
@@ -213,6 +244,7 @@ func (e *EtcdRegistry) updateAddrs(cc resolver.ClientConn, prefix string, servic
 	return nil
 }
 
+// parse etcd response to service info
 func (e *EtcdRegistry) parse(resp *clientv3.GetResponse) (services []*registry.ServiceInfo) {
 	services = make([]*registry.ServiceInfo, 0)
 	for _, event := range resp.Kvs {
@@ -227,6 +259,7 @@ func (e *EtcdRegistry) parse(resp *clientv3.GetResponse) (services []*registry.S
 	return services
 }
 
+// getAddrs get addrs from grpc resolver
 func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Address {
 	addrs := make([]resolver.Address, 0, len(services))
 	for _, service := range services {
