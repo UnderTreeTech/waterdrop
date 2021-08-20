@@ -11,8 +11,22 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    steps:
 
+    services:
+      mysql:
+        # Docker Hub image
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: test
+        ports:
+          - 3306:3306
+        command:
+          - --character-set-server=utf8mb4
+          - --collation-server=utf8mb4_unicode_ci
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
+
+    steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
