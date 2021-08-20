@@ -70,6 +70,7 @@ func testTable(t *testing.T, db *DB) {
 	assert.Nil(t, err)
 	table := "CREATE TABLE IF NOT EXISTS `test` (`id` int(11) NOT NULL AUTO_INCREMENT, `name` varchar(32) NOT NULL DEFAULT '', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 	result, err := db.Exec(context.Background(), table)
+	assert.Nil(t, err)
 	id, err := result.LastInsertId()
 	assert.Zero(t, id)
 	assert.Nil(t, err)
@@ -81,6 +82,7 @@ func testTable(t *testing.T, db *DB) {
 func testExec(t *testing.T, db *DB) {
 	sql := "INSERT INTO test(name) VALUES(?)"
 	result, err := db.Exec(context.Background(), sql, "test")
+	assert.Nil(t, err)
 	id, err := result.LastInsertId()
 	assert.Equal(t, id, int64(1))
 	assert.Nil(t, err)
