@@ -26,11 +26,22 @@ jobs:
           - --collation-server=utf8mb4_unicode_ci
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
 
+      etcd:
+        # Docker Hub image
+        image: bitnami/etcd:3.5.0
+        env:
+          ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379"
+          ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+          ETCDCTL_API: "3"
+          ALLOW_NONE_AUTHENTICATION: "yes"
+        ports:
+          - 2379:2379
+
     steps:
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: 1.15.10
+        go-version: ^1.13
       id: go
 
     - name: Check out code into the Go module directory
