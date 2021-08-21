@@ -91,6 +91,8 @@ func GenerateUUID() string {
 }
 
 // Substr returns runes between start and stop [start, stop) regardless of the chars are ascii or utf8.
+// if start < 0 or start < length, it returns empty string
+// if stop < 0 or stop > length, it returns rs[start:], otherwise it returns rs[start:stop]
 func Substr(str string, start, stop int) string {
 	rs := []rune(str)
 	length := len(rs)
@@ -100,7 +102,7 @@ func Substr(str string, start, stop int) string {
 	}
 
 	if stop < 0 || stop > length {
-		return ""
+		return string(rs[start:])
 	}
 
 	return string(rs[start:stop])

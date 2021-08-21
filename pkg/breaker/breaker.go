@@ -96,13 +96,12 @@ func (bg *BreakerGroup) Get(name string) Breaker {
 // Do execute the input func and stats the breaker result
 func (bg *BreakerGroup) Do(name string, run func() error, accept func(error) bool) error {
 	breaker := bg.Get(name)
-	err := func() error {
-		if berr := breaker.Allow(); berr != nil {
-			return berr
-		}
-		return run()
-	}()
+	err := breaker.Allow()
+	if err != nil {
+		return err
+	}
 
+	err = run()
 	if accept(err) {
 		breaker.Accept()
 	} else {

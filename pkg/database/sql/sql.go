@@ -57,7 +57,7 @@ var (
 
 // Config mysql config.
 type Config struct {
-	DBName            string        //db name
+	DBName            string        // db name
 	DriverName        string        // driver name
 	DSN               string        // write data source name.
 	ReadDSN           []string      // read data source name.
