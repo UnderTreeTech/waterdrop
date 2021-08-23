@@ -66,6 +66,20 @@ func New(cfg *Config) (clnt *MinioClient, err error) {
 	return
 }
 
+// CreateBucket create a new bucket with bucketName with a context to control cancellations and timeouts
+func (mc *MinioClient) CreateBucket(ctx context.Context, bucketName string) (err error) {
+	mo := minio.MakeBucketOptions{}
+	err = mc.client.MakeBucket(ctx, bucketName, mo)
+	return
+}
+
+// ExistBucket verifies if bucket exists and you have permission to access it
+// Allows for a Context to control cancellations and timeouts
+func (mc *MinioClient) ExistBucket(ctx context.Context, bucketName string) (exist bool, err error) {
+	exist, err = mc.client.BucketExists(ctx, bucketName)
+	return
+}
+
 // PutObject creates an object in a bucket.
 //
 // You must have WRITE permissions on a bucket to create an object.
