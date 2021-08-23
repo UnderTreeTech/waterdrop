@@ -24,13 +24,13 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/lib/pq v1.8.0
+	github.com/minio/minio-go/v7 v7.0.12
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic/v7 v7.0.25
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/qiniu/qmgo v0.9.4
-	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
