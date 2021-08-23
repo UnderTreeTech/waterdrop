@@ -26,10 +26,10 @@ jobs:
         # Docker Hub image
         image: bitnami/etcd:3.5.0
         env:
-          ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379"
-          ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
-          ETCDCTL_API: "3"
-          ALLOW_NONE_AUTHENTICATION: "yes"
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+          ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+          ETCDCTL_API: 3
+          ALLOW_NONE_AUTHENTICATION: yes
         ports:
           - 2379:2379
 
