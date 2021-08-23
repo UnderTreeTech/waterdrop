@@ -39,14 +39,14 @@ jobs:
       with:
         go-version: ^1.13
       id: go
-      
+
     - name: Setup minio
-       run:|
-          docker run -d -p 9000:9000 --name minio \
-                     -e "MINIO_ACCESS_KEY=XMFMOKB2FJWA0I9JIR62" \
-                     -e "MINIO_SECRET_KEY=aMRKmxoRcb+Ezr5CmOmFAqFwYWPrEFA7UdtWWWOl" \
-                     -v /tmp/data:/data \
-                     minio/console:latest server /data
+      run: |
+         docker run -d -p 9000:9000 --name minio \
+              -e "MINIO_ACCESS_KEY=XMFMOKB2FJWA0I9JIR62" \
+              -e "MINIO_SECRET_KEY=aMRKmxoRcb+Ezr5CmOmFAqFwYWPrEFA7UdtWWWOl" \
+              -v /tmp:/data \
+              minio/console:latest server /data
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
