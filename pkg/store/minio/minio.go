@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -19,15 +18,19 @@ type Config struct {
 	// object get external endpoint.
 	// it may be a domain or ip+port address
 	ExternalEndpoint string
-	Region           string
+	// bucket region, default empty string
+	Region string
 	// minio access key
 	AccessKey string
 	// minio secret key
 	SecretKey string
+	// http or https, default http
+	Secure bool
 	// file url expire time. Remember that expired time can't greater than 7 days
 	ExpireTime time.Duration
 }
 
+// MinioClient minio client struct
 type MinioClient struct {
 	client *minio.Client
 	config *Config
@@ -36,10 +39,9 @@ type MinioClient struct {
 // New returns MinioClient instance, it default use S3 V2 signature
 // because it will be override if endpoint is S3 or GCS schema
 func New(cfg *Config) (clnt *MinioClient, err error) {
-	secure := strings.HasPrefix(cfg.InternalEndpoint, "https")
 	client, err := minio.New(cfg.InternalEndpoint, &minio.Options{
 		Creds:  credentials.NewStaticV2(cfg.AccessKey, cfg.SecretKey, ""),
-		Secure: secure,
+		Secure: cfg.Secure,
 	})
 	if err != nil {
 		return
