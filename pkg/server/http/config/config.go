@@ -47,7 +47,7 @@ type ServerConfig struct {
 
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
-		Addr:                "0.0.0.0:9000",
+		Addr:                "0.0.0.0:10000",
 		Mode:                gin.ReleaseMode,
 		Timeout:             time.Millisecond * 1000,
 		SlowRequestDuration: 500 * time.Millisecond,

@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 
 func TestStart(t *testing.T) {
 	net := srv.Start()
-	assert.Equal(t, "[::]:9000", net.String())
+	assert.Equal(t, "[::]:10000", net.String())
 	assert.Equal(t, "tcp", net.Network())
 }
 
