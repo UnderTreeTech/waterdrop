@@ -83,11 +83,12 @@ func (mc *MinioClient) PutObject(ctx context.Context, bucketName, objectName str
 		po.ContentType = store.TypeByExtension(ext[0])
 	}
 
-	if _, err = mc.client.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{}); err != nil {
+	if _, err = mc.client.PutObject(ctx, bucketName, objectName, reader, objectSize, po); err != nil {
 		return
 	}
 
-	return mc.GetFileUrl(ctx, bucketName, objectName)
+	fileUrl, err = mc.GetFileUrl(ctx, bucketName, objectName)
+	return
 }
 
 // FPutObject create an object in a bucket, with contents from file at filePath
@@ -101,7 +102,8 @@ func (mc *MinioClient) FPutObject(ctx context.Context, bucketName, objectName, p
 		return
 	}
 
-	return mc.GetFileUrl(ctx, bucketName, objectName)
+	fileUrl, err = mc.GetFileUrl(ctx, bucketName, objectName)
+	return
 }
 
 // GetFileUrl generate presigned get object url
