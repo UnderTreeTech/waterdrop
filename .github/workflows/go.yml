@@ -32,6 +32,17 @@ jobs:
           ALLOW_NONE_AUTHENTICATION: "yes"
         ports:
           - 2379:2379
+         
+      minio:
+        # Docker Hub image
+        image: minio/console:latest
+        env:
+          MINIO_ACCESS_KEY: "XMFMOKB2FJWA0I9JIR62"
+          MINIO_SECRET_KEY: "aMRKmxoRcb+Ezr5CmOmFAqFwYWPrEFA7UdtWWWOl"
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: --entrypoint "minio server /data" --health-cmd "curl -f http://localhost:9000/minio/health/live" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
     - name: Set up Go 1.x
