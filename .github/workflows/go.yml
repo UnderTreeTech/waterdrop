@@ -40,7 +40,7 @@ jobs:
               -e "MINIO_ACCESS_KEY=XMFMOKB2FJWA0I9JIR62" \
               -e "MINIO_SECRET_KEY=aMRKmxoRcb+Ezr5CmOmFAqFwYWPrEFA7UdtWWWOl" \
               -v /tmp:/data \
-              minio/console:latest server /data
+              minio/minio:latest server /data
 
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
