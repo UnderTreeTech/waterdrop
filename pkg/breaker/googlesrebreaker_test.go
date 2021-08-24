@@ -42,7 +42,7 @@ func TestBreakerAccept(t *testing.T) {
 func TestBreakerReject(t *testing.T) {
 	defer log.New(nil).Sync()
 	breaker := bg.Get("breaker")
-	for i := 0; i < 4000; i++ {
+	for i := 0; i < 40000; i++ {
 		breaker.Reject()
 	}
 	err := breaker.Allow()
