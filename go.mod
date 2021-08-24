@@ -11,11 +11,11 @@ require (
 	github.com/apache/rocketmq-client-go/v2 v2.0.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-playground/validator/v10 v10.4.1
+	github.com/go-redis/redis/v8 v8.11.0
 	github.com/go-resty/resty/v2 v2.4.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/mock v1.4.4 // indirect
@@ -28,6 +28,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic/v7 v7.0.25
+	github.com/onsi/gomega v1.15.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/qiniu/qmgo v0.9.4
@@ -47,5 +48,4 @@ require (
 	google.golang.org/grpc v1.39.1
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/fsnotify.v1 v1.4.7
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
