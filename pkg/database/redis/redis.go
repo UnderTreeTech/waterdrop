@@ -20,168 +20,174 @@ package redis
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+
+	"github.com/go-redis/redis/v8"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 	"github.com/opentracing/opentracing-go/ext"
-
-	"github.com/gomodule/redigo/redis"
 )
 
+const (
+	defaultSlowQueryTime = time.Millisecond * 100
+	defaultMinIdleConns  = 10
+)
+
+var (
+	// reference refer to current redis config
+	reference *Config
+	// addrErr redis address error
+	addrErr = errors.New("you must assign at least one redis address")
+	// nodeErr node mode error
+	nodeErr = errors.New("node mode only support one address")
+	// modeErr redis deploy mode error
+	modeErr = errors.New("unsupported redis mode")
+)
+
+// Config redis configs
 type Config struct {
 	DBName        string
 	DBIndex       int
-	Addr          string
+	Addr          []string
+	DBAddr        string
 	Password      string
-	MaxActive     int
-	MaxIdle       int
-	IdleTimeout   time.Duration
+	Type          string
+	MasterName    string
+	MinIdleConns  int
 	DialTimeout   time.Duration
 	ReadTimeout   time.Duration
 	WriteTimeout  time.Duration
 	SlowOpTimeout time.Duration
 }
 
+// Redis redis instance
 type Redis struct {
-	pool *redis.Pool
-	conf *Config
+	client   redis.UniversalClient
+	config   *Config
+	breakers *breaker.BreakerGroup
 }
 
-func New(conf *Config) *Redis {
-	p := &redis.Pool{
-		// Other pool configuration not shown in this example.
-		Dial: func() (redis.Conn, error) {
-			opts := make([]redis.DialOption, 0)
-			opts = append(opts,
-				redis.DialReadTimeout(conf.ReadTimeout),
-				redis.DialWriteTimeout(conf.WriteTimeout),
-				redis.DialConnectTimeout(conf.DialTimeout),
-				redis.DialDatabase(conf.DBIndex),
-				redis.DialPassword(conf.Password),
-			)
-			conn, err := redis.Dial("tcp", conf.Addr, opts...)
-			if err != nil {
-				return nil, err
-			}
-			return conn, nil
-		},
-		MaxIdle:     conf.MaxIdle,
-		MaxActive:   conf.MaxActive,
-		IdleTimeout: conf.IdleTimeout,
+// New returns a redis instance according deploy mode. There are three deploy mode.
+// node: standalone
+// sentinel: master-slave failover sentinel
+// cluster: cluster mode
+func New(cfg *Config) (rdb *Redis, err error) {
+	if len(cfg.Addr) <= 0 {
+		return nil, addrErr
 	}
 
-	return &Redis{
-		pool: p,
-		conf: conf,
-	}
-}
-
-func (r *Redis) Do(ctx context.Context, commandName string, args ...interface{}) (interface{}, error) {
-	statement := r.getStatement(commandName, args...)
-	span, ctx := trace.StartSpanFromContext(ctx, "redis."+commandName)
-	span = span.SetTag("db.index", r.conf.DBIndex)
-	ext.Component.Set(span, "redis")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, r.conf.Addr)
-	ext.DBInstance.Set(span, r.conf.DBName)
-	ext.DBStatement.Set(span, statement)
-
-	conn, err := r.pool.GetContext(ctx)
-	if err != nil {
-		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, commandName, err.Error())
-		return nil, err
+	if cfg.SlowOpTimeout <= 0 {
+		cfg.SlowOpTimeout = defaultSlowQueryTime
 	}
 
-	now := time.Now()
-	defer func() {
-		conn.Close()
-		span.Finish()
-		r.slowLog(ctx, statement, now)
-	}()
-
-	reply, err := conn.Do(commandName, args...)
-	if err != nil {
-		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, commandName, err.Error())
+	if cfg.MinIdleConns <= 0 {
+		cfg.MinIdleConns = defaultMinIdleConns
 	}
 
-	metric.RedisClientReqDuration.Observe(time.Since(now).Seconds(), r.conf.DBName, r.conf.Addr, commandName)
-
-	return reply, err
-}
-
-func (r *Redis) Close() error {
-	return r.pool.Close()
-}
-
-func (r *Redis) Ping(ctx context.Context) error {
-	if _, err := r.Do(ctx, "SET", "ping", "pong"); err != nil {
-		log.Error(ctx, "ping redis fail", log.String("error", err.Error()))
+	if cfg.DBName == "" {
+		cfg.DBName = "default"
 	}
-	return nil
-}
 
-func (r *Redis) getStatement(commandName string, args ...interface{}) (res string) {
-	res = commandName
-	if len(args) > 0 {
-		res = fmt.Sprintf("%s %v", commandName, args[0])
+	cfg.DBAddr = strings.Join(cfg.Addr, "")
+	opts := &redis.UniversalOptions{}
+	opts.DB = cfg.DBIndex
+	opts.Addrs = cfg.Addr
+	opts.Password = cfg.Password
+	opts.MinIdleConns = cfg.MinIdleConns
+	opts.DialTimeout = cfg.DialTimeout
+	opts.ReadTimeout = cfg.ReadTimeout
+	opts.WriteTimeout = cfg.WriteTimeout
+
+	switch cfg.Type {
+	case "node":
+		if len(cfg.Addr) > 1 {
+			return nil, nodeErr
+		}
+	case "sentinel":
+		opts.MasterName = cfg.MasterName
+	case "cluster":
+	default:
+		return nil, modeErr
+	}
+
+	reference = cfg
+	uc := redis.NewUniversalClient(opts)
+	uc.AddHook(redisHook{})
+	rdb = &Redis{
+		client:   uc,
+		config:   cfg,
+		breakers: breaker.NewBreakerGroup(),
 	}
 	return
 }
 
-func (r *Redis) slowLog(ctx context.Context, statement string, now time.Time) {
-	elapse := time.Since(now)
-	if elapse > r.conf.SlowOpTimeout {
-		log.Warn(ctx, "slow-redis-query", log.String("statement", statement), log.Duration("op_time", elapse))
-	}
+// accept check request success or not
+func accept(err error) bool {
+	return err == nil
 }
 
-func (r *Redis) Pipeline(ctx context.Context, commands []string, args [][]interface{}) ([]interface{}, error) {
-	span, ctx := trace.StartSpanFromContext(ctx, "redis.pipeline")
-	span = span.SetTag("db.index", r.conf.DBIndex)
+type (
+	// timeKey time context key
+	timeKey struct{}
+	// redisHook to hack in trace and metric stats
+	redisHook struct{}
+)
+
+// BeforeProcess pre handler before process
+func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
+	// init span
+	span, ctx := trace.StartSpanFromContext(ctx, cmd.Name())
+	span = span.SetTag("db.index", reference.DBIndex)
 	ext.Component.Set(span, "redis")
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, r.conf.Addr)
-	ext.DBInstance.Set(span, r.conf.DBName)
+	ext.PeerAddress.Set(span, reference.DBAddr)
+	ext.DBInstance.Set(span, reference.DBName)
 
-	conn, err := r.pool.GetContext(ctx)
-	if err != nil {
-		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, "pipeline", err.Error())
-		return nil, err
+	// record current time
+	start := time.Now()
+	ctx = context.WithValue(ctx, timeKey{}, start)
+
+	return ctx, nil
+}
+
+// AfterProcess post handler after process
+func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
+	// check if it's a slow query
+	start := ctx.Value(timeKey{}).(time.Time)
+	elapse := time.Since(start)
+	if elapse > reference.SlowOpTimeout {
+		log.Warn(ctx, "slow-redis-query", log.String("statement", cmd.String()), log.Duration("op_time", elapse))
 	}
 
-	now := time.Now()
-	defer func() {
-		conn.Close()
+	// finish span
+	if span := trace.SpanFromContext(ctx); span != nil {
 		span.Finish()
-		r.slowLog(ctx, "pipeline", now)
-	}()
-
-	for index, command := range commands {
-		err = conn.Send(command, args[index]...)
-		if err != nil {
-			return nil, err
-		}
 	}
 
-	err = conn.Flush()
-	if err != nil {
-		metric.RedisClientErrCounter.Inc(r.conf.DBName, r.conf.Addr, "pipeline", err.Error())
-		return nil, err
+	// metric query
+	if cmd.Err() != nil {
+		metric.RedisClientErrCounter.Inc(reference.DBName, reference.DBAddr, cmd.Name(), cmd.Err().Error())
+	} else {
+		metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.DBAddr, cmd.Name())
 	}
 
-	replyNum := len(commands)
-	replies := make([]interface{}, replyNum)
-	for i := 0; i < replyNum; i++ {
-		reply, _ := conn.Receive()
-		replies[i] = reply
-	}
+	return nil
+}
 
-	metric.RedisClientReqDuration.Observe(time.Since(now).Seconds(), r.conf.DBName, r.conf.Addr, "pipeline")
+// BeforeProcessPipeline pre handler before process pipeline
+func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
+	return ctx, nil
+}
 
-	return replies, nil
+// AfterProcessPipeline post handler after process pipeline
+func (r redisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
+	return nil
 }
