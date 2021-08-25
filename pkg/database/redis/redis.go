@@ -131,7 +131,7 @@ func New(cfg *Config) (rdb *Redis, err error) {
 
 // accept check request success or not
 func accept(err error) bool {
-	return err == nil
+	return err == nil || err == redis.Nil
 }
 
 type (
