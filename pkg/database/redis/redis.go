@@ -139,6 +139,9 @@ type (
 	timeKey struct{}
 	// redisHook to hack in trace and metric stats
 	redisHook struct{}
+
+	// Pipeliner is an alias of redis.Pipeliner
+	Pipeliner = redis.Pipeliner
 )
 
 // BeforeProcess pre handler before process
@@ -154,7 +157,6 @@ func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.
 	// record current time
 	start := time.Now()
 	ctx = context.WithValue(ctx, timeKey{}, start)
-
 	return ctx, nil
 }
 
@@ -173,21 +175,55 @@ func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	}
 
 	// metric query
-	if cmd.Err() != nil {
+	if cmd.Err() != nil && cmd.Err() != redis.Nil {
 		metric.RedisClientErrCounter.Inc(reference.DBName, reference.DBAddr, cmd.Name(), cmd.Err().Error())
 	} else {
 		metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.DBAddr, cmd.Name())
 	}
-
 	return nil
 }
 
 // BeforeProcessPipeline pre handler before process pipeline
 func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
+	// init span
+	span, ctx := trace.StartSpanFromContext(ctx, "pipeline")
+	span = span.SetTag("db.index", reference.DBIndex)
+	ext.Component.Set(span, "redis")
+	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+	ext.PeerAddress.Set(span, reference.DBAddr)
+	ext.DBInstance.Set(span, reference.DBName)
+
+	// record current time
+	start := time.Now()
+	ctx = context.WithValue(ctx, timeKey{}, start)
 	return ctx, nil
 }
 
 // AfterProcessPipeline post handler after process pipeline
 func (r redisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
+	// check if it's a slow query
+	start := ctx.Value(timeKey{}).(time.Time)
+	elapse := time.Since(start)
+	var queryName string
+	for _, cmd := range cmds {
+		queryName += cmd.String()
+	}
+	if elapse > reference.SlowOpTimeout {
+		log.Warn(ctx, "slow-redis-query", log.String("statement", queryName), log.Duration("op_time", elapse))
+	}
+
+	// finish span
+	if span := trace.SpanFromContext(ctx); span != nil {
+		span.Finish()
+	}
+
+	// metric pipeline
+	for _, cmd := range cmds {
+		if cmd.Err() != nil && cmd.Err() != redis.Nil {
+			metric.RedisClientErrCounter.Inc(reference.DBName, reference.DBAddr, cmd.Name(), cmd.Err().Error())
+			break
+		}
+	}
+	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.DBAddr, queryName)
 	return nil
 }
