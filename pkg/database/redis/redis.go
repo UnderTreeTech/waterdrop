@@ -54,17 +54,29 @@ var (
 
 // Config redis configs
 type Config struct {
-	DBName        string
-	DBIndex       int
-	Addr          []string
-	DBAddr        string
-	Password      string
-	Type          string
-	MasterName    string
-	MinIdleConns  int
-	DialTimeout   time.Duration
-	ReadTimeout   time.Duration
-	WriteTimeout  time.Duration
+	// DBName metric name
+	DBName string
+	// DBIndex redis db index
+	DBIndex int
+	// Addr redis address
+	Addr []string
+	// dbAddr metric addr
+	dbAddr string
+	// Password auth password
+	Password string
+	// DeployMode deploy mode
+	DeployMode string
+	// MasterName master name for sentinel mode
+	MasterName string
+	// MinIdleConns min idle connections
+	MinIdleConns int
+	// DialTimeout dial redis timeout
+	DialTimeout time.Duration
+	// ReadTimeout read time out
+	ReadTimeout time.Duration
+	// WriteTimeout write time out
+	WriteTimeout time.Duration
+	// SlowOpTimeout slow query threshold
 	SlowOpTimeout time.Duration
 }
 
@@ -74,6 +86,23 @@ type Redis struct {
 	config   *Config
 	breakers *breaker.BreakerGroup
 }
+
+type (
+	// Pipeliner is an alias of redis.Pipeliner
+	Pipeliner = redis.Pipeliner
+	// IntCmd is an alias of redis.IntCmd
+	IntCmd = redis.IntCmd
+	// FloatCmd is an alias of redis.FloatCmd
+	FloatCmd = redis.FloatCmd
+	// StringCmd is an alias of redis.StringCmd
+	StringCmd = redis.StringCmd
+	// StringStringMapCmd is an alias of redis.StringStringMapCmd
+	StringStringMapCmd = redis.StringStringMapCmd
+	// StringSliceCmd is an alias of redis.StringSliceCmd
+	StringSliceCmd = redis.StringSliceCmd
+	// IntSliceCmd is an alias of redis.IntSliceCmd
+	IntSliceCmd = redis.IntSliceCmd
+)
 
 // New returns a redis instance according deploy mode. There are three deploy mode.
 // node: standalone
@@ -96,7 +125,7 @@ func New(cfg *Config) (rdb *Redis, err error) {
 		cfg.DBName = "default"
 	}
 
-	cfg.DBAddr = strings.Join(cfg.Addr, "")
+	cfg.dbAddr = strings.Join(cfg.Addr, "")
 	opts := &redis.UniversalOptions{}
 	opts.DB = cfg.DBIndex
 	opts.Addrs = cfg.Addr
@@ -106,7 +135,7 @@ func New(cfg *Config) (rdb *Redis, err error) {
 	opts.ReadTimeout = cfg.ReadTimeout
 	opts.WriteTimeout = cfg.WriteTimeout
 
-	switch cfg.Type {
+	switch cfg.DeployMode {
 	case "node":
 		if len(cfg.Addr) > 1 {
 			return nil, nodeErr
@@ -139,9 +168,6 @@ type (
 	timeKey struct{}
 	// redisHook to hack in trace and metric stats
 	redisHook struct{}
-
-	// Pipeliner is an alias of redis.Pipeliner
-	Pipeliner = redis.Pipeliner
 )
 
 // BeforeProcess pre handler before process
@@ -151,7 +177,7 @@ func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.
 	span = span.SetTag("db.index", reference.DBIndex)
 	ext.Component.Set(span, "redis")
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, reference.DBAddr)
+	ext.PeerAddress.Set(span, reference.dbAddr)
 	ext.DBInstance.Set(span, reference.DBName)
 
 	// record current time
@@ -174,12 +200,16 @@ func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 		span.Finish()
 	}
 
-	// metric query
-	if cmd.Err() != nil && cmd.Err() != redis.Nil {
-		metric.RedisClientErrCounter.Inc(reference.DBName, reference.DBAddr, cmd.Name(), cmd.Err().Error())
+	// metric error and hit/miss
+	if cmd.Err() != nil {
+		metric.RedisMissCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
+		if cmd.Err() != redis.Nil {
+			metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
+		}
 	} else {
-		metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.DBAddr, cmd.Name())
+		metric.RedisHitCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
 	}
+	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, cmd.Name())
 	return nil
 }
 
@@ -190,7 +220,7 @@ func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder
 	span = span.SetTag("db.index", reference.DBIndex)
 	ext.Component.Set(span, "redis")
 	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, reference.DBAddr)
+	ext.PeerAddress.Set(span, reference.dbAddr)
 	ext.DBInstance.Set(span, reference.DBName)
 
 	// record current time
@@ -204,10 +234,7 @@ func (r redisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder)
 	// check if it's a slow query
 	start := ctx.Value(timeKey{}).(time.Time)
 	elapse := time.Since(start)
-	var queryName string
-	for _, cmd := range cmds {
-		queryName += cmd.String()
-	}
+	queryName := "pipeline"
 	if elapse > reference.SlowOpTimeout {
 		log.Warn(ctx, "slow-redis-query", log.String("statement", queryName), log.Duration("op_time", elapse))
 	}
@@ -220,10 +247,10 @@ func (r redisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder)
 	// metric pipeline
 	for _, cmd := range cmds {
 		if cmd.Err() != nil && cmd.Err() != redis.Nil {
-			metric.RedisClientErrCounter.Inc(reference.DBName, reference.DBAddr, cmd.Name(), cmd.Err().Error())
+			metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
 			break
 		}
 	}
-	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.DBAddr, queryName)
+	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, queryName)
 	return nil
 }
