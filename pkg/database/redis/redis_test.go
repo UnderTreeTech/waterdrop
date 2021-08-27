@@ -193,6 +193,7 @@ func TestSet(t *testing.T) {
 	_, err = r.SRandMember(ctx, s2)
 	assert.Nil(t, err)
 	_, err = r.SRandMemberN(ctx, s2, 2)
+	assert.Nil(t, err)
 	num, err = r.SRem(ctx, s2, "github")
 	assert.Nil(t, err)
 	assert.EqualValues(t, num, 1)
