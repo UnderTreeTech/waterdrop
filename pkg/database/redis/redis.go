@@ -39,6 +39,8 @@ import (
 const (
 	defaultSlowQueryTime = time.Millisecond * 100
 	defaultMinIdleConns  = 10
+	// Nil is an alias of redis.Nil
+	Nil = redis.Nil
 )
 
 var (
@@ -87,7 +89,19 @@ type Redis struct {
 	breakers *breaker.BreakerGroup
 }
 
+// Pair zset pair element
+type Pair struct {
+	Member string
+	Score  int64
+}
+
 type (
+	// Z is an alias of redis.Z
+	Z = redis.Z
+	// ZStore is an alias of redis.ZStore
+	ZStore = redis.ZStore
+	// ZRangeBy is an alias of redis.ZRangeBy
+	ZRangeBy = redis.ZRangeBy
 	// Pipeliner is an alias of redis.Pipeliner
 	Pipeliner = redis.Pipeliner
 	// IntCmd is an alias of redis.IntCmd
