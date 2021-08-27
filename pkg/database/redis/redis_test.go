@@ -68,7 +68,7 @@ func TestGetSet(t *testing.T) {
 	vals, err := r.MGet(ctx, []string{"hello", "db", "language", "framework", "github"}...)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, vals, []string{"waterdrop", "golang", "redis", "world", ""})
-	_, err = r.Del(ctx, "framework", "langauge", "db", "hello")
+	_, err = r.Del(ctx, "framework", "language", "db", "hello")
 	assert.Nil(t, err)
 }
 
@@ -269,8 +269,8 @@ func TestZSet(t *testing.T) {
 			Score:  3,
 		},
 	})
-	num, err = r.ZRank(ctx, z1, "wolrd")
-	assert.NotNil(t, err)
+	num, err = r.ZRank(ctx, z1, "world")
+	assert.Nil(t, err)
 	assert.Zero(t, num)
 	svals, err = r.ZRevRange(ctx, z1, 0, -1)
 	assert.Nil(t, err)
