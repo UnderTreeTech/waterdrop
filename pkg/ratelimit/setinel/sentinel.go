@@ -31,6 +31,7 @@ import (
 	"github.com/alibaba/sentinel-golang/core/flow"
 )
 
+// Config sentinel polices and config
 type Config struct {
 	AppName   string
 	LogPath   string
@@ -38,6 +39,7 @@ type Config struct {
 	RulePath  string
 }
 
+// InitSentinel init sentinel by config
 func InitSentinel(config *Config) error {
 	if config.RulePath != "" {
 		var rules []*flow.Rule

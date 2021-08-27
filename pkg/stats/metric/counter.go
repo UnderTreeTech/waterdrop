@@ -20,6 +20,7 @@ package metric
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// CounterVecOpts
 type CounterVecOpts struct {
 	Namespace string
 	Subsystem string
@@ -32,6 +33,7 @@ type counterVec struct {
 	*prometheus.CounterVec
 }
 
+// NewCounterVec returns a CounterVecOpts instance
 func NewCounterVec(opt *CounterVecOpts) *counterVec {
 	vector := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -45,10 +47,12 @@ func NewCounterVec(opt *CounterVecOpts) *counterVec {
 	return &counterVec{CounterVec: vector}
 }
 
+// Inc increments the counter by 1
 func (c *counterVec) Inc(labels ...string) {
 	c.WithLabelValues(labels...).Inc()
 }
 
+// Add adds the given value to the counter. It panics if the value is < 0
 func (c *counterVec) Add(v float64, labels ...string) {
 	c.WithLabelValues(labels...).Add(v)
 }

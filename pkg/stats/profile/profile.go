@@ -25,6 +25,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterProfile register profile handler
 func RegisterProfile(engine *gin.Engine) {
 	perf := engine.Group("/debug/profile")
 	{
@@ -42,6 +43,7 @@ func RegisterProfile(engine *gin.Engine) {
 	}
 }
 
+// profileHandler performance handler
 func profileHandler(handler http.HandlerFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		handler.ServeHTTP(ctx.Writer, ctx.Request)

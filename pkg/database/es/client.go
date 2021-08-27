@@ -24,6 +24,7 @@ import (
 	es7 "github.com/olivere/elastic/v7"
 )
 
+// Config client config
 type Config struct {
 	Username string
 	Password string
@@ -33,12 +34,13 @@ type Config struct {
 	Plugins  []string
 }
 
+// Client es client struct
 type Client struct {
 	*es7.Client
 	*Config
 }
 
-// NewClient returns es7 client pointer
+// NewClient returns es7 client instance
 func NewClient(config *Config) *Client {
 	if "" == config.Schema {
 		config.Schema = "http"

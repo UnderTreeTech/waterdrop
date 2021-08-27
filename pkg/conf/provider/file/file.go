@@ -27,27 +27,33 @@ import (
 	fsnotify "gopkg.in/fsnotify.v1"
 )
 
+// fileProvider file data source
 type fileProvider struct {
 	path  string
 	watch bool
 }
 
+// NewFileProvider returns a fileProvider instance
 func NewFileProvider(path string, watch bool) *fileProvider {
 	return &fileProvider{path: filepath.Clean(path), watch: watch}
 }
 
+// IsEnableWatch check if enable watch file changes
 func (f *fileProvider) IsEnableWatch() bool {
 	return f.watch
 }
 
+// SetEnableWatch enable watch file changes
 func (f *fileProvider) SetEnableWatch(enable bool) {
 	f.watch = enable
 }
 
+// ReadBytes read file to bytes
 func (f *fileProvider) ReadBytes() ([]byte, error) {
 	return ioutil.ReadFile(f.path)
 }
 
+// Watch watch file changes
 func (f *fileProvider) Watch(cb func()) error {
 	// Resolve symlinks and save the original path so that changes to symlinks
 	// can be detected.

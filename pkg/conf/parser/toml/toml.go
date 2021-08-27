@@ -27,10 +27,12 @@ func NewTOMLParser() TOML {
 	return parser
 }
 
+// Marshal marshal TOML to bytes
 func (t TOML) Marshal(m map[string]interface{}) ([]byte, error) {
 	return nil, nil
 }
 
+// Unmarshal unmarshal input bytes to map[string]interface{}
 func (t TOML) Unmarshal(b []byte) (map[string]interface{}, error) {
 	if err := toml.Unmarshal(b, &t); err != nil {
 		return nil, err

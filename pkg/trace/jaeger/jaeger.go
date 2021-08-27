@@ -32,7 +32,7 @@ import (
 	jconfig "github.com/uber/jaeger-client-go/config"
 )
 
-// Config ...
+// JaegerConfig
 type JaegerConfig struct {
 	ServiceName      string
 	Sampler          *jconfig.SamplerConfig
@@ -41,6 +41,7 @@ type JaegerConfig struct {
 	options          []jconfig.Option
 }
 
+// Config
 type Config struct {
 	ServiceName      string
 	EnableRPCMetrics bool
@@ -79,6 +80,7 @@ func defaultJaegerConfig() *JaegerConfig {
 	}
 }
 
+// WithOption apply jaeger option
 func (jc *JaegerConfig) WithOption(options ...jconfig.Option) *JaegerConfig {
 	if jc.options == nil {
 		jc.options = make([]jconfig.Option, 0)
@@ -103,6 +105,7 @@ func newJaegerClient(traceConf *JaegerConfig) (opentracing.Tracer, func()) {
 	return tracer, func() { closer.Close() }
 }
 
+// Init init jaeger tracer
 func Init() func() {
 	traceConf := &JaegerConfig{}
 	jconf := &Config{}

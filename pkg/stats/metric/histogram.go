@@ -20,6 +20,7 @@ package metric
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// HistogramVecOpts
 type HistogramVecOpts struct {
 	Namespace string
 	Subsystem string
@@ -33,6 +34,7 @@ type histogramVec struct {
 	*prometheus.HistogramVec
 }
 
+// NewHistogramVec returns a HistogramVecOpts instance
 func NewHistogramVec(opt *HistogramVecOpts) *histogramVec {
 	vector := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -47,6 +49,7 @@ func NewHistogramVec(opt *HistogramVecOpts) *histogramVec {
 	return &histogramVec{HistogramVec: vector}
 }
 
+// Observe add observations to Histogram.
 func (h *histogramVec) Observe(v float64, labels ...string) {
 	h.WithLabelValues(labels...).Observe(v)
 }

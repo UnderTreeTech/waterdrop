@@ -59,6 +59,7 @@ var (
 	UndefinedErr       = add(1000, "未知错误")
 )
 
+// New returns a Status instance
 func New(code int, msg string) *Status {
 	if code < 0 {
 		panic(fmt.Sprintf("status code must be greater than zero"))

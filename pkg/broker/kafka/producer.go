@@ -33,6 +33,7 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+// ProducerConfig kafka producer config
 type ProducerConfig struct {
 	Addr  []string
 	Topic []string
@@ -51,6 +52,7 @@ type ProducerConfig struct {
 	ClientID string
 }
 
+// SyncProducer send message sync
 type SyncProducer struct {
 	producer sarama.SyncProducer
 	config   *ProducerConfig
@@ -58,6 +60,7 @@ type SyncProducer struct {
 	interceptors []sarama.ProducerInterceptor
 }
 
+// NewSyncProducer returns a SyncProducer instance
 func NewSyncProducer(config *ProducerConfig) *SyncProducer {
 	sconfig := newKafkaProducerConfig(config)
 	producer, err := sarama.NewSyncProducer(config.Addr, sconfig)
@@ -92,6 +95,7 @@ func newKafkaProducerConfig(config *ProducerConfig) *sarama.Config {
 	return sconfig
 }
 
+// SendSyncMsg send message sync
 func (sp *SyncProducer) SendSyncMsg(ctx context.Context, content string) error {
 	for _, topic := range sp.config.Topic {
 		now := time.Now()
@@ -140,6 +144,7 @@ func (sp *SyncProducer) SendSyncMsg(ctx context.Context, content string) error {
 	return nil
 }
 
+// Close close producer
 func (sp *SyncProducer) Close() error {
 	return sp.producer.Close()
 }

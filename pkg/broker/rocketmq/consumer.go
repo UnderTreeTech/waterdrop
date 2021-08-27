@@ -28,6 +28,7 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
+// ConsumerConfig RocketMQ consumer config
 type ConsumerConfig struct {
 	Endpoint  []string
 	AccessKey string
@@ -42,11 +43,13 @@ type ConsumerConfig struct {
 	interceptors []primitive.Interceptor
 }
 
+// PushConsumer push consumer mode
 type PushConsumer struct {
 	consumer rocketmq.PushConsumer
 	config   *ConsumerConfig
 }
 
+// NewPushConsumer returns a PushConsumer instance
 func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 	var credentials = primitive.Credentials{
 		AccessKey: config.AccessKey,
@@ -75,14 +78,17 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 	return pc
 }
 
+// Start start consumer
 func (pc *PushConsumer) Start() error {
 	return pc.consumer.Start()
 }
 
-func (pc *PushConsumer) Shutdown() error {
+// Close close consumer
+func (pc *PushConsumer) Close() error {
 	return pc.consumer.Shutdown()
 }
 
+// Subscribe subscribe topic
 func (pc *PushConsumer) Subscribe(cb func(context.Context, *primitive.MessageExt) error) *PushConsumer {
 	selector := consumer.MessageSelector{
 		Type:       consumer.TAG,
