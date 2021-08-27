@@ -96,6 +96,7 @@ func (r *Redis) forceUnLock(ctx context.Context, key string) (err error) {
 }
 
 // Lock lock resource
+// default lock 1000ms and retry 3 times, retry delay is 15ms
 func (r *Redis) Lock(ctx context.Context, key string, expireTime ...int) (locked bool, lockValue string, err error) {
 	lockTime := _lockTime
 	if len(expireTime) > 0 {
