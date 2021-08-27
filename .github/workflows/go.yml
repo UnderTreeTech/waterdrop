@@ -12,16 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      mysql:
-        # Docker Hub image
-        image: mysql:5.7
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: test
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
-
       etcd:
         # Docker Hub image
         image: bitnami/etcd:3.5.0
@@ -32,6 +22,25 @@ jobs:
           ALLOW_NONE_AUTHENTICATION: yes
         ports:
           - 2379:2379
+
+      redis:
+        # Docker Hub image
+        image: redis:5.0.13
+        ports:
+          - 6379:6379
+        # Set health checks to wait until redis has started
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5 --health-retries=10
+
+      mysql:
+        # Docker Hub image
+        image: mysql:5.7
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: test
+        ports:
+          - 3306:3306
+        # Set health checks to wait until redis has started
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
     - name: Set up minio
