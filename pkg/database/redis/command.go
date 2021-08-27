@@ -29,7 +29,7 @@ import (
 )
 
 // Close closes the client, releasing any open resources
-func (r *Redis) Close(ctx context.Context) (err error) {
+func (r *Redis) Close() (err error) {
 	err = r.client.Close()
 	return
 }

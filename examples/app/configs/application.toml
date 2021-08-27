@@ -82,10 +82,9 @@
 [redis]
     dbName = "saas-test"
     dbIndex = 0
-    addr = "127.0.0.1:6379"
-    password = ""
-    maxIdle = 5
-    maxActive = 10
+    addr = ["127.0.0.1:6379"]
+    deployMode = "node"
+    minIdleConns = 5
     dialTimeout = "1s"
     readTimeout = "1s"
     writeTimeout = "1s"
