@@ -30,6 +30,7 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/producer"
 )
 
+// ProducerConfig RocketMQ producer config
 type ProducerConfig struct {
 	Endpoint  []string
 	AccessKey string
@@ -47,11 +48,13 @@ type ProducerConfig struct {
 	SlowSendDuration time.Duration
 }
 
+// Producer producer config
 type Producer struct {
 	producer rocketmq.Producer
 	config   *ProducerConfig
 }
 
+// NewProducer returns a Producer instance
 func NewProducer(config *ProducerConfig) *Producer {
 	var credentials = primitive.Credentials{
 		AccessKey: config.AccessKey,
@@ -80,14 +83,17 @@ func NewProducer(config *ProducerConfig) *Producer {
 	return p
 }
 
+// Start start producer
 func (p *Producer) Start() error {
 	return p.producer.Start()
 }
 
-func (p *Producer) Shutdown() error {
+// Close shutdown producer
+func (p *Producer) Close() error {
 	return p.producer.Shutdown()
 }
 
+// SendSyncMsg send message sync
 func (p *Producer) SendSyncMsg(ctx context.Context, content string) error {
 	msgs := getSendMsgs(p.config.Topic, p.config.Tags, content)
 	_, err := p.producer.SendSync(ctx, msgs...)
@@ -98,6 +104,7 @@ func (p *Producer) SendSyncMsg(ctx context.Context, content string) error {
 	return nil
 }
 
+// SendAsyncMsg send message async
 func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback func(context.Context, *primitive.SendResult, error)) error {
 	msgs := getSendMsgs(p.config.Topic, p.config.Tags, content)
 	err := p.producer.SendAsync(ctx, callback, msgs...)
@@ -108,6 +115,7 @@ func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback fu
 	return nil
 }
 
+// getSendMsgs format send message to primitive.Message
 func getSendMsgs(topic string, tags []string, content string) []*primitive.Message {
 	var msgs []*primitive.Message
 

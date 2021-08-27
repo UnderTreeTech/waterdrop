@@ -19,9 +19,8 @@
 package metric
 
 const (
-	_httpServerNamespace   = "http_server"
-	_unaryServerNamespace  = "unary_server"
-	_streamServerNamespace = "stream_server"
+	_httpServerNamespace  = "http_server"
+	_unaryServerNamespace = "unary_server"
 
 	_redisClientNamespace = "redis"
 	_mysqlClientNamespace = "mysql"

@@ -20,6 +20,7 @@ package metric
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// GaugeVecOpts
 type GaugeVecOpts struct {
 	Namespace string
 	Subsystem string
@@ -32,6 +33,7 @@ type gaugeVec struct {
 	*prometheus.GaugeVec
 }
 
+// NewGaugeVec returns a GaugeVecOpts instance
 func NewGaugeVec(opt *GaugeVecOpts) *gaugeVec {
 	vector := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -45,18 +47,22 @@ func NewGaugeVec(opt *GaugeVecOpts) *gaugeVec {
 	return &gaugeVec{GaugeVec: vector}
 }
 
+// Inc increments the Gauge by 1
 func (g *gaugeVec) Inc(labels ...string) {
 	g.WithLabelValues(labels...).Inc()
 }
 
+// Dec decrements the Gauge by 1
 func (g *gaugeVec) Dec(labels ...string) {
 	g.WithLabelValues(labels...).Dec()
 }
 
+// Add adds the given value to the Gauge
 func (g *gaugeVec) Add(v float64, labels ...string) {
 	g.WithLabelValues(labels...).Add(v)
 }
 
+// Sub subtracts the given value from the Gauge
 func (g *gaugeVec) Sub(v float64, labels ...string) {
 	g.WithLabelValues(labels...).Sub(v)
 }

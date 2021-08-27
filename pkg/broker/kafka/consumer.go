@@ -31,6 +31,7 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+// ConsumerConfig kafka consumer config
 type ConsumerConfig struct {
 	Addr  []string
 	Topic []string
@@ -50,6 +51,7 @@ type ConsumerConfig struct {
 	ClientID string
 }
 
+// Consumer consumer struct
 type Consumer struct {
 	consumer    sarama.ConsumerGroup
 	subscribers []ConsumerHandler
@@ -58,6 +60,7 @@ type Consumer struct {
 
 type ConsumerHandler func(context.Context, *sarama.ConsumerMessage) error
 
+// NewConsumer returns a consumer instance
 func NewConsumer(config *ConsumerConfig) *Consumer {
 	sconfig := newKafkaConsumerConfig(config)
 	consumer, err := sarama.NewConsumerGroup(config.Addr, config.Gid, sconfig)
@@ -96,10 +99,12 @@ func newKafkaConsumerConfig(config *ConsumerConfig) *sarama.Config {
 	return sconfig
 }
 
+// Subscribe subscribe to topic
 func (c *Consumer) Subscribe(handler ConsumerHandler) {
 	c.subscribers = append(c.subscribers, handler)
 }
 
+// Start start consumer
 func (c *Consumer) Start() {
 	if len(c.subscribers) == 0 {
 		panic(fmt.Sprintf("start consumer fail, must assigned at least one handler"))
@@ -114,6 +119,7 @@ func (c *Consumer) Start() {
 	}()
 }
 
+// Close close consumer
 func (c *Consumer) Close() error {
 	return c.consumer.Close()
 }

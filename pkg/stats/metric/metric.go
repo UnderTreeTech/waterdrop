@@ -25,6 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// RegisterMetric register metric handler
 func RegisterMetric(engine *gin.Engine) {
 	metric := engine.Group("/metrics")
 	{
@@ -32,6 +33,7 @@ func RegisterMetric(engine *gin.Engine) {
 	}
 }
 
+// metricHandler metric handler
 func metricHandler(handler http.HandlerFunc) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		handler.ServeHTTP(ctx.Writer, ctx.Request)

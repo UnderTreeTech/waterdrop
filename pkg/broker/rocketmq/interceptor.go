@@ -31,6 +31,7 @@ import (
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
+// producerMetricInterceptor producer metric
 func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
 		now := time.Now()
@@ -74,6 +75,7 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 	}
 }
 
+// pushConsumerMetricInterceptor push consumer metric
 func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
 		now := time.Now()

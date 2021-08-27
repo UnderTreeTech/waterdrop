@@ -26,6 +26,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// StatsConfig
 type StatsConfig struct {
 	Addr string
 	Mode string
@@ -44,6 +45,7 @@ func defaultStatsConfig() *StatsConfig {
 	}
 }
 
+// StartStats start stats server
 func StartStats(config *StatsConfig) {
 	if config == nil {
 		config = defaultStatsConfig()
