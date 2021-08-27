@@ -88,8 +88,8 @@ func (p *Producer) Start() error {
 	return p.producer.Start()
 }
 
-// Close shutdown producer
-func (p *Producer) Close() error {
+// Shutdown producer
+func (p *Producer) Shutdown() error {
 	return p.producer.Shutdown()
 }
 

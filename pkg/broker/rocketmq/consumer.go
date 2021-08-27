@@ -83,8 +83,8 @@ func (pc *PushConsumer) Start() error {
 	return pc.consumer.Start()
 }
 
-// Close close consumer
-func (pc *PushConsumer) Close() error {
+// Shutdown consumer
+func (pc *PushConsumer) Shutdown() error {
 	return pc.consumer.Shutdown()
 }
 
