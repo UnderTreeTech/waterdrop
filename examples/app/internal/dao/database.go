@@ -71,7 +71,10 @@ func NewRedis() *redis.Redis {
 	}
 	log.Infof("redis config", log.Any("config", config))
 
-	redis := redis.New(config)
+	redis, err := redis.New(config)
+	if err != nil {
+		panic("redis fail")
+	}
 	return redis
 }
 

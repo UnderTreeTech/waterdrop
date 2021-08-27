@@ -32,7 +32,6 @@ import (
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/utils"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"github.com/gin-gonic/gin"
-	"github.com/gomodule/redigo/redis"
 )
 
 func getAppInfo(c *gin.Context) {
@@ -46,9 +45,9 @@ func getAppInfo(c *gin.Context) {
 		log.Error(ctx, "get shop", log.Any("err", err.Error()))
 	}
 
-	dao.GetRedis().Do(ctx, "set", "shop_info_"+strconv.Itoa(int(shop.ID)), shop.ShopName)
-	dao.GetRedis().Do(ctx, "HSET", "helloworld", "4", "123")
-	reply, err := redis.Strings(dao.GetRedis().Do(ctx, "HMGET", "helloworld", "1", "4", "3"))
+	dao.GetRedis().Set(ctx, "shop_info_"+strconv.Itoa(int(shop.ID)), shop.ShopName)
+	dao.GetRedis().HSet(ctx, "helloworld", "4", "123")
+	reply, err := dao.GetRedis().HMGet(ctx, "helloworld", "1", "4", "3")
 	fmt.Println(reply, err)
 
 	s := &model.Shop{}
@@ -94,7 +93,7 @@ func getAppInfo(c *gin.Context) {
 	}
 
 	dao.GetDao().FindShop(ctx, condition)
-	if info, err := redis.String(dao.GetRedis().Do(ctx, "get", "shop_info_"+strconv.Itoa(int(shop.ID)))); err != nil {
+	if info, err := dao.GetRedis().Get(ctx, "shop_info_"+strconv.Itoa(int(shop.ID))); err != nil {
 		log.Info(ctx, "query redis", log.String("shop_info", info))
 	}
 
