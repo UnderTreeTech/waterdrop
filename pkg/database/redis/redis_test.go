@@ -131,6 +131,7 @@ func TestList(t *testing.T) {
 	assert.EqualValues(t, "waterdrop", val)
 	val, err = r.LIndex(ctx, key, 7)
 	assert.NotNil(t, err)
+	assert.EqualValues(t, val, "")
 	val, err = r.LPop(ctx, key)
 	assert.Nil(t, err)
 	assert.Equal(t, val, "redis")
