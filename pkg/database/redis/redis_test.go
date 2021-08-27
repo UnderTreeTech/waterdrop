@@ -175,6 +175,7 @@ func TestSet(t *testing.T) {
 	assert.Nil(t, err)
 	assert.EqualValues(t, num, 6)
 	_, err = r.Del(ctx, "diff", "intersect", "union")
+	assert.Nil(t, err)
 	vals, err = r.SMembers(ctx, s1)
 	assert.Nil(t, err)
 	assert.ElementsMatch(t, vals, []string{"hello", "world", "go", "waterdrop"})
