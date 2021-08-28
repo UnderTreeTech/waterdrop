@@ -34,6 +34,8 @@ import (
 
 	"google.golang.org/grpc/keepalive"
 
+	// Automatically set GOMAXPROCS to match Linux container CPU quota
+	_ "go.uber.org/automaxprocs"
 	"google.golang.org/grpc"
 )
 
