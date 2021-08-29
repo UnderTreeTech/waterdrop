@@ -21,12 +21,16 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/qiniu/qmgo"
 )
 
+// Config MongoDB DSN configs
 type Config struct {
 	DSN    string
 	DBName string
@@ -38,6 +42,7 @@ type Config struct {
 	SlowQueryDuration time.Duration
 }
 
+// DB encapsulation of qmgo client and database
 type DB struct {
 	client *qmgo.Client
 	db     *qmgo.Database
@@ -45,7 +50,23 @@ type DB struct {
 	close  func() error
 }
 
-var collections = sync.Map{}
+type (
+	// M is an alias of bson.M
+	M = bson.M
+	// A is an alias of bson.A
+	A = bson.A
+	// D is an alias of bson.D
+	D = bson.D
+	// E is an alias of bson.E
+	E = bson.E
+)
+
+var (
+	collections = sync.Map{}
+
+	// ErrNoSuchDocuments return if no document found
+	ErrNoSuchDocuments = qmgo.ErrNoSuchDocuments
+)
 
 // Open return database instance handler
 func Open(config *Config) *DB {
@@ -117,4 +138,18 @@ func slowLog(start time.Time, slowQueryDuration time.Duration) (slow bool, elaps
 	}
 
 	return false, 0
+}
+
+// IsErrNoDocuments check if err is no documents,
+// simply call if err == ErrNoSuchDocuments or if err == mongo.ErrNoDocuments
+func IsErrNoDocuments(err error) bool {
+	if err == ErrNoSuchDocuments {
+		return true
+	}
+	return false
+}
+
+// IsDup check if err is mongo E11000 (duplicate err)。
+func IsDup(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "E11000")
 }
