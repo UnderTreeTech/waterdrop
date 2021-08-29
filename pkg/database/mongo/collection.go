@@ -102,9 +102,9 @@ func (c *Collection) Insert(ctx context.Context, doc interface{}) (result *qmgo.
 	defer span.Finish()
 
 	result, err = c.conn.InsertOne(ctx, doc)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 
 	return
@@ -123,9 +123,9 @@ func (c *Collection) BatchInsert(ctx context.Context, docs interface{}) (result 
 	defer span.Finish()
 
 	result, err = c.conn.InsertMany(ctx, docs)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -147,9 +147,9 @@ func (c *Collection) Upsert(ctx context.Context, filter interface{}, replacement
 	defer span.Finish()
 
 	result, err = c.conn.Upsert(ctx, filter, replacement)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -169,9 +169,9 @@ func (c *Collection) UpsertId(ctx context.Context, id interface{}, replacement i
 	defer span.Finish()
 
 	result, err = c.conn.UpsertId(ctx, id, replacement)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -190,9 +190,9 @@ func (c *Collection) UpdateOne(ctx context.Context, filter interface{}, update i
 	defer span.Finish()
 
 	err = c.conn.UpdateOne(ctx, filter, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -210,9 +210,9 @@ func (c *Collection) UpdateId(ctx context.Context, id interface{}, update interf
 	defer span.Finish()
 
 	err = c.conn.UpdateId(ctx, id, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -231,9 +231,9 @@ func (c *Collection) UpdateAll(ctx context.Context, filter interface{}, update i
 	defer span.Finish()
 
 	result, err = c.conn.UpdateAll(ctx, filter, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -252,9 +252,9 @@ func (c *Collection) ReplaceOne(ctx context.Context, filter interface{}, doc int
 	defer span.Finish()
 
 	err = c.conn.ReplaceOne(ctx, filter, doc)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -273,9 +273,9 @@ func (c *Collection) Remove(ctx context.Context, filter interface{}) (err error)
 	defer span.Finish()
 
 	err = c.conn.Remove(ctx, filter)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -292,9 +292,9 @@ func (c *Collection) RemoveId(ctx context.Context, id interface{}) (err error) {
 	defer span.Finish()
 
 	err = c.conn.RemoveId(ctx, id)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -313,9 +313,9 @@ func (c *Collection) RemoveAll(ctx context.Context, filter interface{}) (result 
 	defer span.Finish()
 
 	result, err = c.conn.RemoveAll(ctx, filter)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
 		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }

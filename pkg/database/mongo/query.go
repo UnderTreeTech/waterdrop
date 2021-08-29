@@ -84,9 +84,9 @@ func (q *Query) One(result interface{}) (err error) {
 	defer q.span.Finish()
 
 	err = q.qi.One(result)
-	if ok, elpase := slowLog(now, q.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
 		ext.Error.Set(q.span, true)
-		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }
@@ -99,9 +99,9 @@ func (q *Query) All(result interface{}) (err error) {
 	defer q.span.Finish()
 
 	err = q.qi.All(result)
-	if ok, elpase := slowLog(now, q.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
 		ext.Error.Set(q.span, true)
-		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
 	return
 }

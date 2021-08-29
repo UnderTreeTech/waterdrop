@@ -131,10 +131,9 @@ func (b *Bulk) Run() (result *qmgo.BulkResult, err error) {
 
 	result, err = b.bulk.Run(b.ctx)
 
-	if ok, elpase := slowLog(now, b.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, b.config.SlowQueryDuration); ok {
 		ext.Error.Set(b.span, true)
-		b.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		b.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
-
 	return
 }

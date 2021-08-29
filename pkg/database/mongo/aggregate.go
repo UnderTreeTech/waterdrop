@@ -43,11 +43,10 @@ func (a *Aggregate) All(results interface{}) (err error) {
 	defer a.span.Finish()
 
 	err = a.ai.All(results)
-	if ok, elpase := slowLog(now, a.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
 		ext.Error.Set(a.span, true)
-		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
-
 	return
 }
 
@@ -58,11 +57,10 @@ func (a *Aggregate) One(result interface{}) (err error) {
 	defer a.span.Finish()
 
 	err = a.ai.One(result)
-	if ok, elpase := slowLog(now, a.config.SlowQueryDuration); ok {
+	if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
 		ext.Error.Set(a.span, true)
-		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
+		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 	}
-
 	return
 }
 
