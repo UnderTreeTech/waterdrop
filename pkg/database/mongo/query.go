@@ -115,8 +115,17 @@ func (q *Query) Count() (n int64, err error) {
 // result should be passed a pointer to slice
 // The function will verify whether the static type of the elements in the result slice is consistent with the data type obtained in mongodb
 // reference https://docs.mongodb.com/manual/reference/command/distinct/
-func (q *Query) Distinct(key string, result interface{}) error {
-	return q.qi.Distinct(key, result)
+func (q *Query) Distinct(key string, result interface{}) (err error) {
+	now := time.Now()
+	q.span = q.span.SetOperationName("query_one")
+	defer q.span.Finish()
+
+	err = q.qi.Distinct(key, result)
+	if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
+		ext.Error.Set(q.span, true)
+		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+	}
+	return
 }
 
 // Cursor gets a Cursor object, which can be used to traverse the query result set
