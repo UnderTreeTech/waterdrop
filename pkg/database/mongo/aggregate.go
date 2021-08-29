@@ -22,6 +22,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -34,33 +36,40 @@ type Aggregate struct {
 	ctx    context.Context
 	config *Config
 	span   opentracing.Span
+	brk    *breaker.BreakerGroup
 }
 
 // All iterates the cursor from aggregate and decodes each document into results.
 func (a *Aggregate) All(results interface{}) (err error) {
-	now := time.Now()
-	a.span = a.span.SetOperationName("aggregate_all")
-	defer a.span.Finish()
+	err = a.brk.Do(a.config.Addr, func() error {
+		now := time.Now()
+		a.span = a.span.SetOperationName("aggregate_all")
+		defer a.span.Finish()
 
-	err = a.ai.All(results)
-	if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
-		ext.Error.Set(a.span, true)
-		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
-	}
+		err = a.ai.All(results)
+		if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
+			ext.Error.Set(a.span, true)
+			a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		return err
+	}, accept)
 	return
 }
 
 // One iterates the cursor from aggregate and decodes current document into result.
 func (a *Aggregate) One(result interface{}) (err error) {
-	now := time.Now()
-	a.span = a.span.SetOperationName("aggregate_one")
-	defer a.span.Finish()
+	err = a.brk.Do(a.config.Addr, func() error {
+		now := time.Now()
+		a.span = a.span.SetOperationName("aggregate_one")
+		defer a.span.Finish()
 
-	err = a.ai.One(result)
-	if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
-		ext.Error.Set(a.span, true)
-		a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
-	}
+		err = a.ai.One(result)
+		if ok, elapse := slowLog(now, a.config.SlowQueryDuration); ok {
+			ext.Error.Set(a.span, true)
+			a.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		return err
+	}, accept)
 	return
 }
 

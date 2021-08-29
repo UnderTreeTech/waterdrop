@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/qiniu/qmgo"
@@ -48,6 +50,7 @@ type DB struct {
 	db     *qmgo.Database
 	config *Config
 	close  func() error
+	brk    *breaker.BreakerGroup
 }
 
 type (
@@ -77,6 +80,7 @@ func Open(config *Config) *DB {
 		db:     dbHandler,
 		config: config,
 		close:  close,
+		brk:    breaker.NewBreakerGroup(),
 	}
 	return db
 }
@@ -91,9 +95,9 @@ func (d *DB) GetCollection(name string) *Collection {
 		conn:   d.db.Collection(name),
 		config: d.config,
 		name:   name,
+		brk:    d.brk,
 	}
 	collections.Store(name, collection)
-
 	return collection
 }
 
@@ -126,7 +130,6 @@ func client(config *Config) (*qmgo.Client, func() error) {
 	close := func() error {
 		return cli.Close(context.Background())
 	}
-
 	return cli, close
 }
 
@@ -152,4 +155,9 @@ func IsErrNoDocuments(err error) bool {
 // IsDup check if err is mongo E11000 (duplicate err)。
 func IsDup(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "E11000")
+}
+
+// accept check mongo op success or not
+func accept(err error) bool {
+	return err == nil || err == ErrNoSuchDocuments
 }

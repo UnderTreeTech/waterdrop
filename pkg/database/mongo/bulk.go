@@ -22,6 +22,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -50,6 +52,7 @@ type Bulk struct {
 	config *Config
 	span   opentracing.Span
 	ctx    context.Context
+	brk    *breaker.BreakerGroup
 }
 
 // SetOrdered marks the bulk as ordered or unordered.
