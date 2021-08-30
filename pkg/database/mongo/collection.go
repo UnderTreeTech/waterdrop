@@ -22,6 +22,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -113,6 +115,7 @@ func (c *Collection) Insert(ctx context.Context, doc interface{}) (result *qmgo.
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "insert")
 		return err
 	}, accept)
 	return
@@ -136,6 +139,7 @@ func (c *Collection) BatchInsert(ctx context.Context, docs interface{}) (result 
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "batch_insert")
 		return err
 	}, accept)
 	return
@@ -163,6 +167,7 @@ func (c *Collection) Upsert(ctx context.Context, filter interface{}, replacement
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "upsert")
 		return err
 	}, accept)
 	return
@@ -188,6 +193,7 @@ func (c *Collection) UpsertId(ctx context.Context, id interface{}, replacement i
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "upsert_id")
 		return err
 	}, accept)
 	return
@@ -212,6 +218,7 @@ func (c *Collection) UpdateOne(ctx context.Context, filter interface{}, update i
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_one")
 		return err
 	}, accept)
 	return
@@ -235,6 +242,7 @@ func (c *Collection) UpdateId(ctx context.Context, id interface{}, update interf
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_id")
 		return err
 	}, accept)
 	return
@@ -259,6 +267,7 @@ func (c *Collection) UpdateAll(ctx context.Context, filter interface{}, update i
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_all")
 		return err
 	}, accept)
 	return
@@ -283,6 +292,7 @@ func (c *Collection) ReplaceOne(ctx context.Context, filter interface{}, doc int
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "replace_one")
 		return err
 	}, accept)
 	return
@@ -307,6 +317,7 @@ func (c *Collection) Remove(ctx context.Context, filter interface{}) (err error)
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove")
 		return err
 	}, accept)
 	return
@@ -329,6 +340,7 @@ func (c *Collection) RemoveId(ctx context.Context, id interface{}) (err error) {
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove_id")
 		return err
 	}, accept)
 	return
@@ -353,6 +365,7 @@ func (c *Collection) RemoveAll(ctx context.Context, filter interface{}) (result 
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove_all")
 		return err
 	}, accept)
 	return

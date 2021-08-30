@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -129,14 +130,19 @@ func (b *Bulk) UpdateAll(filter interface{}, update interface{}) *Bulk {
 // queue of operations is unchanged, containing both successful and failed
 // operations.
 func (b *Bulk) Run() (result *qmgo.BulkResult, err error) {
-	now := time.Now()
-	defer b.span.Finish()
+	err = b.brk.Do(b.config.Addr, func() error {
+		now := time.Now()
+		defer b.span.Finish()
 
-	result, err = b.bulk.Run(b.ctx)
+		result, err = b.bulk.Run(b.ctx)
 
-	if ok, elapse := slowLog(now, b.config.SlowQueryDuration); ok {
-		ext.Error.Set(b.span, true)
-		b.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
-	}
+		if ok, elapse := slowLog(now, b.config.SlowQueryDuration); ok {
+			ext.Error.Set(b.span, true)
+			b.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), b.config.DBName, b.config.Addr, "bulk")
+		return err
+	}, accept)
+
 	return
 }

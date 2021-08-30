@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -92,6 +93,7 @@ func (q *Query) One(result interface{}) (err error) {
 			ext.Error.Set(q.span, true)
 			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "query_one")
 		return err
 	}, accept)
 	return
@@ -110,6 +112,7 @@ func (q *Query) All(result interface{}) (err error) {
 			ext.Error.Set(q.span, true)
 			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "query_all")
 		return err
 	}, accept)
 	return
@@ -127,6 +130,7 @@ func (q *Query) Count() (n int64, err error) {
 			ext.Error.Set(q.span, true)
 			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "count")
 		return err
 	}, accept)
 	return
@@ -147,6 +151,7 @@ func (q *Query) Distinct(key string, result interface{}) (err error) {
 			ext.Error.Set(q.span, true)
 			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
 		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "distinct")
 		return err
 	}, accept)
 	return
