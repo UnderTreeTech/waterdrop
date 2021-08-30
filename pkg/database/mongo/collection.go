@@ -22,6 +22,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/qiniu/qmgo"
@@ -34,6 +38,7 @@ type Collection struct {
 	conn   *qmgo.Collection
 	config *Config
 	name   string
+	brk    *breaker.BreakerGroup
 }
 
 // Aggregate executes an aggregate command against the collection and returns a Aggregate to get resulting documents.
@@ -50,6 +55,7 @@ func (c *Collection) Aggregate(ctx context.Context, pipeline interface{}) *Aggre
 		ctx:    ctx,
 		config: c.config,
 		span:   span,
+		brk:    c.brk,
 	}
 }
 
@@ -68,6 +74,7 @@ func (c *Collection) Bulk(ctx context.Context) *Bulk {
 		config: c.config,
 		span:   span,
 		ctx:    ctx,
+		brk:    c.brk,
 	}
 }
 
@@ -86,47 +93,55 @@ func (c *Collection) Find(ctx context.Context, filter interface{}) *Query {
 		qi:     query,
 		config: c.config,
 		span:   span,
+		brk:    c.brk,
 	}
 }
 
 // InsertOne insert one document into the collection
 // Reference: https://docs.mongodb.com/manual/reference/command/insert/
 func (c *Collection) Insert(ctx context.Context, doc interface{}) (result *qmgo.InsertOneResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "insert")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "insert")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.InsertOne(ctx, doc)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
-
+		result, err = c.conn.InsertOne(ctx, doc)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "insert")
+		return err
+	}, accept)
 	return
 }
 
 // BatchInsert executes an insert command to insert multiple documents into the collection.
 // Reference: https://docs.mongodb.com/manual/reference/command/insert/
 func (c *Collection) BatchInsert(ctx context.Context, docs interface{}) (result *qmgo.InsertManyResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "batch_insert")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "batch_insert")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.InsertMany(ctx, docs)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		result, err = c.conn.InsertMany(ctx, docs)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "batch_insert")
+		return err
+	}, accept)
 	return
 }
 
@@ -137,20 +152,24 @@ func (c *Collection) BatchInsert(ctx context.Context, docs interface{}) (result 
 // If replacement has "_id" field and the document is exist, please initial it with existing id(even with Qmgo default field feature).
 // Otherwise "the (immutable) field '_id' altered" error happens.
 func (c *Collection) Upsert(ctx context.Context, filter interface{}, replacement interface{}) (result *qmgo.UpdateResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "upsert")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "upsert")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.Upsert(ctx, filter, replacement)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		result, err = c.conn.Upsert(ctx, filter, replacement)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "upsert")
+		return err
+	}, accept)
 	return
 }
 
@@ -159,61 +178,73 @@ func (c *Collection) Upsert(ctx context.Context, filter interface{}, replacement
 // and cannot contain any update operators
 // Reference: https://docs.mongodb.com/manual/reference/operator/update/
 func (c *Collection) UpsertId(ctx context.Context, id interface{}, replacement interface{}) (result *qmgo.UpdateResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "upsert_id")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "upsert_id")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.UpsertId(ctx, id, replacement)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		result, err = c.conn.UpsertId(ctx, id, replacement)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "upsert_id")
+		return err
+	}, accept)
 	return
 }
 
 // UpdateOne executes an update command to update at most one document in the collection.
 // Reference: https://docs.mongodb.com/manual/reference/operator/update/
 func (c *Collection) UpdateOne(ctx context.Context, filter interface{}, update interface{}) (err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "update_one")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "update_one")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
 
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	err = c.conn.UpdateOne(ctx, filter, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = c.conn.UpdateOne(ctx, filter, update)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_one")
+		return err
+	}, accept)
 	return
 }
 
 // UpdateId executes an update command to update at most one document in the collection.
 // Reference: https://docs.mongodb.com/manual/reference/operator/update/
 func (c *Collection) UpdateId(ctx context.Context, id interface{}, update interface{}) (err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "update_id")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "update_id")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	err = c.conn.UpdateId(ctx, id, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = c.conn.UpdateId(ctx, id, update)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_id")
+		return err
+	}, accept)
 	return
 }
 
@@ -221,20 +252,24 @@ func (c *Collection) UpdateId(ctx context.Context, id interface{}, update interf
 // The matchedCount is 0 in UpdateResult if no document updated
 // Reference: https://docs.mongodb.com/manual/reference/operator/update/
 func (c *Collection) UpdateAll(ctx context.Context, filter interface{}, update interface{}) (result *qmgo.UpdateResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "update_all")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "update_all")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.UpdateAll(ctx, filter, update)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		result, err = c.conn.UpdateAll(ctx, filter, update)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "update_all")
+		return err
+	}, accept)
 	return
 }
 
@@ -242,20 +277,24 @@ func (c *Collection) UpdateAll(ctx context.Context, filter interface{}, update i
 // If UpdateHook in opts is set, hook works on it, otherwise hook try the doc as hook
 // Expect type of the doc is the define of user's document
 func (c *Collection) ReplaceOne(ctx context.Context, filter interface{}, doc interface{}) (err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "replace_one")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "replace_one")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	err = c.conn.ReplaceOne(ctx, filter, doc)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = c.conn.ReplaceOne(ctx, filter, doc)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "replace_one")
+		return err
+	}, accept)
 	return
 }
 
@@ -263,39 +302,47 @@ func (c *Collection) ReplaceOne(ctx context.Context, filter interface{}, doc int
 // if filter is bson.M{}，DeleteOne will delete one document in collection
 // Reference: https://docs.mongodb.com/manual/reference/command/delete/
 func (c *Collection) Remove(ctx context.Context, filter interface{}) (err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "remove")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "remove")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	err = c.conn.Remove(ctx, filter)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = c.conn.Remove(ctx, filter)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove")
+		return err
+	}, accept)
 	return
 }
 
 // RemoveId executes a delete command to delete at most one document from the collection.
 func (c *Collection) RemoveId(ctx context.Context, id interface{}) (err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "remove_id")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "remove_id")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	err = c.conn.RemoveId(ctx, id)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = c.conn.RemoveId(ctx, id)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove_id")
+		return err
+	}, accept)
 	return
 }
 
@@ -303,19 +350,23 @@ func (c *Collection) RemoveId(ctx context.Context, id interface{}) (err error) {
 // If filter is bson.M{}，all ducuments in Collection will be deleted
 // Reference: https://docs.mongodb.com/manual/reference/command/delete/
 func (c *Collection) RemoveAll(ctx context.Context, filter interface{}) (result *qmgo.DeleteResult, err error) {
-	now := time.Now()
-	span, ctx := trace.StartSpanFromContext(ctx, "remove_all")
-	ext.PeerAddress.Set(span, c.config.Addr)
-	ext.DBType.Set(span, "mongo")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.DBInstance.Set(span, c.config.DBName)
-	span = span.SetTag("db.collection", c.name)
-	defer span.Finish()
+	err = c.brk.Do(c.config.Addr, func() error {
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(ctx, "remove_all")
+		ext.PeerAddress.Set(span, c.config.Addr)
+		ext.DBType.Set(span, "mongo")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.DBInstance.Set(span, c.config.DBName)
+		span = span.SetTag("db.collection", c.name)
+		defer span.Finish()
 
-	result, err = c.conn.RemoveAll(ctx, filter)
-	if ok, elpase := slowLog(now, c.config.SlowQueryDuration); ok {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		result, err = c.conn.RemoveAll(ctx, filter)
+		if ok, elapse := slowLog(now, c.config.SlowQueryDuration); ok {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), c.config.DBName, c.config.Addr, "remove_all")
+		return err
+	}, accept)
 	return
 }

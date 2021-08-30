@@ -21,6 +21,9 @@ package mongo
 import (
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -33,6 +36,7 @@ type Query struct {
 	qi     qmgo.QueryI
 	config *Config
 	span   opentracing.Span
+	brk    *breaker.BreakerGroup
 }
 
 // Sort is Used to set the sorting rules for the returned results
@@ -79,44 +83,78 @@ func (q *Query) Limit(n int64) *Query {
 // One query a record that meets the filter conditions
 // If the search fails, an error will be returned
 func (q *Query) One(result interface{}) (err error) {
-	now := time.Now()
-	q.span = q.span.SetOperationName("query_one")
-	defer q.span.Finish()
+	err = q.brk.Do(q.config.Addr, func() error {
+		now := time.Now()
+		q.span = q.span.SetOperationName("query_one")
+		defer q.span.Finish()
 
-	err = q.qi.One(result)
-	if ok, elpase := slowLog(now, q.config.SlowQueryDuration); ok {
-		ext.Error.Set(q.span, true)
-		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = q.qi.One(result)
+		if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
+			ext.Error.Set(q.span, true)
+			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "query_one")
+		return err
+	}, accept)
 	return
 }
 
 // All query multiple records that meet the filter conditions
 // The static type of result must be a slice pointer
 func (q *Query) All(result interface{}) (err error) {
-	now := time.Now()
-	q.span = q.span.SetOperationName("query_all")
-	defer q.span.Finish()
+	err = q.brk.Do(q.config.Addr, func() error {
+		now := time.Now()
+		q.span = q.span.SetOperationName("query_all")
+		defer q.span.Finish()
 
-	err = q.qi.All(result)
-	if ok, elpase := slowLog(now, q.config.SlowQueryDuration); ok {
-		ext.Error.Set(q.span, true)
-		q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elpase)))
-	}
+		err = q.qi.All(result)
+		if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
+			ext.Error.Set(q.span, true)
+			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "query_all")
+		return err
+	}, accept)
 	return
 }
 
 // Count count the number of eligible entries
 func (q *Query) Count() (n int64, err error) {
-	return q.qi.Count()
+	q.brk.Do(q.config.Addr, func() error {
+		now := time.Now()
+		q.span = q.span.SetOperationName("count")
+		defer q.span.Finish()
+
+		n, err = q.qi.Count()
+		if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
+			ext.Error.Set(q.span, true)
+			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "count")
+		return err
+	}, accept)
+	return
 }
 
 // Distinct gets the unique value of the specified field in the collection and return it in the form of slice
 // result should be passed a pointer to slice
 // The function will verify whether the static type of the elements in the result slice is consistent with the data type obtained in mongodb
 // reference https://docs.mongodb.com/manual/reference/command/distinct/
-func (q *Query) Distinct(key string, result interface{}) error {
-	return q.qi.Distinct(key, result)
+func (q *Query) Distinct(key string, result interface{}) (err error) {
+	err = q.brk.Do(q.config.Addr, func() error {
+		now := time.Now()
+		q.span = q.span.SetOperationName("distinct")
+		defer q.span.Finish()
+
+		err = q.qi.Distinct(key, result)
+		if ok, elapse := slowLog(now, q.config.SlowQueryDuration); ok {
+			ext.Error.Set(q.span, true)
+			q.span.LogFields(log.String("event", "slow_query"), log.Int64("elapse", int64(elapse)))
+		}
+		metric.MongoClientReqDuration.Observe(time.Since(now).Seconds(), q.config.DBName, q.config.Addr, "distinct")
+		return err
+	}, accept)
+	return
 }
 
 // Cursor gets a Cursor object, which can be used to traverse the query result set
