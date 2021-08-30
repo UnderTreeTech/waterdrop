@@ -87,8 +87,8 @@ func main() {
 	etcd := etcd.New(etcdConf)
 	etcd.Register(context.Background(), serviceInfo)
 	resolver.Register(etcd)
-	startStats()
-
+	si, _ := stats.StartStats()
+	etcd.Register(context.Background(), si)
 	<-c
 
 	etcd.Close()
@@ -103,14 +103,6 @@ func parseConfig(configName string, srvConfig *config.ServerConfig) {
 	if err := conf.Unmarshal(configName, srvConfig); err != nil {
 		panic(fmt.Sprintf("unmarshal grpc server config fail, err msg %s", err.Error()))
 	}
-}
-
-func startStats() {
-	statsConfig := &stats.StatsConfig{}
-	if err := conf.Unmarshal("stats", statsConfig); err != nil {
-		panic(fmt.Sprintf("unmarshal stats config fail, err msg %s", err.Error()))
-	}
-	stats.StartStats(statsConfig)
 }
 
 type Service struct{}
