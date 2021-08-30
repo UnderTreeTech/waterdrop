@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// GoogleSREBreaker breaker based on google sre. It rejects request adaptively based on server response
 func GoogleSREBreaker(breakers *breaker.BreakerGroup) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		return breakers.Do(

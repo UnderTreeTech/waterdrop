@@ -33,6 +33,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// LoggerForUnaryServer log unary server response details
 func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		now := time.Now()
@@ -75,6 +76,7 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 	}
 }
 
+// LoggerForUnaryClient log unary client request details
 func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		now := time.Now()

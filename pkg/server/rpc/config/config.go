@@ -22,21 +22,25 @@ import (
 	"time"
 )
 
+// ServerConfig rpc server config
 type ServerConfig struct {
+	// Addr server addr,it may be ":8080" or "127.0.0.1:8080"
 	Addr string
-
-	Timeout        time.Duration
-	IdleTimeout    time.Duration
-	MaxLifeTime    time.Duration
-	ForceCloseWait time.Duration
-
+	// Timeout rpc request timeout
+	Timeout time.Duration
+	// GRPC ServerParameters
+	IdleTimeout       time.Duration
+	MaxLifeTime       time.Duration
+	ForceCloseWait    time.Duration
 	KeepAliveInterval time.Duration
 	KeepAliveTimeout  time.Duration
-
+	// SlowRequestDuration slow rpc request timeout
 	SlowRequestDuration time.Duration
-	WatchConfig         bool
+	// WatchConfig whether watch config file changes
+	WatchConfig bool
 }
 
+// DefaultServerConfig default server config for starting rpc server out of box
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Addr:                "0.0.0.0:20812",
@@ -50,20 +54,26 @@ func DefaultServerConfig() *ServerConfig {
 	}
 }
 
+// ClientConfig rpc client configs
 type ClientConfig struct {
+	// DialTimeout dial rpc server timeout
 	DialTimeout time.Duration
-	Block       bool
-	Balancer    string
-	Target      string
-
+	// Block dial mode: sync or async
+	Block bool
+	// Balancer client balancer, default round robbin
+	Balancer string
+	// Target rpc server endpoint
+	Target string
+	// Timeout rpc request timeout
 	Timeout time.Duration
-
+	// GRPC ClientParameters
 	KeepAliveInterval time.Duration
 	KeepAliveTimeout  time.Duration
-
+	// SlowRequestDuration client slow request timeout
 	SlowRequestDuration time.Duration
 }
 
+// DefaultClientConfig default client config for starting rpc client out of box
 func DefaultClientConfig() *ClientConfig {
 	return &ClientConfig{
 		DialTimeout: 5 * time.Second,
