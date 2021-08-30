@@ -28,9 +28,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/stats"
+
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/service"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/stats"
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
 	"github.com/UnderTreeTech/waterdrop/examples/app/internal/server/grpc"
@@ -71,7 +72,11 @@ func main() {
 
 	etcd.Register(context.Background(), rpc.ServiceInfo)
 	etcd.Register(context.Background(), http.ServiceInfo)
-	startStats()
+	si, err := stats.StartStats()
+	if err != nil {
+		panic(fmt.Sprintf("start stats fail, err msg is %s", err.Error()))
+	}
+	etcd.Register(context.Background(), si)
 
 	<-c
 
@@ -97,12 +102,4 @@ func initLog() *log.Logger {
 	})
 
 	return logger
-}
-
-func startStats() {
-	statsConfig := &stats.StatsConfig{}
-	if err := conf.Unmarshal("stats", statsConfig); err != nil {
-		panic(fmt.Sprintf("unmarshal stats config fail, err msg %s", err.Error()))
-	}
-	stats.StartStats(statsConfig)
 }

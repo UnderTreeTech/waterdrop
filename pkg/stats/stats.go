@@ -20,51 +20,41 @@ package stats
 
 import (
 	"fmt"
+	"net"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/registry"
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xnet"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/profile"
-	"github.com/gin-gonic/gin"
 )
 
-// StatsConfig
-type StatsConfig struct {
-	Addr string
-	Mode string
-
-	EnableMetric  bool
-	EnableProfile bool
-}
-
-func defaultStatsConfig() *StatsConfig {
-	return &StatsConfig{
-		Addr: "0.0.0.0:20828",
-		Mode: "release",
-
-		EnableMetric:  true,
-		EnableProfile: true,
-	}
-}
-
 // StartStats start stats server
-func StartStats(config *StatsConfig) {
-	if config == nil {
-		config = defaultStatsConfig()
-	}
-
-	gin.SetMode(config.Mode)
+func StartStats() (si *registry.ServiceInfo, err error) {
+	gin.SetMode("release")
 	engine := gin.Default()
 
-	if config.EnableProfile {
-		profile.RegisterProfile(engine)
-	}
-
-	if config.EnableMetric {
-		metric.RegisterMetric(engine)
+	profile.RegisterProfile(engine)
+	metric.RegisterMetric(engine)
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return nil, err
 	}
 
 	go func() {
-		if err := engine.Run(config.Addr); err != nil {
-			panic(fmt.Sprintf("start profile server fail, error %s", err.Error()))
+		if err = engine.RunListener(listener); err != nil {
+			return
 		}
 	}()
+
+	_, port, _ := net.SplitHostPort(listener.Addr().String())
+	si = &registry.ServiceInfo{
+		Name:    "server.http.stats",
+		Scheme:  "http",
+		Addr:    fmt.Sprintf("%s://%s:%s", "http", xnet.InternalIP(), port),
+		Version: "1.0.0",
+	}
+	return
 }

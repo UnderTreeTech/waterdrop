@@ -16,7 +16,6 @@
         mode = "debug"
         slowRequestDuration = "500ms"
         watchConfig = true
-        enableMetric = true
 
 [client]
     [client.rpc]
