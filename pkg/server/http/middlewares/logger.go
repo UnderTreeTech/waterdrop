@@ -28,6 +28,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Logger log request details
 func Logger(config *config.ServerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		now := time.Now()

@@ -25,8 +25,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// WebSocketHandler ws callback handler
 type WebSocketHandler func(*WebSocket)
 
+// WebSocket ws definition
 type WebSocket struct {
 	Path    string
 	Handler WebSocketHandler
@@ -35,6 +37,7 @@ type WebSocket struct {
 	*websocket.Conn
 }
 
+// NewWebSocket returns a WebSocket instance
 func NewWebSocket(path string, handler WebSocketHandler) *WebSocket {
 	return &WebSocket{
 		Path:     path,
@@ -43,6 +46,7 @@ func NewWebSocket(path string, handler WebSocketHandler) *WebSocket {
 	}
 }
 
+// Upgrade upgrade http to WebSocket
 func (ws *WebSocket) Upgrade(w http.ResponseWriter, r *http.Request) {
 	conn, err := ws.Upgrader.Upgrade(w, r, nil)
 	if err != nil {

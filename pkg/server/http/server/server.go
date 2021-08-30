@@ -37,12 +37,14 @@ import (
 	_ "go.uber.org/automaxprocs"
 )
 
+// Server http server
 type Server struct {
 	*gin.Engine
 	Server *http.Server
 	config *config.ServerConfig
 }
 
+// New returns a http server instance
 func New(cfg *config.ServerConfig) *Server {
 	if cfg == nil {
 		cfg = config.DefaultServerConfig()
@@ -58,7 +60,7 @@ func New(cfg *config.ServerConfig) *Server {
 	return srv
 }
 
-//start server
+// Start server
 func (s *Server) Start() net.Addr {
 	listener, err := net.Listen("tcp", s.config.Addr)
 	if err != nil {
@@ -84,12 +86,12 @@ func (s *Server) Start() net.Addr {
 	return listener.Addr()
 }
 
-// shutdown server graceful
+// Stop shutdown server graceful
 func (s *Server) Stop(ctx context.Context) error {
 	return s.Server.Shutdown(ctx)
 }
 
-// upgrade http to websocket
+// Upgrade upgrade http to websocket
 func (s *Server) Upgrade(ws *websocket.WebSocket) gin.IRoutes {
 	return s.GET(ws.Path, func(c *gin.Context) {
 		ws.Upgrade(c.Writer, c.Request)

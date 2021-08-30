@@ -23,14 +23,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// CORSConfig is an alias of cors.Config
 type CORSConfig cors.Config
 
-// default cors handler
+// DefaultCORS default cors handler
 func DefaultCORS() gin.HandlerFunc {
 	return cors.Default()
 }
 
-// customer cors handler by config
+// NewCORS customer cors handler by config
 func NewCORS(config CORSConfig) gin.HandlerFunc {
 	return cors.New(cors.Config(config))
 }
