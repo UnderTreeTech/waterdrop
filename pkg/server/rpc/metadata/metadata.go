@@ -21,5 +21,7 @@ package metadata
 import "math"
 
 const (
+	// MaxInterceptors max interceptors for rpc client/server
+	// The idea borrowed from gin
 	MaxInterceptors = math.MaxInt8 / 2
 )

@@ -31,6 +31,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Trace trace incoming request details
 func Trace(config *config.ServerConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		span, ctx := trace.StartSpanFromContext(

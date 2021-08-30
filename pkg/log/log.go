@@ -35,51 +35,72 @@ import (
 	"go.uber.org/zap"
 )
 
+// Field is an alias of zap.Field
 type Field = zap.Field
 
 var (
-	String   = zap.String
-	Bytes    = zap.ByteString
+	// String is an alias of zap.String
+	String = zap.String
+	// Bytes is an alias of zap.Bytes
+	Bytes = zap.ByteString
+	// Duration is an alias of zap.Duration
 	Duration = zap.Duration
-
-	Int8  = zap.Int8
+	// Int8 is an alias of zap.Int8
+	Int8 = zap.Int8
+	// Int32 is an alias of zap.Int32
 	Int32 = zap.Int32
-	Int   = zap.Int
+	// Int is an alias of zap.Int
+	Int = zap.Int
+	// Int64 is an alias of zap.Int64
 	Int64 = zap.Int64
-
-	Uint8  = zap.Uint8
+	// Uint8 is an alias of zap.Uint8
+	Uint8 = zap.Uint8
+	// Uint32 is an alias of zap.Uint32
 	Uint32 = zap.Uint32
-	Uint   = zap.Uint
+	// Uint is an alias of zap.Uint
+	Uint = zap.Uint
+	// Uint64 is an alias of zap.Uint64
 	Uint64 = zap.Uint64
-
+	// Float64 is an alias of zap.Float64
 	Float64 = zap.Float64
-	Any     = zap.Any
+	// Any is an alias of zap.Any
+	Any = zap.Any
 )
 
-//default logger
+// defaultLogger default logger for internal used
 var defaultLogger *Logger
 
+// Logger logger definition
 type Logger struct {
 	logger *zap.Logger
 	level  zap.AtomicLevel
 }
 
+// Config log configs
 type Config struct {
-	Dir   string
-	Name  string
+	// Dir log output directory
+	Dir string
+	// Name log output file name
+	Name string
+	// Level log level
 	Level string
-
-	CallerSkip    int
+	// CallerSkip log depth
+	CallerSkip int
+	// FlushInterval log flush interval
 	FlushInterval time.Duration
-
-	Debug             bool
-	WatchConfig       bool
-	EnableAsyncLog    bool
+	// Debug log mode, default true
+	Debug bool
+	// WatchConfig whether watch config file changes
+	WatchConfig bool
+	// EnableAsyncLog whether flush log async
+	EnableAsyncLog bool
+	// DisableStacktrace where log stack details if run into error
 	DisableStacktrace bool
-
-	// 日志输出文件最大长度，超过改值则截断
-	MaxSize   int
-	MaxAge    int
+	// MaxSize max size of log file, it'll rotate log automatically if exceed the max size
+	MaxSize int
+	// MaxAge max duration of store logs
+	MaxAge int
+	// MaxBackup max files of backup logs
 	MaxBackup int
 }
 
@@ -140,7 +161,7 @@ func defaultConfig() *Config {
 	}
 }
 
-// New return a pointer of Logger
+// New returns a Logger instance
 func New(config *Config) *Logger {
 	if config == nil {
 		config = defaultConfig()
@@ -226,7 +247,7 @@ func assembleFields(ctx context.Context, fields ...Field) []Field {
 	return fs
 }
 
-// rotate rotate log
+// rotate rotate log according to the predefined polices
 func rotate(config *Config) io.Writer {
 	return &lumberjack.Logger{
 		Filename:   fmt.Sprintf("%s/%s", config.Dir, config.Name),

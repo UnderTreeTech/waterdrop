@@ -24,27 +24,37 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ClientConfig http client config
 type ClientConfig struct {
-	HostURL             string
-	Timeout             time.Duration
+	// HostURL peer service host
+	HostURL string
+	// Timeout request timeout
+	Timeout time.Duration
+	// SlowRequestDuration slow request timeout
 	SlowRequestDuration time.Duration
-
+	// EnableDebug trace request details
 	EnableDebug bool
-
-	Key    string
+	// Key client key
+	Key string
+	// Secret signature secret
 	Secret string
 }
 
+// ServerConfig http server config
 type ServerConfig struct {
+	// Addr server addr, like :8080 or 127.0.0.1:8080
 	Addr string
-
+	// Timeout request timeout
 	Timeout time.Duration
-	Mode    string
-
+	// Mode server mode: release or debug
+	Mode string
+	// SlowRequestDuration slow request timeout
 	SlowRequestDuration time.Duration
-	WatchConfig         bool
+	// WatchConfig whether watch config file changes
+	WatchConfig bool
 }
 
+// DefaultServerConfig default server configs, for start http server out of box
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Addr:                "0.0.0.0:10000",

@@ -34,6 +34,7 @@ import (
 
 const size = 4 << 10
 
+// RecoveryForUnaryServer recover unary server once it panics
 func RecoveryForUnaryServer(config *config.ServerConfig) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer func() {
@@ -73,6 +74,7 @@ func RecoveryForUnaryServer(config *config.ServerConfig) grpc.UnaryServerInterce
 	}
 }
 
+// RecoveryForUnaryClient recover unary client once it panics
 func RecoveryForUnaryClient(config *config.ClientConfig) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		defer func() {

@@ -35,6 +35,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Client grpc client definition
 type Client struct {
 	conn          *grpc.ClientConn
 	config        *config.ClientConfig
@@ -44,6 +45,7 @@ type Client struct {
 	unaryInterceptors []grpc.UnaryClientInterceptor
 }
 
+// New returns a Client instance
 func New(config *config.ClientConfig) *Client {
 	cli := &Client{
 		config:   config,
@@ -89,7 +91,6 @@ func New(config *config.ClientConfig) *Client {
 }
 
 // ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
-//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryClient(one, two, three) will execute one before two before three.
 func (c *Client) ChainUnaryClient() grpc.UnaryClientInterceptor {
@@ -113,7 +114,6 @@ func (c *Client) ChainUnaryClient() grpc.UnaryClientInterceptor {
 }
 
 // Chain creates a single interceptor out of a chain of many interceptors.
-//
 // WithUnaryServerChain is a grpc.Client dial option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
 func (c *Client) WithUnaryServerChain() grpc.DialOption {

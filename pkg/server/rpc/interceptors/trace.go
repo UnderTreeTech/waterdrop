@@ -34,6 +34,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// TraceForUnaryServer trace unary server side details
 func TraceForUnaryServer() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		opt := trace.FromIncomingContext(ctx)
@@ -56,6 +57,7 @@ func TraceForUnaryServer() grpc.UnaryServerInterceptor {
 	}
 }
 
+// TraceForUnaryClient trace unary client side details
 func TraceForUnaryClient() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) (err error) {
 		md, ok := metadata.FromOutgoingContext(ctx)

@@ -39,6 +39,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Server rpc server definition
 type Server struct {
 	server *grpc.Server
 	config *config.ServerConfig
@@ -47,6 +48,7 @@ type Server struct {
 	unaryInterceptors []grpc.UnaryServerInterceptor
 }
 
+// New returns a rpc Server instance
 func New(cfg *config.ServerConfig) *Server {
 	if cfg == nil {
 		cfg = config.DefaultServerConfig()
@@ -77,6 +79,7 @@ func New(cfg *config.ServerConfig) *Server {
 	return srv
 }
 
+// Start rpc server
 func (s *Server) Start() net.Addr {
 	listener, err := net.Listen("tcp", s.config.Addr)
 	if err != nil {
@@ -121,12 +124,12 @@ func (s *Server) Stop(ctx context.Context) error {
 	return err
 }
 
+// Server returns underlying grpc Server
 func (s *Server) Server() *grpc.Server {
 	return s.server
 }
 
 // ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
-//
 // Execution is done in left-to-right order, including passing of context.
 // For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
 // will see context changes of one and two.
@@ -151,7 +154,6 @@ func (s *Server) ChainUnaryServer() grpc.UnaryServerInterceptor {
 }
 
 // Chain creates a single interceptor out of a chain of many interceptors.
-//
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
 func (s *Server) WithUnaryServerChain() grpc.ServerOption {

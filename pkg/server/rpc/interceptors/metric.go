@@ -31,7 +31,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Metric metric handler
+// Metric metric handler, currently only metric at server side
 func Metric() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		now := time.Now()
