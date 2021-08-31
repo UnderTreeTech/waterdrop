@@ -26,8 +26,6 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/database/mongo"
@@ -150,7 +148,7 @@ func testMongo(c *gin.Context) {
 
 	// find one
 	var userinfo *UserInfo
-	err = db.GetCollection("user").Find(ctx, bson.M{"name": user.Name}).One(&userinfo)
+	err = db.GetCollection("user").Find(ctx, mongo.M{"name": user.Name}).One(&userinfo)
 	if err != nil {
 		fmt.Println("query doc fail", err)
 	} else {
@@ -159,7 +157,7 @@ func testMongo(c *gin.Context) {
 
 	// find all
 	allUsers := make([]*UserInfo, 0)
-	err = db.GetCollection("user").Find(ctx, bson.M{}).Sort("name").Limit(5).All(&allUsers)
+	err = db.GetCollection("user").Find(ctx, mongo.M{}).Sort("name").Limit(5).All(&allUsers)
 	if err != nil {
 		fmt.Println("query limit docs fail", err)
 	} else {
@@ -169,7 +167,7 @@ func testMongo(c *gin.Context) {
 	}
 
 	// count
-	count, err := db.GetCollection("user").Find(ctx, bson.M{}).Count()
+	count, err := db.GetCollection("user").Find(ctx, mongo.M{}).Count()
 	if err != nil {
 		fmt.Println("count fail", err)
 	} else {
@@ -177,7 +175,7 @@ func testMongo(c *gin.Context) {
 	}
 
 	// update
-	uret, err := db.GetCollection("user").UpdateAll(ctx, bson.M{"id": bson.M{"$in": []int64{1611138298337130000, 1611138298495058000}}}, bson.M{"$set": bson.M{"email": xstring.RandomString(32)}})
+	uret, err := db.GetCollection("user").UpdateAll(ctx, mongo.M{"id": mongo.M{"$in": []int64{1611138298337130000, 1611138298495058000}}}, mongo.M{"$set": mongo.M{"email": xstring.RandomString(32)}})
 	if err != nil {
 		fmt.Println("update doc fail", err)
 	} else {
@@ -185,7 +183,7 @@ func testMongo(c *gin.Context) {
 	}
 
 	// delete
-	err = db.GetCollection("user").Remove(ctx, bson.M{"id": 1611138298337130000})
+	err = db.GetCollection("user").Remove(ctx, mongo.M{"id": 1611138298337130000})
 	if err != nil {
 		fmt.Println("delete doc fail", err)
 	}
@@ -207,8 +205,8 @@ func testMongo(c *gin.Context) {
 
 	bret, err := db.GetCollection("user").Bulk(ctx).
 		InsertOne(insert).
-		UpdateOne(bson.M{"id": 1611138298495058000}, bson.M{"$set": bson.M{"email": xstring.RandomString(32)}}).
-		Remove(bson.M{"id": 1611138298495401000}).
+		UpdateOne(mongo.M{"id": 1611138298495058000}, mongo.M{"$set": mongo.M{"email": xstring.RandomString(32)}}).
+		Remove(mongo.M{"id": 1611138298495401000}).
 		Run()
 
 	if err != nil {
@@ -217,5 +215,5 @@ func testMongo(c *gin.Context) {
 		fmt.Println(bret.ModifiedCount, bret.InsertedCount, bret.DeletedCount)
 	}
 
-	c.JSON(200, err.Error())
+	c.JSON(200, "success")
 }

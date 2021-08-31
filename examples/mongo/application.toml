@@ -10,7 +10,7 @@
 [mongo]
     dbName = "waterdrop"
     addr = "127.0.0.1:27017"
-    dsn = "mongodb://user:password@127.0.0.1:27017/?connect=direct"
+    dsn = "mongodb://root:123456@127.0.0.1:27017/?connect=direct"
     #specifies that maximum number of connections allowed in the driver's connection pool to each server.
     maxPoolSize = 100
     #specifies the minimum number of connections allowed in the driver's connection pool to each server. If
