@@ -29,7 +29,12 @@ jobs:
         ports:
           - 6379:6379
         # Set health checks to wait until redis has started
-        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5 --health-retries=10
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-retries=10
 
       mongo:
         # Docker Hub image
@@ -47,6 +52,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      elasticsearch:
+        # Docker Hub image
+        image: elasticsearch:7.10.1
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+        options: >-
+          --health-cmd="curl http://localhost:9200/_cluster/health"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
       mysql:
         # Docker Hub image
         image: mysql:5.7
@@ -56,10 +74,14 @@ jobs:
         ports:
           - 3306:3306
         # Set health checks to wait until redis has started
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=10
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
-    - name: Set up minio
+    - name: Set up Minio
       run: |
         docker run -d -p 9000:9000 --name minio \
               -e "MINIO_ACCESS_KEY=XMFMOKB2FJWA0I9JIR62" \
