@@ -25,6 +25,7 @@ const (
 	_redisClientNamespace = "redis"
 	_mysqlClientNamespace = "mysql"
 	_mongoClientNamespace = "mongo"
+	_esClientNamespace    = "es"
 
 	_rocketmqClientNamespace = "rocketmq"
 	_kafkaClientNamespace    = "kafka"
@@ -127,6 +128,26 @@ var (
 		Help:      "mongo client requests duration(ms).",
 		Labels:    []string{"name", "addr", "command"},
 		Buckets:   []float64{5, 10, 25, 50, 100, 250, 500, 1000},
+	})
+)
+
+// es metrics
+var (
+	ESClientReqDuration = NewHistogramVec(&HistogramVecOpts{
+		Namespace: _esClientNamespace,
+		Subsystem: "requests",
+		Name:      "duration_ms",
+		Help:      "es client requests duration(ms).",
+		Labels:    []string{"name", "addr", "command"},
+		Buckets:   []float64{5, 10, 25, 50, 100, 250, 500, 1000},
+	})
+
+	ESClientErrCounter = NewCounterVec(&CounterVecOpts{
+		Namespace: _esClientNamespace,
+		Subsystem: "requests",
+		Name:      "error_total",
+		Help:      "redis client requests error count.",
+		Labels:    []string{"name", "peer", "command", "error"},
 	})
 )
 

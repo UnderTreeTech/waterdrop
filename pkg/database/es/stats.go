@@ -20,6 +20,13 @@ package es
 
 import (
 	"net/http"
+	"time"
+
+	"github.com/olivere/elastic/v7"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -35,12 +42,15 @@ type Transport struct {
 	rt http.RoundTripper
 	// config transport config
 	config *Config
+	// brk es breaker
+	brk *breaker.BreakerGroup
 }
 
 // NewTransport returns a Transport pointer
 func NewTransport(config *Config) *Transport {
 	return &Transport{
 		config: config,
+		brk:    breaker.NewBreakerGroup(),
 	}
 }
 
@@ -51,26 +61,41 @@ func (t *Transport) SetRoundTripper(rt http.RoundTripper) *Transport {
 }
 
 // RoundTrip custom http RoundTrip
+// Trace and metric request here and enable breaker at the same time
 func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-	span, ctx := trace.StartSpanFromContext(req.Context(), "es")
-	span = span.SetTag("peer.port", req.URL.Port())
-	ext.Component.Set(span, t.config.Version)
-	ext.HTTPUrl.Set(span, req.URL.String())
-	ext.HTTPMethod.Set(span, req.Method)
-	ext.PeerHostname.Set(span, req.URL.Hostname())
-	defer span.Finish()
+	err = t.brk.Do("es", func() error {
+		// Trace request
+		now := time.Now()
+		span, ctx := trace.StartSpanFromContext(req.Context(), "es")
+		span = span.SetTag("peer.port", req.URL.Port())
+		ext.Component.Set(span, "es")
+		ext.HTTPUrl.Set(span, req.URL.String())
+		ext.HTTPMethod.Set(span, req.Method)
+		ext.PeerHostname.Set(span, req.URL.Hostname())
+		defer span.Finish()
 
-	req = req.WithContext(ctx)
-	if t.rt != nil {
-		resp, err = t.rt.RoundTrip(req)
-	} else {
-		resp, err = http.DefaultTransport.RoundTrip(req)
-	}
+		req = req.WithContext(ctx)
+		if t.rt != nil {
+			resp, err = t.rt.RoundTrip(req)
+		} else {
+			resp, err = http.DefaultTransport.RoundTrip(req)
+		}
 
-	span = span.SetTag("http.status_code", resp.StatusCode)
-	if err != nil {
-		ext.Error.Set(span, true)
-		span.LogFields(log.String("event", "error"), log.String("message", err.Error()))
-	}
+		span = span.SetTag("http.status_code", resp.StatusCode)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.String("event", "error"), log.String("message", err.Error()))
+			// metric err
+			metric.ESClientErrCounter.Inc("es", t.config.URLs[0], req.Method, err.Error())
+		}
+		// metric request detail
+		metric.ESClientReqDuration.Observe(time.Since(now).Seconds(), "es", t.config.URLs[0], req.Method)
+		return err
+	}, accept)
 	return
+}
+
+// accept check es op success or not
+func accept(err error) bool {
+	return err == nil || elastic.IsNotFound(err)
 }
