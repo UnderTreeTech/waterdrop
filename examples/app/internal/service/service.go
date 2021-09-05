@@ -21,14 +21,12 @@ package service
 import (
 	"fmt"
 
-	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
-	rpcConfig "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
-
 	"github.com/UnderTreeTech/waterdrop/examples/proto/user"
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/client"
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
+	rpcConfig "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 )
 
 type Service struct {
@@ -42,7 +40,6 @@ func New() *Service {
 		panic(fmt.Sprintf("unmarshal user client config fail, err msg %s", err.Error()))
 	}
 	rpcCli := rpcClient.New(cliConf)
-	rpcCli.Use(interceptors.GoogleSREBreaker(rpcCli.GetBreakers()))
 	userRPC := user.NewUserClient(rpcCli.GetConn())
 
 	httpCliConf := &config.ClientConfig{}
