@@ -49,7 +49,7 @@ func TestClient(t *testing.T) {
 		DialTimeout: 150 * time.Millisecond,
 		Block:       false,
 		Balancer:    "round_robin",
-		Target:      "0.0.0.0:21819",
+		Target:      "127.0.0.1:21819",
 	}
 	client := New(cfg)
 	rpc := demo.NewDemoClient(client.GetConn())
@@ -83,7 +83,7 @@ func TestDialTimeout(t *testing.T) {
 		DialTimeout: 50 * time.Millisecond,
 		Block:       true,
 		Balancer:    "round_robin",
-		Target:      "0.0.0.0:21819",
+		Target:      "127.0.0.1:21819",
 	}
 	client := New(cfg)
 	demo.NewDemoClient(client.GetConn())
