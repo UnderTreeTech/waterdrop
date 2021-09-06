@@ -30,17 +30,23 @@ import (
 )
 
 type googleSreBreaker struct {
-	// google accepts multiplier K
-	k     float64
+	// k google accepts multiplier K
+	k float64
+	// state service status
 	state int32
-	rw    *xcollection.RollingWindow
+	// rw rolling window to stat metrics
+	rw *xcollection.RollingWindow
+	// proba open breaker probability
 	proba *Proba
+	// name breaker name
+	name string
 }
 
 type GoogleSreBreakerConfig struct {
 	K          float64
 	Window     time.Duration
 	BucketSize int
+	Name       string
 }
 
 // defaultGoogleSreBreakerConfig default google sre breaker config
@@ -66,6 +72,7 @@ func newGoogleSreBreaker(config *GoogleSreBreakerConfig) *googleSreBreaker {
 		rw:    rw,
 		proba: NewProba(),
 		state: StateOpen,
+		name:  config.Name,
 	}
 
 	return breaker
@@ -76,7 +83,7 @@ func (gsb *googleSreBreaker) Allow() error {
 	success, total := gsb.summary()
 	googleAccepts := gsb.k * success
 	dropRatio := math.Max(0, (float64(total)-googleAccepts)/float64(total+1))
-	log.Debugf("breaker", log.Int64("total", total), log.Float64("success", success), log.Float64("accepts", googleAccepts), log.Float64("ratio", dropRatio))
+	log.Debugf("breaker", log.String("name", gsb.name), log.Int64("total", total), log.Float64("success", success), log.Float64("accepts", googleAccepts), log.Float64("ratio", dropRatio))
 	if dropRatio <= 0 {
 		if atomic.LoadInt32(&gsb.state) == StateOpen {
 			atomic.CompareAndSwapInt32(&gsb.state, StateOpen, StateClosed)
