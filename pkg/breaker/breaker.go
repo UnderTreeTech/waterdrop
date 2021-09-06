@@ -61,16 +61,24 @@ func (p *Proba) TrueOnProba(proba float64) bool {
 	return reject
 }
 
+// brks global breaker group instance
+var brks *BreakerGroup
+
+func init() {
+	brks = &BreakerGroup{
+		breakers: make(map[string]Breaker),
+	}
+}
+
+// BreakerGroup brks
 type BreakerGroup struct {
 	mutex    sync.RWMutex
 	breakers map[string]Breaker
 }
 
-// NewBreakerGroup return a breaker group pointer
+// NewBreakerGroup returns global breaker group instance brks
 func NewBreakerGroup() *BreakerGroup {
-	return &BreakerGroup{
-		breakers: make(map[string]Breaker),
-	}
+	return brks
 }
 
 // Get return a break associate with the name
@@ -85,7 +93,9 @@ func (bg *BreakerGroup) Get(name string) Breaker {
 	bg.mutex.Lock()
 	breaker, ok = bg.breakers[name]
 	if !ok {
-		breaker = newGoogleSreBreaker(nil)
+		cfg := defaultGoogleSreBreakerConfig()
+		cfg.Name = name
+		breaker = newGoogleSreBreaker(cfg)
 		bg.breakers[name] = breaker
 	}
 	bg.mutex.Unlock()

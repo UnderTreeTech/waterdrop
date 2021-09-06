@@ -19,6 +19,7 @@
 package breaker
 
 import (
+	"os"
 	"testing"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
@@ -26,11 +27,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var bg = NewBreakerGroup()
+var bg *BreakerGroup
+
+func TestMain(m *testing.M) {
+	defer log.New(nil).Sync()
+	bg = NewBreakerGroup()
+	os.Exit(m.Run())
+}
 
 // TestBreakerAccept test breaker Accept
 func TestBreakerAccept(t *testing.T) {
-	defer log.New(nil).Sync()
 	breaker := bg.Get("breaker")
 	for i := 0; i < 100; i++ {
 		breaker.Accept()
@@ -40,7 +46,6 @@ func TestBreakerAccept(t *testing.T) {
 
 // TestBreakerReject test breaker Reject
 func TestBreakerReject(t *testing.T) {
-	defer log.New(nil).Sync()
 	breaker := bg.Get("breaker")
 	for i := 0; i < 40000; i++ {
 		breaker.Reject()
@@ -51,7 +56,6 @@ func TestBreakerReject(t *testing.T) {
 
 // TestBreakerDo test breaker Do
 func TestBreakerDo(t *testing.T) {
-	defer log.New(nil).Sync()
 	err := bg.Do("do", func() error {
 		return nil
 	}, func(e error) bool {

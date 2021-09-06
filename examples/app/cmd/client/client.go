@@ -28,8 +28,6 @@ import (
 
 	rpcClient "github.com/UnderTreeTech/waterdrop/pkg/server/rpc/client"
 
-	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/interceptors"
-
 	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
@@ -63,7 +61,6 @@ func main() {
 	}
 	fmt.Println(cliConf)
 	rpcCli := rpcClient.New(cliConf)
-	rpcCli.Use(interceptors.GoogleSREBreaker(rpcCli.GetBreakers()))
 	demoRPC := demo.NewDemoClient(rpcCli.GetConn())
 
 	for i := 0; i < 1; i++ {
