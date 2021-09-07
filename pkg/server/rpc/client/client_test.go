@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/UnderTreeTech/waterdrop/examples/proto/demo"
+	"github.com/UnderTreeTech/waterdrop/tests/proto/demo"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"

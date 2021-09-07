@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/Masterminds/squirrel v1.4.0
 	github.com/Shopify/sarama v1.27.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alibaba/sentinel-golang v1.0.2
