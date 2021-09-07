@@ -21,6 +21,8 @@ package upgrade
 import (
 	"fmt"
 
+	"github.com/fatih/color"
+
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/project/base"
 	"github.com/urfave/cli/v2"
 )
@@ -40,6 +42,9 @@ func run(c *cli.Context) (err error) {
 
 	if err != nil {
 		fmt.Println("upgrade waterdrop fail", err.Error())
+		return
 	}
+
+	fmt.Println(color.GreenString("upgrade tool waterdrop success"))
 	return
 }

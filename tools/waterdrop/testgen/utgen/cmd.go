@@ -21,6 +21,8 @@ package utgen
 import (
 	"fmt"
 
+	"github.com/fatih/color"
+
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/testgen/common"
 
 	"github.com/urfave/cli/v2"
@@ -63,6 +65,6 @@ func run(ctx *cli.Context) error {
 		panic(err)
 	}
 
-	fmt.Println(common.GenTestSuccess)
+	fmt.Println(color.GreenString(common.GenTestSuccess))
 	return nil
 }
