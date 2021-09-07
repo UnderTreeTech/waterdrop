@@ -5,6 +5,7 @@
 ### Optimize/Enhancement
 - polish redis Ping code
 - update README and CHANGELOG
+- remove examples
 
 ### Tool
 - add new and upgrade tool ([7cf0f29](https://github.com/UnderTreeTech/waterdrop/pull/132))
