@@ -35,9 +35,14 @@ func (r *Redis) Close() (err error) {
 }
 
 // Ping ping is used to test if a connection is still alive, or to measure latency
-func (r *Redis) Ping(ctx context.Context) (value string, err error) {
-	err = r.breakers.Do(r.config.dbAddr, func() error {
-		return r.client.Ping(ctx).Err()
+func (r *Redis) Ping(ctx context.Context) (alive bool) {
+	_ = r.breakers.Do(r.config.dbAddr, func() error {
+		value, err := r.client.Ping(ctx).Result()
+		if err != nil {
+			return nil
+		}
+		alive = "PONG" == value
+		return nil
 	}, accept)
 	return
 }
