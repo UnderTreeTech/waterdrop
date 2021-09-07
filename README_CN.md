@@ -27,14 +27,26 @@
 - Status：全局错误处理，用于HTTP/RPC之间错误转换。后续可扩展成从remote加载错误定义
 - Dashboard：基于Grafana搭建metrics大盘，待实现
 - Breaker：熔断器，支持[alibaba sentinel](github.com/alibaba/sentinel-golang)、[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/)
-- Middlewares & Interceptors：http/rpc server通用中间件，如令牌桶/漏桶限流、signature签名等，待实现
+- Middlewares & Interceptors：http/rpc server通用中间件，如recovery, trace, metric and logger等
 
 
 ## Installation
 
 `go get github.com/UnderTreeTech/waterdrop`
 
-## Documentation
+## Tools
+
+waterdrop提供脚手架工具来提高开发效率。执行`go get -u github.com/UnderTreeTech/waterdrop/tools/waterdrop`安装最新版工具。
+
+工具依赖`protc`及`protoc-gen-go`来生成protobuf代码，目前waterdrop工具并不自动安装这两个插件需要用户自主安装，实际开发中每人的版本并不相同。
+
+waterdrop工具提供的功能如下：
+
+- `watedrop new your_project_name` new a standard layout project
+- `waterdrop protoc --grpc --swagger xx.proto` generate grpc code and swagger api file
+- `waterdrop swagger serve xx.swagger.json` serve and browse swagger api
+- `watedrop utgen xx.go` generate unit tests
+- `watedrop upgrade` upgrade tool `watedrop`
 
 ## Contributing
 

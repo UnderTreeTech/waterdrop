@@ -24,22 +24,37 @@ watch the config file changes for hot reload configuration
 - Distribute Lock: distributed Lock is implemented based on Redis and ETCD. 
 The former is suitable for final consistent business locks, while the latter is suitable for strongly consistent business locks
 - Stats: Metrics & Profile for service operation
-- Broker: Support RocketMQ and Kafka.
+- Broker: Support RocketMQ and Kafka
 - Utils: Helper class function
 - Registry: Service Registry discovery, etcd is the default service discovery component
 - Status: Global error handling for error conversion between HTTP/RPC
 - Dashboard: Build metrics dashboard based on Grafana, to be implemented
 - Breaker: Support [alibaba sentinel](github.com/alibaba/sentinel-golang), 
 [google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/)
-- Middlewares & Interceptors: HTTP/RPC Server common middleware, such as token bucket/leaky bucket flow limiting, 
-request signature, etc., to be implemented
+- Middlewares & Interceptors: HTTP/RPC Server common middleware, such as recovery, trace, metric and logger,etc
 
 
 ## Installation
 
 `go get github.com/UnderTreeTech/waterdrop`
 
-## Documentation
+## Tools
+
+Execute the following command to get waterdrop tool to help you boost your development progress
+
+`go get -u github.com/UnderTreeTech/waterdrop/tools/waterdrop`
+
+You can use `watedrop help` to find out how to use tools
+
+You can generate protobuf codes but make sure you've already installed `protc` and `protoc-gen-go`. 
+Here we don't install the two plugins automatically because we are not sure which version you will choose.
+
+- `watedrop new your_project_name` new a standard layout project
+- `waterdrop protoc --grpc --swagger xx.proto` generate grpc code and swagger api file
+- `waterdrop swagger serve xx.swagger.json` serve and browse swagger api
+- `watedrop utgen xx.go` generate unit tests
+- `watedrop upgrade` upgrade tool `watedrop`
+
 
 ## Contributing
 
