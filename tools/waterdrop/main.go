@@ -23,6 +23,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/upgrade"
+
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/project"
+
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/swagger"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/testgen/utgen"
 
@@ -40,9 +44,11 @@ func main() {
 	app.Usage = "waterdrop tools"
 	app.Version = Version
 	app.Commands = []*cli.Command{
+		project.ProjectCmd,
 		protoc.ProtocCmd,
 		swagger.SwaggerCmd,
 		utgen.UTCmd,
+		upgrade.UpgradeCmd,
 	}
 
 	if err := app.Run(os.Args); err != nil {
