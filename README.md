@@ -44,16 +44,16 @@ Execute the following command to get waterdrop tool to help you boost your devel
 
 `go get -u github.com/UnderTreeTech/waterdrop/tools/waterdrop`
 
-You can use `watedrop help` to find out how to use tools
+You can use `waterdrop help` to find out how to use tools
 
 You can generate protobuf codes but make sure you've already installed `protc` and `protoc-gen-go`. 
 Here we don't install the two plugins automatically because we are not sure which version you will choose.
 
-- `watedrop new your_project_name` new a standard layout project
+- `waterdrop new your_project_name` new a standard layout project
 - `waterdrop protoc --grpc --swagger xx.proto` generate grpc code and swagger api file
 - `waterdrop swagger serve xx.swagger.json` serve and browse swagger api
-- `watedrop utgen xx.go` generate unit tests
-- `watedrop upgrade` upgrade tool `watedrop`
+- `waterdrop utgen xx.go` generate unit tests
+- `waterdrop upgrade` upgrade tool `waterdrop`
 
 
 ## Contributing
