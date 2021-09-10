@@ -42,11 +42,11 @@ waterdrop提供脚手架工具来提高开发效率。执行`go get -u github.co
 
 waterdrop工具提供的功能如下：
 
-- `watedrop new your_project_name` new a standard layout project
+- `waterdrop new your_project_name` new a standard layout project
 - `waterdrop protoc --grpc --swagger xx.proto` generate grpc code and swagger api file
 - `waterdrop swagger serve xx.swagger.json` serve and browse swagger api
-- `watedrop utgen xx.go` generate unit tests
-- `watedrop upgrade` upgrade tool `watedrop`
+- `waterdrop utgen xx.go` generate unit tests
+- `waterdrop upgrade` upgrade tool `waterdrop`
 
 ## Contributing
 
