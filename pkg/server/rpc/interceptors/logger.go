@@ -56,7 +56,7 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
-			log.String("peer_ip", ip),
+			log.String("peer", ip),
 			log.String("method", info.FullMethod),
 			log.Any("req", req),
 			log.Float64("quota", quota),
@@ -101,7 +101,7 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
-			log.String("peer_ip", peerIP),
+			log.String("peer", peerIP),
 			log.String("method", method),
 			log.Any("req", req),
 			log.Float64("quota", quota),

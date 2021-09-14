@@ -164,7 +164,7 @@ func (c *Client) execute(ctx context.Context, request *resty.Request) (reply *re
 			fields := make([]log.Field, 0, 12)
 			fields = append(
 				fields,
-				log.String("host", c.client.HostURL),
+				log.String("peer", c.client.HostURL),
 				log.String("method", request.Method),
 				log.String("path", strings.TrimPrefix(request.URL, c.client.HostURL)),
 				log.Any("headers", request.Header),
