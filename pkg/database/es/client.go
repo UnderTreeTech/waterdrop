@@ -39,6 +39,8 @@ type Config struct {
 	URLs []string
 	// Plugins enabled plugins
 	Plugins []string
+	// Sniff enabled or disabled sniffer
+	Sniff bool
 }
 
 // Client es client struct
@@ -61,6 +63,7 @@ func NewClient(config *Config) *Client {
 		es7.SetURL(config.URLs...),
 		es7.SetScheme(config.Schema),
 		es7.SetRequiredPlugins(config.Plugins...),
+		es7.SetSniff(config.Sniff),
 	)
 	client := &Client{
 		config: config,
