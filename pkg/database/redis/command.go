@@ -289,6 +289,16 @@ func (r *Redis) LPop(ctx context.Context, key string) (value string, err error) 
 	return
 }
 
+// LPopN removes and returns the N elements of the list stored at key
+func (r *Redis) LPopN(ctx context.Context, key string, count int) (value []string, err error) {
+	err = r.breakers.Do(r.config.dbAddr, func() error {
+		reply, rerr := r.client.LPopCount(ctx, key, count).Result()
+		value = reply
+		return rerr
+	}, accept)
+	return
+}
+
 // LPush insert all the specified values at the head of the list stored at key
 func (r *Redis) LPush(ctx context.Context, key string, values ...interface{}) (value int64, err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
