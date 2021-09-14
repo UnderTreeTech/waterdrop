@@ -80,8 +80,11 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 		} else {
 			resp, err = http.DefaultTransport.RoundTrip(req)
 		}
-
-		span = span.SetTag("http.status_code", resp.StatusCode)
+		
+		if resp != nil {
+		    	span = span.SetTag("http.status_code", resp.StatusCode)
+		}
+		
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogFields(log.String("event", "error"), log.String("message", err.Error()))
