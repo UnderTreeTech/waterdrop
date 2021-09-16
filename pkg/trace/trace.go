@@ -49,6 +49,10 @@ func SpanFromContext(ctx context.Context) opentracing.Span {
 	return opentracing.SpanFromContext(ctx)
 }
 
+func ContextWithSpan(ctx context.Context, span opentracing.Span) context.Context {
+	return opentracing.ContextWithSpan(ctx, span)
+}
+
 // FromIncomingContext extract trace info from span
 func FromIncomingContext(ctx context.Context) opentracing.StartSpanOption {
 	md, ok := metadata.FromIncomingContext(ctx)
