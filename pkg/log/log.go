@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/natefinch/lumberjack"
@@ -112,7 +113,12 @@ func newLogger(config *Config) *Logger {
 	}
 
 	opts := make([]zap.Option, 0)
-	opts = append(opts, zap.AddCallerSkip(config.CallerSkip))
+	opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(config.CallerSkip))
+	kvs := strings.Split(config.Name, ".")
+	if len(kvs) > 0 {
+		opts = append(opts, zap.Fields(zap.String("app", kvs[0])))
+	}
+
 	if !config.DisableStacktrace {
 		opts = append(opts, zap.AddStacktrace(zap.ErrorLevel))
 	}
