@@ -20,6 +20,13 @@ package es
 
 import "github.com/olivere/elastic/v7"
 
+type (
+	// BoolQuery is an alias of elastic.BoolQuery
+	BoolQuery = elastic.BoolQuery
+	// SearchResult is an alias of elastic.SearchResult
+	SearchResult = elastic.SearchResult
+)
+
 // NewBoolQuery creates a new bool query
 func NewBoolQuery() *elastic.BoolQuery {
 	return elastic.NewBoolQuery()
@@ -221,4 +228,9 @@ func NewBulkIndexRequest() *elastic.BulkIndexRequest {
 // NewBulkUpdateRequest returns a new BulkUpdateRequest
 func NewBulkUpdateRequest() *elastic.BulkUpdateRequest {
 	return elastic.NewBulkUpdateRequest()
+}
+
+// NewHighlight creates a highlight instance
+func NewHighlight(name string, value interface{}) *elastic.Highlight {
+	return elastic.NewHighlight()
 }
