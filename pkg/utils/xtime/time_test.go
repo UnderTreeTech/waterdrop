@@ -25,9 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var now = &Time{
-	Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.UTC),
-}
+var now = &Time{Time: time.Date(2020, 11, 26, 14, 10, 32, 331, time.UTC)}
 
 func TestNow(t *testing.T) {
 	n := Now()
@@ -50,14 +48,16 @@ func TestFormat(t *testing.T) {
 	assert.Regexp(t, datetimeReg, datetime)
 
 	unix := now.CurrentUnixTime()
-	millis := now.CurrentMilliTime()
-	nano := now.CurrentNanoTime()
 	assert.Regexp(t, dateReg, FormatUnixDate(unix))
-	assert.Regexp(t, dateReg, FormatMilliDate(millis))
 	assert.Regexp(t, datetimeReg, FormatUnixDateTime(unix))
-	assert.Regexp(t, datetimeReg, FormatMilliDateTime(millis))
-	assert.Regexp(t, dateReg, FormatMilliDate(nano/1e6))
-	assert.Regexp(t, datetimeReg, FormatMilliDateTime(nano/1e6))
+	assert.Equal(t, FormatUnix(unix, DateFormat), now.In(time.Local).Format(DateFormat))
+	assert.Equal(t, FormatUnix(unix, DateTimeFormat), now.In(time.Local).Format(DateTimeFormat))
+	assert.Equal(t, FormatUnix(unix, TimeFormat), now.In(time.Local).Format(TimeFormat))
+
+	assert.Equal(t, now.Format(TimeFormat), "14:10:32")
+	assert.Equal(t, now.Format(ShortDateFormat), "20201126")
+	assert.Equal(t, now.Format(ShortDateTimeFormat), "20201126141032")
+	assert.Equal(t, now.Format(ShortTimeFormat), "141032")
 }
 
 func TestTime(t *testing.T) {
@@ -89,4 +89,19 @@ func TestTime(t *testing.T) {
 	assert.Equal(t, now.EndOfHour().CurrentUnixTime(), endOfHour)
 	assert.Equal(t, now.BeginOfMinute().CurrentUnixTime(), beginOfMinute)
 	assert.Equal(t, now.EndOfMinute().CurrentUnixTime(), endOfMinute)
+
+	assert.Equal(t, now.Yesterday().CurrentUnixTime(), now.CurrentUnixTime()-SecondsPerDay)
+	assert.Equal(t, now.Tomorrow().CurrentUnixTime(), now.CurrentUnixTime()+SecondsPerDay)
+	assert.Equal(t, now.DaysBefore(5).CurrentUnixTime(), now.CurrentUnixTime()-5*SecondsPerDay)
+	assert.Equal(t, now.DaysAfter(5).CurrentUnixTime(), now.CurrentUnixTime()+5*SecondsPerDay)
+
+	assert.Equal(t, Yesterday().CurrentUnixTime(), Now().CurrentUnixTime()-SecondsPerDay)
+	assert.Equal(t, Tomorrow().CurrentUnixTime(), Now().CurrentUnixTime()+SecondsPerDay)
+	assert.Equal(t, DaysBefore(5).CurrentUnixTime(), Now().CurrentUnixTime()-5*SecondsPerDay)
+	assert.Equal(t, DaysAfter(5).CurrentUnixTime(), Now().CurrentUnixTime()+5*SecondsPerDay)
+
+	tt, err := ParseByLayout("2020-11-26 14:10:32", DateTimeFormat, time.UTC)
+	assert.Nil(t, err)
+	assert.Equal(t, tt.CurrentUnixTime(), now.CurrentUnixTime())
+
 }
