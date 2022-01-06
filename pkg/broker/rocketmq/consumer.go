@@ -72,7 +72,6 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 		consumer: consumer,
 		config:   config,
 	}
-
 	return pc
 }
 
@@ -107,6 +106,5 @@ func (pc *PushConsumer) Subscribe(cb func(context.Context, *primitive.MessageExt
 	if err != nil {
 		panic(fmt.Sprintf("subscribe rocketmq fail, err msg: %s", err.Error()))
 	}
-
 	return pc
 }
