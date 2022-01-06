@@ -39,7 +39,6 @@ func main() {
 		Retry:       1,
 		SendTimeout: time.Second,
 		Topic:       "your_topic",
-		Tags:        []string{"go-rocketmq"},
 	}
 
 	p := rocketmq.NewProducer(config)

@@ -47,11 +47,10 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 		}
 		duration := time.Since(now).Seconds()
 
-		fields := make([]log.Field, 0, 6)
+		fields := make([]log.Field, 0, 5)
 		fields = append(
 			fields,
 			log.String("topic", pc.Topic),
-			log.Any("tags", pc.Tags),
 			log.String("content", realReq.String()),
 			log.String("response", realReply.String()),
 			log.Float64("duration", duration),
@@ -59,17 +58,17 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 		)
 
 		if err != nil {
-			log.Error(ctx, "rocketmq produce fail", fields...)
+			log.Error(ctx, "send msg fail", fields...)
 			metric.RocketMQClientHandleCounter.Inc("unknown", "rocketmq", pc.Topic, "produce", err.Error())
 			metric.RocketMQClientReqDuration.Observe(duration, "unknown", "rocketmq", pc.Topic, "produce")
 		} else {
-			log.Info(ctx, "rocketmq produce success", fields...)
+			log.Info(ctx, "send msg success", fields...)
 			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", strconv.Itoa(int(realReply.Status)))
 			metric.RocketMQClientReqDuration.Observe(duration, realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce")
 		}
 
 		if pc.SlowSendDuration > 0 && time.Since(now) > pc.SlowSendDuration {
-			log.Warn(ctx, "rocketmq slow produce", fields...)
+			log.Warn(ctx, "send slow", fields...)
 		}
 		return err
 	}
@@ -107,9 +106,9 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 			)
 
 			if err != nil {
-				log.Error(ctx, "rocketmq consume fail", fields...)
+				log.Error(ctx, "consume msg fail", fields...)
 			} else {
-				log.Info(ctx, "rocketmq consume success", fields...)
+				log.Info(ctx, "consume msg success", fields...)
 			}
 		}
 		return err
