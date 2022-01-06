@@ -121,8 +121,9 @@ func getSendMsgs(topic string, content string, tags ...string) []*primitive.Mess
 
 	if 0 == len(tags) {
 		msgs = make([]*primitive.Message, 0, 1)
-		msgs[0] = primitive.NewMessage(topic, bs).
+		msg := primitive.NewMessage(topic, bs).
 			WithKeys([]string{xstring.RandomString(16)})
+		msgs = append(msgs, msg)
 	} else {
 		msgs = make([]*primitive.Message, 0, len(tags))
 		for _, tag := range tags {
