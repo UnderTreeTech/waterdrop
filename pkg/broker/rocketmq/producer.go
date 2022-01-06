@@ -35,7 +35,6 @@ type ProducerConfig struct {
 	Endpoint  []string
 	AccessKey string
 	SecretKey string
-	Namespace string
 
 	Retry       int
 	SendTimeout time.Duration
@@ -62,11 +61,10 @@ func NewProducer(config *ProducerConfig) *Producer {
 	}
 
 	producer, err := rocketmq.NewProducer(
-		producer.WithNameServer(config.Endpoint),
+		producer.WithNsResolver(primitive.NewPassthroughResolver(config.Endpoint)),
 		producer.WithRetry(config.Retry),
 		producer.WithSendMsgTimeout(config.SendTimeout),
 		producer.WithCredentials(credentials),
-		producer.WithNamespace(config.Namespace),
 		producer.WithInterceptor(producerMetricInterceptor(config)),
 		producer.WithInterceptor(config.interceptors...),
 	)

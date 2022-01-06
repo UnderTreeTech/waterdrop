@@ -36,7 +36,6 @@ func main() {
 		Endpoint:    []string{"your_endpoint"},
 		AccessKey:   "your_access_key",
 		SecretKey:   "your_secret_key",
-		Namespace:   "your_namespace",
 		Retry:       1,
 		SendTimeout: time.Second,
 		Topic:       "your_topic",

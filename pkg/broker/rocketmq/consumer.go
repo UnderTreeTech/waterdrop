@@ -33,7 +33,6 @@ type ConsumerConfig struct {
 	Endpoint  []string
 	AccessKey string
 	SecretKey string
-	Namespace string
 
 	Topic string
 	Gid   string
@@ -57,9 +56,8 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 	}
 
 	consumer, err := rocketmq.NewPushConsumer(
-		consumer.WithNameServer(config.Endpoint),
+		consumer.WithNsResolver(primitive.NewPassthroughResolver(config.Endpoint)),
 		consumer.WithCredentials(credentials),
-		consumer.WithNamespace(config.Namespace),
 		consumer.WithGroupName(config.Gid),
 		consumer.WithConsumerOrder(config.Orderly),
 		consumer.WithInterceptor(pushConsumerMetricInterceptor(config)),

@@ -20,6 +20,7 @@ package rocketmq
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/apache/rocketmq-client-go/v2/consumer"
@@ -63,14 +64,13 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 			metric.RocketMQClientReqDuration.Observe(duration, "unknown", "rocketmq", pc.Topic, "produce")
 		} else {
 			log.Info(ctx, "rocketmq produce success", fields...)
-			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", string(rune(realReply.Status)))
+			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", strconv.Itoa(int(realReply.Status)))
 			metric.RocketMQClientReqDuration.Observe(duration, realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce")
 		}
 
 		if pc.SlowSendDuration > 0 && time.Since(now) > pc.SlowSendDuration {
 			log.Warn(ctx, "rocketmq slow produce", fields...)
 		}
-
 		return err
 	}
 }
@@ -88,7 +88,7 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 			errmsg = err.Error()
 		}
 		holder := reply.(*consumer.ConsumeResultHolder)
-		replyCode := string(rune(holder.ConsumeResult))
+		replyCode := strconv.Itoa(int(holder.ConsumeResult))
 		duration := time.Since(now).Seconds()
 
 		for _, msg := range msgs {
@@ -101,7 +101,7 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 				log.String("topic", pc.Topic),
 				log.Any("tags", pc.Tags),
 				log.String("content", msg.String()),
-				log.String("response", replyCode),
+				log.Int("response", int(holder.ConsumeResult)),
 				log.Float64("duration", duration),
 				log.String("error", errmsg),
 			)
@@ -112,7 +112,6 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 				log.Info(ctx, "rocketmq consume success", fields...)
 			}
 		}
-
 		return err
 	}
 }
