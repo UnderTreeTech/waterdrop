@@ -37,6 +37,7 @@ type ConsumerConfig struct {
 	Topic string
 	Gid   string
 	Tags  []string
+	Retry int32
 
 	Orderly      bool
 	interceptors []primitive.Interceptor
@@ -60,6 +61,7 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 		consumer.WithCredentials(credentials),
 		consumer.WithGroupName(config.Gid),
 		consumer.WithConsumerOrder(config.Orderly),
+		consumer.WithMaxReconsumeTimes(config.Retry),
 		consumer.WithInterceptor(pushConsumerMetricInterceptor(config)),
 		consumer.WithInterceptor(config.interceptors...),
 	)
