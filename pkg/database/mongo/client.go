@@ -20,10 +20,13 @@ package mongo
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
@@ -62,6 +65,8 @@ type (
 	D = bson.D
 	// E is an alias of bson.E
 	E = bson.E
+	// ObjectID is an alias of primitive.ObjectID
+	ObjectID = primitive.ObjectID
 )
 
 var (
@@ -69,6 +74,12 @@ var (
 
 	// ErrNoSuchDocuments return if no document found
 	ErrNoSuchDocuments = qmgo.ErrNoSuchDocuments
+
+	// NilObjectID is the zero value for ObjectID
+	NilObjectID = primitive.NilObjectID
+
+	// ErrInvalidHex indicates that a hex string cannot be converted to an ObjectID
+	ErrInvalidHex = primitive.ErrInvalidHex
 )
 
 // Open return database instance handler
@@ -152,7 +163,7 @@ func IsErrNoDocuments(err error) bool {
 	return false
 }
 
-// IsDup check if err is mongo E11000 (duplicate err)。
+// IsDup check if err is mongo E11000 (duplicate err)
 func IsDup(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "E11000")
 }
@@ -160,4 +171,27 @@ func IsDup(err error) bool {
 // accept check mongo op success or not
 func accept(err error) bool {
 	return err == nil || err == ErrNoSuchDocuments
+}
+
+// NewObjectID generates a new ObjectID
+func NewObjectID() ObjectID {
+	return primitive.NewObjectID()
+}
+
+// ObjectIDFromHex creates a new ObjectID from a hex string
+// It returns an error if the hex string is not a valid ObjectID
+func ObjectIDFromHex(s string) (ObjectID, error) {
+	if len(s) != 24 {
+		return NilObjectID, ErrInvalidHex
+	}
+
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return NilObjectID, err
+	}
+
+	var oid [12]byte
+	copy(oid[:], b[:])
+
+	return oid, nil
 }
