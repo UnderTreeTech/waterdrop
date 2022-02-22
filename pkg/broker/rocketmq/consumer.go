@@ -33,11 +33,11 @@ type ConsumerConfig struct {
 	Endpoint  []string
 	AccessKey string
 	SecretKey string
-	Namespace string
 
 	Topic string
 	Gid   string
 	Tags  []string
+	Retry int32
 
 	Orderly      bool
 	interceptors []primitive.Interceptor
@@ -57,11 +57,11 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 	}
 
 	consumer, err := rocketmq.NewPushConsumer(
-		consumer.WithNameServer(config.Endpoint),
+		consumer.WithNsResolver(primitive.NewPassthroughResolver(config.Endpoint)),
 		consumer.WithCredentials(credentials),
-		consumer.WithNamespace(config.Namespace),
 		consumer.WithGroupName(config.Gid),
 		consumer.WithConsumerOrder(config.Orderly),
+		consumer.WithMaxReconsumeTimes(config.Retry),
 		consumer.WithInterceptor(pushConsumerMetricInterceptor(config)),
 		consumer.WithInterceptor(config.interceptors...),
 	)
@@ -74,7 +74,6 @@ func NewPushConsumer(config *ConsumerConfig) *PushConsumer {
 		consumer: consumer,
 		config:   config,
 	}
-
 	return pc
 }
 
@@ -109,6 +108,5 @@ func (pc *PushConsumer) Subscribe(cb func(context.Context, *primitive.MessageExt
 	if err != nil {
 		panic(fmt.Sprintf("subscribe rocketmq fail, err msg: %s", err.Error()))
 	}
-
 	return pc
 }

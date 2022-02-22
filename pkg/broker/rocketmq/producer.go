@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
+
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xstring"
 
 	rocketmq "github.com/apache/rocketmq-client-go/v2"
@@ -35,13 +37,11 @@ type ProducerConfig struct {
 	Endpoint  []string
 	AccessKey string
 	SecretKey string
-	Namespace string
 
 	Retry       int
 	SendTimeout time.Duration
 
 	Topic string
-	Tags  []string
 
 	interceptors []primitive.Interceptor
 
@@ -62,11 +62,10 @@ func NewProducer(config *ProducerConfig) *Producer {
 	}
 
 	producer, err := rocketmq.NewProducer(
-		producer.WithNameServer(config.Endpoint),
+		producer.WithNsResolver(primitive.NewPassthroughResolver(config.Endpoint)),
 		producer.WithRetry(config.Retry),
 		producer.WithSendMsgTimeout(config.SendTimeout),
 		producer.WithCredentials(credentials),
-		producer.WithNamespace(config.Namespace),
 		producer.WithInterceptor(producerMetricInterceptor(config)),
 		producer.WithInterceptor(config.interceptors...),
 	)
@@ -79,7 +78,6 @@ func NewProducer(config *ProducerConfig) *Producer {
 		producer: producer,
 		config:   config,
 	}
-
 	return p
 }
 
@@ -94,43 +92,45 @@ func (p *Producer) Shutdown() error {
 }
 
 // SendSyncMsg send message sync
-func (p *Producer) SendSyncMsg(ctx context.Context, content string) error {
-	msgs := getSendMsgs(p.config.Topic, p.config.Tags, content)
+func (p *Producer) SendSyncMsg(ctx context.Context, content string, tags ...string) error {
+	msgs := getSendMsgs(p.config.Topic, content, tags...)
 	_, err := p.producer.SendSync(ctx, msgs...)
 	if err != nil {
+		log.Error(ctx, "send msg fail", log.String("content", content), log.Any("tags", tags),
+			log.String("error", err.Error()))
 		return err
 	}
-
 	return nil
 }
 
 // SendAsyncMsg send message async
-func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback func(context.Context, *primitive.SendResult, error)) error {
-	msgs := getSendMsgs(p.config.Topic, p.config.Tags, content)
+func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback func(context.Context, *primitive.SendResult, error), tags ...string) error {
+	msgs := getSendMsgs(p.config.Topic, content, tags...)
 	err := p.producer.SendAsync(ctx, callback, msgs...)
 	if err != nil {
+		log.Error(ctx, "async send msg fail", log.String("content", content), log.String("error", err.Error()))
 		return err
 	}
-
 	return nil
 }
 
 // getSendMsgs format send message to primitive.Message
-func getSendMsgs(topic string, tags []string, content string) []*primitive.Message {
+func getSendMsgs(topic string, content string, tags ...string) []*primitive.Message {
 	var msgs []*primitive.Message
+	bs := xstring.StringToBytes(content)
 
 	if 0 == len(tags) {
-		msgs = make([]*primitive.Message, 1)
-		msgs[0] = primitive.NewMessage(topic, []byte(content)).
+		msgs = make([]*primitive.Message, 0, 1)
+		msg := primitive.NewMessage(topic, bs).
 			WithKeys([]string{xstring.RandomString(16)})
+		msgs = append(msgs, msg)
 	} else {
-		msgs = make([]*primitive.Message, len(tags))
-		for index, tag := range tags {
-			msg := primitive.NewMessage(topic, []byte(content)).
+		msgs = make([]*primitive.Message, 0, len(tags))
+		for _, tag := range tags {
+			msg := primitive.NewMessage(topic, bs).
 				WithTag(tag).WithKeys([]string{xstring.RandomString(16)})
-			msgs[index] = msg
+			msgs = append(msgs, msg)
 		}
 	}
-
 	return msgs
 }

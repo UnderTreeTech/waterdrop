@@ -25,7 +25,6 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/broker/rocketmq"
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
-	"github.com/apache/rocketmq-client-go/v2/primitive"
 )
 
 func main() {
@@ -35,7 +34,6 @@ func main() {
 		Endpoint:  []string{"your_endpoint"},
 		AccessKey: "your_access_key",
 		SecretKey: "your_secret_key",
-		Namespace: "your_namespace",
 		Topic:     "your_topic",
 		Gid:       "your_group_id",
 		Tags:      []string{"go-rocketmq"},
@@ -48,7 +46,7 @@ func main() {
 	time.Sleep(time.Hour)
 }
 
-func consumeMsg(ctx context.Context, msg *primitive.MessageExt) error {
+func consumeMsg(ctx context.Context, msg *rocketmq.MessageExt) error {
 	fmt.Println("msg", msg.String())
 	return nil
 }
