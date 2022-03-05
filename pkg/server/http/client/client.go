@@ -71,7 +71,7 @@ func New(config *config.ClientConfig) *Client {
 	cli := resty.New()
 	cli.SetTimeout(config.Timeout)
 	cli.SetDebug(config.EnableDebug)
-	cli.SetHostURL(config.HostURL)
+	cli.SetBaseURL(config.HostURL)
 
 	return &Client{
 		client:   cli,
