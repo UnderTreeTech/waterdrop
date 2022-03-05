@@ -32,7 +32,7 @@ import (
 )
 
 // StartStats start stats server
-func StartStats() (si *registry.ServiceInfo, err error) {
+func StartStats(serviceName string) (si *registry.ServiceInfo, err error) {
 	gin.SetMode("release")
 	engine := gin.Default()
 
@@ -51,7 +51,7 @@ func StartStats() (si *registry.ServiceInfo, err error) {
 
 	_, port, _ := net.SplitHostPort(listener.Addr().String())
 	si = &registry.ServiceInfo{
-		Name:    "server.http.stats",
+		Name:    serviceName + "/stats",
 		Scheme:  "http",
 		Addr:    fmt.Sprintf("%s://%s:%s", "http", xnet.InternalIP(), port),
 		Version: "1.0.0",
