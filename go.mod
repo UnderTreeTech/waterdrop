@@ -7,7 +7,7 @@ require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alibaba/sentinel-golang v1.0.2
-	github.com/apache/rocketmq-client-go/v2 v2.1.1-rc2.0.20220103125055-83f60c154236
+	github.com/apache/rocketmq-client-go/v2 v2.1.1-rc2.0.20220308065954-bcd6e49fa7f8
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
