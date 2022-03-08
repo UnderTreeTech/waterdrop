@@ -1,5 +1,43 @@
 # CHANGELOG
 
+
+## v1.3.4
+
+Fix can't go get the latest v1.3.3 issue
+
+
+## v1.3.3
+
+This is a minor updates version.
+
+### Optimize/Enhancement
+- optimize rocket mq ([9c900fe](https://github.com/UnderTreeTech/waterdrop/pull/139))
+- add more time helper functions ([a2fe5fe](https://github.com/UnderTreeTech/waterdrop/pull/138))
+- add Highlight, BoolQuery and SearchResult alias ([e74b0fd](https://github.com/UnderTreeTech/waterdrop/pull/137))
+- update dependencies ([17ff6c8](https://github.com/UnderTreeTech/waterdrop/pull/141)). Thanks to @andykis
+- add log caller and app filed ([2ba23e0](https://github.com/UnderTreeTech/waterdrop/commit/2ba23e0da10dba65e37176e166102da9ceec8b7a))
+- add more mongo var alias ([053897d](https://github.com/UnderTreeTech/waterdrop/commit/053897d565643c224817fad71a8f2add31488bcd))
+- fix gjson ReDoS security ([0f43392](https://github.com/UnderTreeTech/waterdrop/pull/143))
+
+### Bugfix
+- add trace func ContextWithSpan ([ae369ac](https://github.com/UnderTreeTech/waterdrop/pull/136)). Thanks to @dirtyrain
+- send msg get nil reply #142 ([eebcf35](https://github.com/UnderTreeTech/waterdrop/commit/eebcf356db57a755e3a9ce72c27d2af025d998f8)). Thanks to @Billxunyang
+
+
+## v1.3.2
+
+This is a minor updates version.
+
+### Optimize/Enhancement
+- add es sniff field ([9eb04ca](https://github.com/UnderTreeTech/waterdrop/commit/9eb04caf29ba620c2919a1fa54cf49a0e768a91c))
+- add redis LPopN method, notice that it's only for redis version 6.2 and later ([9c900fe](https://github.com/UnderTreeTech/waterdrop/commit/9c900fe849971401409df947b263607a0b0becf0))
+- unify host and peer_ip to peer ([eeb196b](https://github.com/UnderTreeTech/waterdrop/commit/eeb196bcbf48e41411b6ed2a603cf35cbe285fe0))
+- fix typo ([dd0e83f](https://github.com/UnderTreeTech/waterdrop/pull/134)). Thanks to @coosir
+
+### Bugfix
+- fix es `nil` return panic ([a7da9d5](https://github.com/UnderTreeTech/waterdrop/commit/a7da9d5120ea3929faa36b3693d5211b71e090f8))
+
+
 ## v1.3.1
 
 ### Optimize/Enhancement
@@ -44,6 +82,7 @@ Hi erveryone, this is a major release including many improvments, features and b
 ### Tool
 - remove protobuf directory and upgrade swagger tool ([60ddd9c](https://github.com/UnderTreeTech/waterdrop/pull/108))
 
+
 ## v1.2.0
 
 ### Features
@@ -57,6 +96,7 @@ Hi erveryone, this is a major release including many improvments, features and b
 
 ### Bugfix
 - add lru element trigger deadlock ([5ac524d](https://github.com/UnderTreeTech/waterdrop/pull/89))
+
 
 ## v1.1.0
 
@@ -73,6 +113,7 @@ Hi erveryone, this is a major release including many improvments, features and b
 - compatible with multi gopath ([bb4687c](https://github.com/UnderTreeTech/waterdrop/pull/80)). Thanks to @dirtyrain
 - improve sql span security ([9073e9c](https://github.com/UnderTreeTech/waterdrop/pull/73))
 
+
 ## v1.0.0
 
 We're exciting to release waterdrop GA version v1.0.0! Feel free to have a try.
@@ -86,6 +127,7 @@ We're exciting to release waterdrop GA version v1.0.0! Feel free to have a try.
 ### Bugfix
 - fix interceptor does not take effect ([cebe08f](https://github.com/UnderTreeTech/waterdrop/pull/61))
 - fix trace span leaky ([1086af6](https://github.com/UnderTreeTech/waterdrop/pull/60))
+
 
 ## v0.2.0
 
@@ -101,6 +143,7 @@ We're exciting to release waterdrop GA version v1.0.0! Feel free to have a try.
 
 ### Bugfix
 - set read limit ([eaa5b78](https://github.com/UnderTreeTech/waterdrop/pull/33))
+
 
 ## v0.1.0
 
