@@ -45,8 +45,12 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 		if err != nil {
 			errmsg = err.Error()
 		}
-		duration := time.Since(now).Seconds()
 
+		if realReply == nil || realReply.MessageQueue == nil {
+			return err
+		}
+
+		duration := time.Since(now).Seconds()
 		fields := make([]log.Field, 0, 5)
 		fields = append(
 			fields,
