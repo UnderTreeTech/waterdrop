@@ -24,14 +24,14 @@ import "sync"
 const defaultMask = 42
 
 type (
-	TrieOption func(root *trie)
+	TrieOption func(root *Trie)
 
 	trieNode struct {
 		children map[rune]*trieNode
 		end      bool
 	}
 
-	trie struct {
+	Trie struct {
 		root *trieNode
 		mu   sync.RWMutex
 		mask rune
@@ -46,12 +46,12 @@ func newTrieNode() *trieNode {
 }
 
 // NewTrie return a pointer of trie
-func NewTrie(keywords []string, opts ...TrieOption) *trie {
+func NewTrie(keywords []string, opts ...TrieOption) *Trie {
 	n := &trieNode{
 		children: make(map[rune]*trieNode),
 	}
 
-	t := &trie{
+	t := &Trie{
 		root: n,
 	}
 
@@ -71,7 +71,7 @@ func NewTrie(keywords []string, opts ...TrieOption) *trie {
 }
 
 // Add add a keyword to trie
-func (t *trie) Add(keyword string) {
+func (t *Trie) Add(keyword string) {
 	chars := []rune(keyword)
 	if len(chars) == 0 {
 		return
@@ -90,7 +90,7 @@ func (t *trie) Add(keyword string) {
 }
 
 // Delete delete a keyword from trie, be aware of that Delete execute soft delete
-func (t *trie) Delete(keyword string) {
+func (t *Trie) Delete(keyword string) {
 	chars := []rune(keyword)
 	if len(chars) == 0 {
 		return
@@ -115,14 +115,14 @@ func (t *trie) Delete(keyword string) {
 }
 
 // DeleteAll delete all keywords from trie
-func (t *trie) DeleteAll() {
+func (t *Trie) DeleteAll() {
 	t.mu.Lock()
 	t.root = newTrieNode()
 	t.mu.Unlock()
 }
 
 // Query find sensitive keywords and return them.
-func (t *trie) Query(text string) (sanitize string, keywords []string, exist bool) {
+func (t *Trie) Query(text string) (sanitize string, keywords []string, exist bool) {
 	chars := []rune(text)
 	txtLen := len(chars)
 
@@ -161,14 +161,14 @@ func (t *trie) Query(text string) (sanitize string, keywords []string, exist boo
 }
 
 // QueryAll return all the keywords
-func (t *trie) QueryAll() (keywords []string) {
+func (t *Trie) QueryAll() (keywords []string) {
 	t.mu.RLock()
 	keywords = t.deepRead(t.root, keywords, "")
 	t.mu.RUnlock()
 	return
 }
 
-func (t *trie) deepRead(node *trieNode, words []string, parentWord string) (keywords []string) {
+func (t *Trie) deepRead(node *trieNode, words []string, parentWord string) (keywords []string) {
 	for char, child := range node.children {
 		if child.end {
 			words = append(words, parentWord+string(char))
@@ -181,7 +181,7 @@ func (t *trie) deepRead(node *trieNode, words []string, parentWord string) (keyw
 }
 
 // replaceWithMask replace keyword with mask
-func (t *trie) replaceWithMask(chars []rune, start, end int) {
+func (t *Trie) replaceWithMask(chars []rune, start, end int) {
 	for i := start; i < end; i++ {
 		chars[i] = t.mask
 	}
@@ -189,7 +189,7 @@ func (t *trie) replaceWithMask(chars []rune, start, end int) {
 
 // WithMask mask option
 func WithMask(mask rune) TrieOption {
-	return func(root *trie) {
+	return func(root *Trie) {
 		root.mask = mask
 	}
 }

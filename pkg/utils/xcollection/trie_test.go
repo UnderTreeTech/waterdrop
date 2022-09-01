@@ -27,7 +27,7 @@ import (
 func Test_trie_Query(t1 *testing.T) {
 	tests := []struct {
 		name         string
-		t            *trie
+		t            *Trie
 		text         string
 		wantSentence string
 		wantKeywords []string
@@ -64,7 +64,7 @@ func Test_trie_Query(t1 *testing.T) {
 func Test_trie_Add(t1 *testing.T) {
 	tests := []struct {
 		name         string
-		t            *trie
+		t            *Trie
 		keywords     []string
 		wantKeywords []string
 	}{
@@ -89,7 +89,7 @@ func Test_trie_Add(t1 *testing.T) {
 func Test_trie_Delete(t1 *testing.T) {
 	tests := []struct {
 		name         string
-		t            *trie
+		t            *Trie
 		keywords     []string
 		wantKeywords []string
 	}{
@@ -111,7 +111,7 @@ func Test_trie_Delete(t1 *testing.T) {
 func Test_trie_DeleteAll(t1 *testing.T) {
 	tests := []struct {
 		name         string
-		t            *trie
+		t            *Trie
 		keywords     []string
 		wantKeywords []string
 	}{
@@ -133,7 +133,7 @@ func Test_trie_DeleteAll(t1 *testing.T) {
 func Test_trie_QueryAll(t1 *testing.T) {
 	tests := []struct {
 		name         string
-		t            *trie
+		t            *Trie
 		keywords     []string
 		wantKeywords []string
 	}{
