@@ -42,6 +42,7 @@ type ProducerConfig struct {
 	SendTimeout time.Duration
 
 	Topic string
+	Gid   string
 
 	interceptors []primitive.Interceptor
 
@@ -65,6 +66,7 @@ func NewProducer(config *ProducerConfig) *Producer {
 		producer.WithNsResolver(primitive.NewPassthroughResolver(config.Endpoint)),
 		producer.WithRetry(config.Retry),
 		producer.WithSendMsgTimeout(config.SendTimeout),
+		producer.WithGroupName(config.Gid),
 		producer.WithCredentials(credentials),
 		producer.WithInterceptor(producerMetricInterceptor(config)),
 		producer.WithInterceptor(config.interceptors...),
