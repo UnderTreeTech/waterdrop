@@ -49,12 +49,12 @@ type RsaConfig struct {
 
 // NewRsaCrypt init with the RSA config
 func NewRsaCrypt(config *RsaConfig) (*RsaCrypt, error) {
-	privateKey, err := parsePrivateKey(config.PrivateKeyPath)
+	privateKey, err := ParsePrivateKey(config.PrivateKeyPath)
 	if err != nil {
 		return nil, err
 	}
 
-	publicKey, err := parsePublicKey(config.PublicKeyPath)
+	publicKey, err := ParsePublicKey(config.PublicKeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +131,8 @@ func GenRsaKey(bits int) (string, string, error) {
 	return string(publicKeyBytes), string(privateKeyBytes), nil
 }
 
-// parsePrivateKey parses private key bytes to rsa PrivateKey
-func parsePrivateKey(path string) (*rsa.PrivateKey, error) {
+// ParsePrivateKey parses private key bytes to rsa PrivateKey
+func ParsePrivateKey(path string) (*rsa.PrivateKey, error) {
 	privateKeyContent, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -145,8 +145,8 @@ func parsePrivateKey(path string) (*rsa.PrivateKey, error) {
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
-// parsePublicKey parses public key bytes to rsa PublicKey
-func parsePublicKey(path string) (*rsa.PublicKey, error) {
+// ParsePublicKey parses public key bytes to rsa PublicKey
+func ParsePublicKey(path string) (*rsa.PublicKey, error) {
 	publicKeyContent, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
