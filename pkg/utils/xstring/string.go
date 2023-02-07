@@ -30,7 +30,7 @@ import (
 const (
 	_defalutLng  = "en"
 	_lngWildCard = "*"
-	_letters     = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-_"
+	_letters     = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
 //get locale language
