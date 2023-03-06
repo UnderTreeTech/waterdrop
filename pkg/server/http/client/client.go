@@ -54,6 +54,7 @@ type Request struct {
 	QueryParam url.Values
 	Body       interface{}
 	PathParam  map[string]string
+	Headers    map[string]string
 }
 
 // RequestMiddleware http request middleware
@@ -88,7 +89,7 @@ func (c *Client) Use(m RequestMiddleware) *Client {
 }
 
 // NewRequest return a resty Request object
-func (c *Client) NewRequest(method string, req *Request, reply interface{}) *resty.Request {
+func (c *Client) newRequest(method string, req *Request, reply interface{}) *resty.Request {
 	request := c.client.NewRequest()
 	request.URL = req.URI
 	request.Method = method
@@ -101,9 +102,11 @@ func (c *Client) NewRequest(method string, req *Request, reply interface{}) *res
 	if method != http.MethodGet {
 		request.SetHeader(metadata.HeaderContentType, metadata.DefaultContentTypeJson)
 	}
+
 	request.SetHeader(metadata.HeaderAppkey, c.config.Key)
 	request.SetHeader(metadata.HeaderUserAgent, metadata.DefaultUserAgentVal)
 	request.SetHeader(metadata.HeaderAcceptLanguage, metadata.DefaultLocale)
+	request.SetHeaders(req.Headers)
 	return request
 }
 
@@ -211,7 +214,7 @@ func accept(err error) bool {
 // Get http get request
 // Notice that Get only applied to JSON and XML response MIME type
 func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) (err error) {
-	request := c.NewRequest(http.MethodGet, req, reply)
+	request := c.newRequest(http.MethodGet, req, reply)
 	_, err = c.execute(ctx, request)
 	return
 }
@@ -219,7 +222,7 @@ func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) (err 
 // Post http post request
 // Notice that Post only applied to JSON and XML response MIME type
 func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) (err error) {
-	request := c.NewRequest(http.MethodPost, req, reply)
+	request := c.newRequest(http.MethodPost, req, reply)
 	_, err = c.execute(ctx, request)
 	return
 }
@@ -227,7 +230,7 @@ func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) (err
 // Put http put request
 // Notice that Put only applied to JSON and XML response MIME type
 func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) (err error) {
-	request := c.NewRequest(http.MethodPut, req, reply)
+	request := c.newRequest(http.MethodPut, req, reply)
 	_, err = c.execute(ctx, request)
 	return
 }
@@ -235,35 +238,35 @@ func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) (err 
 // Delete http delete request
 // Notice that Delete only applied to JSON and XML response MIME type
 func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) (err error) {
-	request := c.NewRequest(http.MethodDelete, req, reply)
+	request := c.newRequest(http.MethodDelete, req, reply)
 	_, err = c.execute(ctx, request)
 	return
 }
 
 // RawGet http get request and return response body raw byte
 func (c *Client) RawGet(ctx context.Context, req *Request) (reply []byte, err error) {
-	request := c.NewRequest(http.MethodGet, req, nil)
+	request := c.newRequest(http.MethodGet, req, nil)
 	resp, err := c.execute(ctx, request)
 	return resp.Body(), err
 }
 
 // RawPost http post request and return response body raw byte
 func (c *Client) RawPost(ctx context.Context, req *Request) (reply []byte, err error) {
-	request := c.NewRequest(http.MethodPost, req, nil)
+	request := c.newRequest(http.MethodPost, req, nil)
 	resp, err := c.execute(ctx, request)
 	return resp.Body(), err
 }
 
 // RawPut http put request and return response body raw byte
 func (c *Client) RawPut(ctx context.Context, req *Request) (reply []byte, err error) {
-	request := c.NewRequest(http.MethodPut, req, nil)
+	request := c.newRequest(http.MethodPut, req, nil)
 	resp, err := c.execute(ctx, request)
 	return resp.Body(), err
 }
 
 // RawDelete http delete request and return response body raw byte
 func (c *Client) RawDelete(ctx context.Context, req *Request) (reply []byte, err error) {
-	request := c.NewRequest(http.MethodDelete, req, nil)
+	request := c.newRequest(http.MethodDelete, req, nil)
 	resp, err := c.execute(ctx, request)
 	return resp.Body(), err
 }
