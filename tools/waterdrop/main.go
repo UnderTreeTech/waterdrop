@@ -23,6 +23,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/ecode"
+
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/upgrade"
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/project"
@@ -35,7 +37,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const Version = "v0.1.0"
+const Version = "v0.2.0"
 
 // main tool entry point
 func main() {
@@ -49,6 +51,7 @@ func main() {
 		swagger.SwaggerCmd,
 		utgen.UTCmd,
 		upgrade.UpgradeCmd,
+		ecode.EcodeCmd,
 	}
 
 	if err := app.Run(os.Args); err != nil {
