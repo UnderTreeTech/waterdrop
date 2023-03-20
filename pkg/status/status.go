@@ -93,7 +93,7 @@ func FromProto(s *spb.Status) *Status {
 	return &Status{s: proto.Clone(s).(*spb.Status)}
 }
 
-//implement error interface, return err code
+// Error implement error interface, return err code
 func (s *Status) Error() string {
 	return strconv.Itoa(s.Code())
 }
@@ -163,11 +163,11 @@ func (s *Status) Details() []interface{} {
 	return details
 }
 
-// err convert grpc unknown code to ecode status
+// errToStatus err convert grpc unknown code to ecode status
 func errToStatus(code string) *Status {
 	ecode, err := strconv.Atoi(code)
 	if err != nil {
-		return ServerErr
+		return UndefinedErr
 	}
 
 	estatus, ok := _status.Load(ecode)
@@ -178,7 +178,7 @@ func errToStatus(code string) *Status {
 	return estatus.(*Status)
 }
 
-// extract status from grpc call reply err
+// ExtractStatus extract status from grpc call reply err
 func ExtractStatus(err error) *Status {
 	if err == nil {
 		return OK
