@@ -39,6 +39,8 @@ const (
 	DefaultUserAgentVal    = "waterdrop"
 	DefaultLocale          = "zh-CN"
 	DefaultNonceLen        = 16
+
+	LimitBodyBytes = 4096
 )
 
 // GetTimeout get timeout from request header

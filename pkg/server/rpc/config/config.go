@@ -38,6 +38,8 @@ type ServerConfig struct {
 	SlowRequestDuration time.Duration
 	// WatchConfig whether watch config file changes
 	WatchConfig bool
+	// NotLog escape log detail path
+	NotLog []string
 }
 
 // DefaultServerConfig default server config for starting rpc server out of box
@@ -71,6 +73,8 @@ type ClientConfig struct {
 	KeepAliveTimeout  time.Duration
 	// SlowRequestDuration client slow request timeout
 	SlowRequestDuration time.Duration
+	// NotLog escape log detail path
+	NotLog []string
 }
 
 // DefaultClientConfig default client config for starting rpc client out of box

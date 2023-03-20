@@ -20,7 +20,10 @@ package interceptors
 
 import (
 	"context"
+	"strings"
 	"time"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xslice"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
 
@@ -53,12 +56,12 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 		estatus := status.ExtractStatus(err)
 		duration := time.Since(now)
 
+		method := info.FullMethod
 		fields := make([]log.Field, 0, 8)
 		fields = append(
 			fields,
 			log.String("peer", ip),
-			log.String("method", info.FullMethod),
-			log.Any("req", req),
+			log.String("method", method),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
 			log.Any("reply", resp),
@@ -66,12 +69,17 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 			log.String("error", estatus.Message()),
 		)
 
+		details := strings.Split(method, "/")
+		fnName := details[len(details)-1]
+		if !xslice.ContainString(config.NotLog, fnName) {
+			log.Any("req", req)
+		}
+
 		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-access-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-access-log", fields...)
 		}
-
 		return
 	}
 }
@@ -103,7 +111,6 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 			fields,
 			log.String("peer", peerIP),
 			log.String("method", method),
-			log.Any("req", req),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
 			log.Any("reply", reply),
@@ -111,12 +118,17 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 			log.String("error", estatus.Message()),
 		)
 
+		details := strings.Split(method, "/")
+		fnName := details[len(details)-1]
+		if !xslice.ContainString(config.NotLog, fnName) {
+			log.Any("req", req)
+		}
+
 		if duration >= config.SlowRequestDuration {
 			log.Warn(ctx, "grpc-slow-request-log", fields...)
 		} else {
 			log.Info(ctx, "grpc-request-log", fields...)
 		}
-
 		return
 	}
 }

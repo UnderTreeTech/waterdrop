@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
+	"github.com/UnderTreeTech/waterdrop/pkg/server/http/metadata"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
@@ -42,13 +43,17 @@ func Logger(config *config.ServerConfig) gin.HandlerFunc {
 		duration := time.Since(now)
 
 		fields := make([]log.Field, 0, 10)
+		req := c.Request.Form.Encode()
+		if len(req) > metadata.LimitBodyBytes {
+			req = req[:metadata.LimitBodyBytes]
+		}
 		fields = append(
 			fields,
 			log.String("client_ip", c.ClientIP()),
 			log.String("method", c.Request.Method),
 			log.String("path", c.Request.URL.Path),
 			log.Any("headers", c.Request.Header),
-			log.String("req", c.Request.Form.Encode()),
+			log.String("req", req),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
 			log.Int("status", c.Writer.Status()),
