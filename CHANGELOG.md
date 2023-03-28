@@ -1,9 +1,26 @@
 # CHANGELOG
 
 
+## v1.3.5
+
+This is a minor updates version.
+
+### Features
+- export Trie ([b9eb9cc](https://github.com/UnderTreeTech/waterdrop/commit/b9eb9cc4846254996c6ef16e47dc6ac50d30cfce))
+- support set rocketmq producer group name ([e05a5aa](https://github.com/UnderTreeTech/waterdrop/commit/e05a5aa9bd6fae0411086e33b5259151180b6ece))
+- export rsa private/public key parse method ([b658cd5](https://github.com/UnderTreeTech/waterdrop/commit/b658cd5e01dd0118771892b3c1146cbb5d90e6e4))
+- remove operator character ([fbef575](https://github.com/UnderTreeTech/waterdrop/commit/fbef5753dac7654cfe770733d8306fd5a05ef9a7))
+- support set http client request header ([5053f7f](https://github.com/UnderTreeTech/waterdrop/commit/5053f7fa118648051305766b70186282663f3e18))
+- support escape large request log ([d816354](https://github.com/UnderTreeTech/waterdrop/commit/d81635403727658508d60c9054d086e80941a8ac))
+- adjust error type ([961864b](https://github.com/UnderTreeTech/waterdrop/commit/961864b49460a591fbfc5e4b21dcec35793a07aa))
+- generate duration/integer jitter ([7b328a8](https://github.com/UnderTreeTech/waterdrop/commit/7b328a87a0527a8e50a24f79912482cc0a446886))
+
+### Tool
+- ecode generate tool ([5aeb61f](https://github.com/UnderTreeTech/waterdrop/commit/5aeb61fc2cd2e8ec632f61a6d812e55d44304214))
+
 ## v1.3.4
 
-Fix can't go get the latest v1.3.3 issue
+Fix can't go get the latest v1.3.3 issue ([974444d](https://github.com/UnderTreeTech/waterdrop/pull/144))
 
 
 ## v1.3.3
