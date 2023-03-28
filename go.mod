@@ -3,11 +3,11 @@ module github.com/UnderTreeTech/waterdrop
 go 1.14
 
 require (
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v1.1.0
 	github.com/Shopify/sarama v1.32.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alibaba/sentinel-golang v1.0.2
-	github.com/apache/rocketmq-client-go/v2 v2.1.1-rc2.0.20220308065954-bcd6e49fa7f8
+	github.com/apache/rocketmq-client-go/v2 v2.1.1
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
@@ -26,7 +26,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.25
 	github.com/onsi/gomega v1.15.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/qiniu/qmgo v1.0.6
 	github.com/spf13/cast v1.4.1
 	github.com/stretchr/objx v0.2.0 // indirect
