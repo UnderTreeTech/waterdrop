@@ -72,7 +72,7 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 		details := strings.Split(method, "/")
 		fnName := details[len(details)-1]
 		if !xslice.ContainString(config.NotLog, fnName) {
-			log.Any("req", req)
+			fields = append(fields, log.Any("req", req))
 		}
 
 		if duration >= config.SlowRequestDuration {
@@ -121,7 +121,7 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 		details := strings.Split(method, "/")
 		fnName := details[len(details)-1]
 		if !xslice.ContainString(config.NotLog, fnName) {
-			log.Any("req", req)
+			fields = append(fields, log.Any("req", req))
 		}
 
 		if duration >= config.SlowRequestDuration {
