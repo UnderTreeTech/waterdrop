@@ -49,11 +49,12 @@ type Config struct {
 
 // DB encapsulation of qmgo client and database
 type DB struct {
-	client *qmgo.Client
-	db     *qmgo.Database
-	config *Config
-	close  func() error
-	brk    *breaker.BreakerGroup
+	client      *qmgo.Client
+	db          *qmgo.Database
+	config      *Config
+	close       func() error
+	brk         *breaker.BreakerGroup
+	collections sync.Map
 }
 
 type (
@@ -70,8 +71,6 @@ type (
 )
 
 var (
-	collections = sync.Map{}
-
 	// ErrNoSuchDocuments return if no document found
 	ErrNoSuchDocuments = qmgo.ErrNoSuchDocuments
 
@@ -87,18 +86,19 @@ func Open(config *Config) *DB {
 	cli, close := client(config)
 	dbHandler := cli.Database(config.DBName)
 	db := &DB{
-		client: cli,
-		db:     dbHandler,
-		config: config,
-		close:  close,
-		brk:    breaker.NewBreakerGroup(),
+		client:      cli,
+		db:          dbHandler,
+		config:      config,
+		close:       close,
+		brk:         breaker.NewBreakerGroup(),
+		collections: sync.Map{},
 	}
 	return db
 }
 
 // GetCollection return collection handler
 func (d *DB) GetCollection(name string) *Collection {
-	if coll, ok := collections.Load(name); ok {
+	if coll, ok := d.collections.Load(name); ok {
 		return coll.(*Collection)
 	}
 
@@ -108,7 +108,7 @@ func (d *DB) GetCollection(name string) *Collection {
 		name:   name,
 		brk:    d.brk,
 	}
-	collections.Store(name, collection)
+	d.collections.Store(name, collection)
 	return collection
 }
 
