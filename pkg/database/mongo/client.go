@@ -170,7 +170,7 @@ func IsDup(err error) bool {
 
 // accept check mongo op success or not
 func accept(err error) bool {
-	return err == nil || err == ErrNoSuchDocuments
+	return err == nil || IsErrNoDocuments(err) || IsDup(err)
 }
 
 // NewObjectID generates a new ObjectID
