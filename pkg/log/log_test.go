@@ -26,6 +26,20 @@ import (
 )
 
 func TestLog(t *testing.T) {
+	type testUser struct {
+		Password    string `json:"Pwd"`
+		Pwd         string `json:"passWord"`
+		AccessToken string `json:"access_token"`
+		ApiKey      string `json:"api_key"`
+		ApiSecret   string `json:"api_secret"`
+	}
+
+	type testStruct struct {
+		TestField string      `json:"field"`
+		Hello     string      `json:"token"`
+		Users     []*testUser `json:"user"`
+	}
+
 	defaultLogger = newLogger(defaultConfig())
 
 	Info(context.Background(), "info",
@@ -63,6 +77,24 @@ func TestLog(t *testing.T) {
 	)
 
 	Errorf("division zero", String("shanghai", "xuhui"))
+
+	ts := testStruct{
+		TestField: "fieldValue",
+		Hello:     "world",
+	}
+	ts.Users = append(ts.Users, &testUser{
+		Password:    "123",
+		Pwd:         "johnsun",
+		AccessToken: "hello",
+		ApiKey:      "world",
+		ApiSecret:   "yes",
+	})
+
+	Infof("filter keyword",
+		Any("users", ts),
+		Any("seCret", []string{"shanghai", "xuhui"}),
+		String("token", "world"),
+	)
 
 	assert.Panics(t, func() {
 		Panicf("memory leaky", String("stop", "yes"))

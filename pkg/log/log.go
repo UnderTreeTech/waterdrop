@@ -24,8 +24,12 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"time"
+	"unsafe"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/natefinch/lumberjack"
 
@@ -103,6 +107,10 @@ type Config struct {
 	MaxAge int
 	// MaxBackup max files of backup logs
 	MaxBackup int
+	// Sensitives filter keywords
+	Sensitives []string
+	// Placeholder filter keyword replacement
+	Placeholder string
 }
 
 // newLogger returns a Logger pointer
@@ -137,8 +145,11 @@ func newLogger(config *Config) *Logger {
 		}
 	}
 
-	encoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+	encCfg := zap.NewProductionEncoderConfig()
+	encCfg.NewReflectedEncoder = filterReflectEncoder(config)
+	encoder := zapcore.NewJSONEncoder(encCfg)
 	core := zapcore.NewCore(encoder, ws, lv)
+	opts = append(opts, zap.WrapCore(newFilterCore(core, config)))
 	logger := zap.New(core, opts...)
 
 	return &Logger{
@@ -164,6 +175,9 @@ func defaultConfig() *Config {
 		MaxSize:   10,  // 10M
 		MaxAge:    30,  // 30 day
 		MaxBackup: 100, // 100 backup
+
+		Sensitives:  []string{"token", "pwd", "password", "api_key", "secret"},
+		Placeholder: "*******",
 	}
 }
 
@@ -262,5 +276,109 @@ func rotate(config *Config) io.Writer {
 		MaxBackups: config.MaxBackup,
 		LocalTime:  true,
 		Compress:   false,
+	}
+}
+
+func filterReflectEncoder(cfg *Config) func(w io.Writer) zapcore.ReflectedEncoder {
+	return func(w io.Writer) zapcore.ReflectedEncoder {
+		jsonAPI := jsoniter.Config{
+			SortMapKeys:            true,
+			UseNumber:              true,
+			CaseSensitive:          true,
+			EscapeHTML:             true,
+			ValidateJsonRawMessage: true,
+		}.Froze()
+		jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: cfg})
+		enc := jsonAPI.NewEncoder(w)
+		return enc
+	}
+}
+
+// filterCore wrap zapcore.Core to filter sensitive keyword
+type filterCore struct {
+	zapcore.Core
+	cfg *Config
+}
+
+func newFilterCore(core zapcore.Core, cfg *Config) func(core zapcore.Core) zapcore.Core {
+	return func(core zapcore.Core) zapcore.Core {
+		return &filterCore{
+			Core: core,
+			cfg:  cfg,
+		}
+	}
+}
+
+func (fc *filterCore) With(fields []Field) zapcore.Core {
+	return fc.Core.With(fields)
+}
+
+func (fc *filterCore) Sync() error {
+	return fc.Core.Sync()
+}
+
+func (fc *filterCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+	if fc.Enabled(ent.Level) {
+		return ce.AddCore(ent, fc)
+	}
+	return ce
+}
+
+func (fc *filterCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
+	for idx, field := range fields {
+		key := strings.ToLower(field.Key)
+		for _, sensitive := range fc.cfg.Sensitives {
+			if !strings.Contains(key, strings.ToLower(sensitive)) {
+				continue
+			}
+			field.String = fc.cfg.Placeholder
+			field.Type = zapcore.StringType
+			field.Interface = nil
+			field.Integer = 0
+			fields[idx] = field
+			break
+		}
+	}
+	return fc.Core.Write(entry, fields)
+}
+
+type filterEncoderExtension struct {
+	jsoniter.DummyExtension
+	cfg *Config
+}
+
+type filterEncoder struct {
+	encoder     jsoniter.ValEncoder
+	placeholder string
+}
+
+func (f *filterEncoder) IsEmpty(ptr unsafe.Pointer) bool {
+	return *(*string)(ptr) == ""
+}
+
+func (f *filterEncoder) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	stream.WriteString(f.placeholder)
+}
+
+func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsoniter.StructDescriptor) {
+	for _, field := range structDescriptor.Fields {
+		if field.Field.Type().Kind() != reflect.String {
+			continue
+		}
+
+		tagParts := strings.Split(field.Field.Tag().Get("json"), ",")
+		if len(tagParts) <= 0 {
+			continue
+		}
+
+		tagName := strings.ToLower(tagParts[0])
+		for _, keyword := range f.cfg.Sensitives {
+			if !strings.Contains(tagName, strings.ToLower(keyword)) {
+				continue
+			}
+			field.Encoder = &filterEncoder{
+				placeholder: f.cfg.Placeholder,
+			}
+		}
 	}
 }
