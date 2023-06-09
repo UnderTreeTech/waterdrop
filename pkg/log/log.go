@@ -81,6 +81,14 @@ type Logger struct {
 	level  zap.AtomicLevel
 }
 
+var jsonAPI = jsoniter.Config{
+	SortMapKeys:            true,
+	UseNumber:              true,
+	CaseSensitive:          true,
+	EscapeHTML:             true,
+	ValidateJsonRawMessage: true,
+}.Froze()
+
 // Config log configs
 type Config struct {
 	// Dir log output directory
@@ -145,8 +153,9 @@ func newLogger(config *Config) *Logger {
 		}
 	}
 
+	jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: config})
 	encCfg := zap.NewProductionEncoderConfig()
-	encCfg.NewReflectedEncoder = filterReflectEncoder(config)
+	encCfg.NewReflectedEncoder = filterReflectEncoder
 	encoder := zapcore.NewJSONEncoder(encCfg)
 	core := zapcore.NewCore(encoder, ws, lv)
 	opts = append(opts, zap.WrapCore(newFilterCore(core, config)))
@@ -279,19 +288,9 @@ func rotate(config *Config) io.Writer {
 	}
 }
 
-func filterReflectEncoder(cfg *Config) func(w io.Writer) zapcore.ReflectedEncoder {
-	return func(w io.Writer) zapcore.ReflectedEncoder {
-		jsonAPI := jsoniter.Config{
-			SortMapKeys:            true,
-			UseNumber:              true,
-			CaseSensitive:          true,
-			EscapeHTML:             true,
-			ValidateJsonRawMessage: true,
-		}.Froze()
-		jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: cfg})
-		enc := jsonAPI.NewEncoder(w)
-		return enc
-	}
+func filterReflectEncoder(w io.Writer) zapcore.ReflectedEncoder {
+	enc := jsonAPI.NewEncoder(w)
+	return enc
 }
 
 // filterCore wrap zapcore.Core to filter sensitive keyword
