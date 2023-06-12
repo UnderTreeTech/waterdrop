@@ -368,8 +368,15 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 			continue
 		}
 
-		tagParts := strings.Split(field.Field.Tag().Get("json"), ",")
-		var filterKeyName string
+		var (
+			tagParts      []string
+			filterKeyName string
+		)
+		jsonTag := field.Field.Tag().Get("json")
+		if strings.TrimSpace(jsonTag) != "" {
+			tagParts = strings.Split(jsonTag, ",")
+		}
+
 		if len(tagParts) <= 0 {
 			filterKeyName = strings.ToLower(field.Field.Name())
 		} else {
