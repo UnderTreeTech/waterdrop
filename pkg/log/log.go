@@ -365,6 +365,22 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 			continue
 		}
 
+		var hit bool
+		fieldName := strings.ToLower(field.Field.Name())
+		for _, keyword := range f.cfg.Sensitives {
+			if !strings.Contains(fieldName, strings.ToLower(keyword)) {
+				continue
+			}
+			field.Encoder = &filterEncoder{
+				placeholder: f.cfg.Placeholder,
+			}
+			hit = true
+			break
+		}
+		if hit {
+			continue
+		}
+
 		tagParts := strings.Split(field.Field.Tag().Get("json"), ",")
 		if len(tagParts) <= 0 {
 			continue
@@ -378,6 +394,7 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 			field.Encoder = &filterEncoder{
 				placeholder: f.cfg.Placeholder,
 			}
+			continue
 		}
 	}
 }
