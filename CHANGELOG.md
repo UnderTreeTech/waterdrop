@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## v1.3.6
+This is a minor updates version.
+
+### Features
+- shrink the scope of collections to db entity ([70c75bb](https://github.com/UnderTreeTech/waterdrop/commit/70c75bb449265598779fce00f1a18c1aebc833d3))
+- accept mongo dup error ([0802c04](https://github.com/UnderTreeTech/waterdrop/commit/0802c04a56ba2713e5f619b9eab2319329e19dc7))
+- filter log sensitive keyword ([c9e20b4](https://github.com/UnderTreeTech/waterdrop/commit/c9e20b454754407b62d71854cdd1ab7d9c36fc1c))
+
+### Bugfix
+- escape log grpc request ([bf6001f](https://github.com/UnderTreeTech/waterdrop/commit/bf6001f3ca76f2c7f07edd401b412e3dd6a60e64))
+
+
 ## v1.3.5
 
 This is a minor updates version.
