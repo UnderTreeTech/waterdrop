@@ -49,7 +49,7 @@ func Logger(config *config.ServerConfig) gin.HandlerFunc {
 			log.String("method", c.Request.Method),
 			log.String("path", c.Request.URL.Path),
 			log.Any("headers", c.Request.Header),
-			log.Any("req", json.RawMessage(log.JsonBytes(c.Request.Form))),
+			log.Any("req", json.RawMessage(log.JsonForm(c.Request.Form))),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
 			log.Int("status", c.Writer.Status()),

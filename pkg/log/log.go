@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -79,6 +80,7 @@ var defaultLogger *Logger
 type Logger struct {
 	logger *zap.Logger
 	level  zap.AtomicLevel
+	cfg    *Config
 }
 
 var jsonAPI = jsoniter.Config{
@@ -164,6 +166,7 @@ func newLogger(config *Config) *Logger {
 	return &Logger{
 		logger: logger,
 		level:  lv,
+		cfg:    config,
 	}
 }
 
@@ -365,36 +368,22 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 			continue
 		}
 
-		var hit bool
-		fieldName := strings.ToLower(field.Field.Name())
-		for _, keyword := range f.cfg.Sensitives {
-			if !strings.Contains(fieldName, strings.ToLower(keyword)) {
-				continue
-			}
-			field.Encoder = &filterEncoder{
-				placeholder: f.cfg.Placeholder,
-			}
-			hit = true
-			break
-		}
-		if hit {
-			continue
-		}
-
 		tagParts := strings.Split(field.Field.Tag().Get("json"), ",")
+		var filterKeyName string
 		if len(tagParts) <= 0 {
-			continue
+			filterKeyName = strings.ToLower(field.Field.Name())
+		} else {
+			filterKeyName = strings.ToLower(tagParts[0])
 		}
 
-		tagName := strings.ToLower(tagParts[0])
 		for _, keyword := range f.cfg.Sensitives {
-			if !strings.Contains(tagName, strings.ToLower(keyword)) {
+			if !strings.Contains(filterKeyName, strings.ToLower(keyword)) {
 				continue
 			}
 			field.Encoder = &filterEncoder{
 				placeholder: f.cfg.Placeholder,
 			}
-			continue
+			break
 		}
 	}
 }
@@ -406,5 +395,22 @@ func Json(obj interface{}) string {
 
 func JsonBytes(obj interface{}) []byte {
 	bs, _ := jsonAPI.Marshal(obj)
+	return bs
+}
+
+func JsonForm(form url.Values) []byte {
+	logForm := url.Values{}
+	placeholder := []string{defaultLogger.cfg.Placeholder}
+	for key, val := range form {
+		logForm[key] = val
+		for _, keyword := range defaultLogger.cfg.Sensitives {
+			if !strings.Contains(strings.ToLower(key), strings.ToLower(keyword)) {
+				continue
+			}
+			logForm[key] = placeholder
+			break
+		}
+	}
+	bs, _ := jsonAPI.Marshal(logForm)
 	return bs
 }
