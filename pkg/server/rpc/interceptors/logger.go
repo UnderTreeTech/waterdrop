@@ -20,6 +20,7 @@ package interceptors
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -64,7 +65,7 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 			log.String("method", method),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
-			log.Any("reply", resp),
+			log.Any("reply", json.RawMessage(log.JsonBytes(resp))),
 			log.Int("code", estatus.Code()),
 			log.String("error", estatus.Message()),
 		)
@@ -72,7 +73,7 @@ func LoggerForUnaryServer(config *config.ServerConfig) grpc.UnaryServerIntercept
 		details := strings.Split(method, "/")
 		fnName := details[len(details)-1]
 		if !xslice.ContainString(config.NotLog, fnName) {
-			fields = append(fields, log.Any("req", req))
+			fields = append(fields, log.Any("req", json.RawMessage(log.JsonBytes(req))))
 		}
 
 		if duration >= config.SlowRequestDuration {
@@ -113,7 +114,7 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 			log.String("method", method),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
-			log.Any("reply", reply),
+			log.Any("reply", json.RawMessage(log.JsonBytes(reply))),
 			log.Int("code", estatus.Code()),
 			log.String("error", estatus.Message()),
 		)
@@ -121,7 +122,7 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 		details := strings.Split(method, "/")
 		fnName := details[len(details)-1]
 		if !xslice.ContainString(config.NotLog, fnName) {
-			fields = append(fields, log.Any("req", req))
+			fields = append(fields, log.Any("req", json.RawMessage(log.JsonBytes(req))))
 		}
 
 		if duration >= config.SlowRequestDuration {

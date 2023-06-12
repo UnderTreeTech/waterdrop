@@ -381,3 +381,13 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 		}
 	}
 }
+
+func Json(obj interface{}) string {
+	bs, _ := jsonAPI.Marshal(obj)
+	return string(bs)
+}
+
+func JsonBytes(obj interface{}) []byte {
+	bs, _ := jsonAPI.Marshal(obj)
+	return bs
+}
