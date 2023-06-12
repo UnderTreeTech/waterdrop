@@ -27,7 +27,7 @@ import (
 
 func TestLog(t *testing.T) {
 	type testUser struct {
-		Password    string `json:"Pwd"`
+		Password    string
 		Pwd         string `json:"passWord"`
 		AccessToken string `json:"access_token"`
 		ApiKey      string `json:"api_key"`

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -79,7 +80,16 @@ var defaultLogger *Logger
 type Logger struct {
 	logger *zap.Logger
 	level  zap.AtomicLevel
+	cfg    *Config
 }
+
+var jsonAPI = jsoniter.Config{
+	SortMapKeys:            true,
+	UseNumber:              true,
+	CaseSensitive:          true,
+	EscapeHTML:             true,
+	ValidateJsonRawMessage: true,
+}.Froze()
 
 // Config log configs
 type Config struct {
@@ -145,8 +155,9 @@ func newLogger(config *Config) *Logger {
 		}
 	}
 
+	jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: config})
 	encCfg := zap.NewProductionEncoderConfig()
-	encCfg.NewReflectedEncoder = filterReflectEncoder(config)
+	encCfg.NewReflectedEncoder = filterReflectEncoder
 	encoder := zapcore.NewJSONEncoder(encCfg)
 	core := zapcore.NewCore(encoder, ws, lv)
 	opts = append(opts, zap.WrapCore(newFilterCore(core, config)))
@@ -155,6 +166,7 @@ func newLogger(config *Config) *Logger {
 	return &Logger{
 		logger: logger,
 		level:  lv,
+		cfg:    config,
 	}
 }
 
@@ -279,19 +291,9 @@ func rotate(config *Config) io.Writer {
 	}
 }
 
-func filterReflectEncoder(cfg *Config) func(w io.Writer) zapcore.ReflectedEncoder {
-	return func(w io.Writer) zapcore.ReflectedEncoder {
-		jsonAPI := jsoniter.Config{
-			SortMapKeys:            true,
-			UseNumber:              true,
-			CaseSensitive:          true,
-			EscapeHTML:             true,
-			ValidateJsonRawMessage: true,
-		}.Froze()
-		jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: cfg})
-		enc := jsonAPI.NewEncoder(w)
-		return enc
-	}
+func filterReflectEncoder(w io.Writer) zapcore.ReflectedEncoder {
+	enc := jsonAPI.NewEncoder(w)
+	return enc
 }
 
 // filterCore wrap zapcore.Core to filter sensitive keyword
@@ -366,19 +368,56 @@ func (f *filterEncoderExtension) UpdateStructDescriptor(structDescriptor *jsonit
 			continue
 		}
 
-		tagParts := strings.Split(field.Field.Tag().Get("json"), ",")
-		if len(tagParts) <= 0 {
-			continue
+		var (
+			tagParts      []string
+			filterKeyName string
+		)
+		jsonTag := field.Field.Tag().Get("json")
+		if strings.TrimSpace(jsonTag) != "" {
+			tagParts = strings.Split(jsonTag, ",")
 		}
 
-		tagName := strings.ToLower(tagParts[0])
+		if len(tagParts) <= 0 {
+			filterKeyName = strings.ToLower(field.Field.Name())
+		} else {
+			filterKeyName = strings.ToLower(tagParts[0])
+		}
+
 		for _, keyword := range f.cfg.Sensitives {
-			if !strings.Contains(tagName, strings.ToLower(keyword)) {
+			if !strings.Contains(filterKeyName, strings.ToLower(keyword)) {
 				continue
 			}
 			field.Encoder = &filterEncoder{
 				placeholder: f.cfg.Placeholder,
 			}
+			break
 		}
 	}
+}
+
+func Json(obj interface{}) string {
+	bs, _ := jsonAPI.Marshal(obj)
+	return string(bs)
+}
+
+func JsonBytes(obj interface{}) []byte {
+	bs, _ := jsonAPI.Marshal(obj)
+	return bs
+}
+
+func JsonForm(form url.Values) []byte {
+	logForm := url.Values{}
+	placeholder := []string{defaultLogger.cfg.Placeholder}
+	for key, val := range form {
+		logForm[key] = val
+		for _, keyword := range defaultLogger.cfg.Sensitives {
+			if !strings.Contains(strings.ToLower(key), strings.ToLower(keyword)) {
+				continue
+			}
+			logForm[key] = placeholder
+			break
+		}
+	}
+	bs, _ := jsonAPI.Marshal(logForm)
+	return bs
 }
