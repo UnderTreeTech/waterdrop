@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/store"
@@ -21,6 +20,8 @@ type Config struct {
 	// object get external endpoint.
 	// it may be a domain or ip+port address
 	ExternalEndpoint string
+	// schema: http/https
+	ExternalSchema string
 	// bucket region, default empty string
 	Region string
 	// minio access key
@@ -130,10 +131,11 @@ func (mc *MinioClient) GetFileUrl(ctx context.Context, bucketName string, object
 	reqParams := make(url.Values)
 	reqParams.Set("response-content-disposition", "attachment; filename="+objectName)
 	presignedURL, err := mc.client.PresignedGetObject(ctx, bucketName, objectName, expired, reqParams)
-	fileUrl = presignedURL.String()
-	if mc.config.InternalEndpoint != mc.config.ExternalEndpoint {
-		fileUrl = strings.Replace(fileUrl, mc.config.InternalEndpoint, mc.config.ExternalEndpoint, 1)
-	}
 
+	if mc.config.InternalEndpoint != mc.config.ExternalEndpoint {
+		presignedURL.Host = mc.config.ExternalEndpoint
+		presignedURL.Scheme = mc.config.ExternalSchema
+	}
+	fileUrl = presignedURL.String()
 	return
 }
