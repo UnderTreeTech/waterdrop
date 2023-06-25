@@ -11,6 +11,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	minio "github.com/minio/minio-go/v7"
+	"path"
 )
 
 // Config minio client config
@@ -127,9 +128,10 @@ func (mc *MinioClient) GetFileUrl(ctx context.Context, bucketName string, object
 	if len(expireTime) > 0 {
 		expired = time.Duration(expireTime[0]) * time.Second
 	}
+	fileName := path.Base(objectName)
 	// Set request parameters
 	reqParams := make(url.Values)
-	reqParams.Set("response-content-disposition", "attachment; filename="+objectName)
+	reqParams.Set("response-content-disposition", "attachment; filename="+fileName)
 	presignedURL, err := mc.client.PresignedGetObject(ctx, bucketName, objectName, expired, reqParams)
 
 	if mc.config.InternalEndpoint != mc.config.ExternalEndpoint {
