@@ -23,6 +23,9 @@ import "sync"
 // rune 42 stands for *
 const defaultMask = 42
 
+// rune 0 stands for ""
+const emptyMask = 0
+
 type (
 	TrieOption func(root *Trie)
 
@@ -182,6 +185,11 @@ func (t *Trie) deepRead(node *trieNode, words []string, parentWord string) (keyw
 
 // replaceWithMask replace keyword with mask
 func (t *Trie) replaceWithMask(chars []rune, start, end int) {
+	// if mask equal "" need not to replace
+	if t.mask == emptyMask {
+		return
+	}
+
 	for i := start; i < end; i++ {
 		chars[i] = t.mask
 	}
