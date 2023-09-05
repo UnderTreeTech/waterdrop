@@ -52,7 +52,13 @@ var (
 	// ErrNoRows is returned by Scan when QueryRow doesn't return a row.
 	// In such a case, QueryRow returns a placeholder *Row value that defers
 	// this error until a Scan.
-	ErrNoRows = sql.ErrNoRows
+	ErrNoRows     = sql.ErrNoRows
+	ErrNoParseDSN = errors.New("you must assign dsn parse func")
+)
+
+const (
+	DBMySQL    = "mysql"
+	DBPostgres = "postgres"
 )
 
 // Config mysql config.
@@ -68,6 +74,39 @@ type Config struct {
 	ExecTimeout       time.Duration // execute sql timeout
 	TranTimeout       time.Duration // transaction sql timeout
 	SlowQueryDuration time.Duration // slow query duration
+	dsnFn             func(string) string
+}
+
+// WithParseDSN dsn parse func
+func (c *Config) WithParseDSN(fn func(string) string) {
+	c.dsnFn = fn
+}
+
+// parseDSNAddr parse dsn name and return addr.
+func (c *Config) parseDSNAddr(dsn string) (addr string) {
+	switch c.DriverName {
+	case DBMySQL:
+		cfg, err := mysql.ParseDSN(dsn)
+		if err != nil {
+			// just ignore parseDSN error, mysql client will return error for us when connect.
+			return
+		}
+		addr = cfg.Addr
+	case DBPostgres:
+		cfgKVs := make(map[string]string)
+		attrs := strings.Split(dsn, " ")
+		for _, attr := range attrs {
+			kv := strings.Split(attr, "=")
+			cfgKVs[kv[0]] = kv[1]
+		}
+		addr = cfgKVs["host"] + ":" + cfgKVs["port"]
+	default:
+		if c.dsnFn == nil {
+			addr = dsn
+		}
+		addr = c.dsnFn(dsn)
+	}
+	return
 }
 
 // DB database.
@@ -166,7 +205,7 @@ func Open(c *Config) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	addr := parseDSNAddr(c.DriverName, c.DSN)
+	addr := c.parseDSNAddr(c.DSN)
 	breakers := breaker.NewBreakerGroup()
 	writeBreaker := breakers.Get(addr)
 	w := &conn{DB: d, conf: c, addr: addr, breaker: writeBreaker}
@@ -176,7 +215,7 @@ func Open(c *Config) (*DB, error) {
 		if err != nil {
 			return nil, err
 		}
-		addr = parseDSNAddr(c.DriverName, rd)
+		addr = c.parseDSNAddr(rd)
 		readBreaker := breakers.Get(addr)
 		r := &conn{DB: d, conf: c, addr: addr, breaker: readBreaker}
 		rs = append(rs, r)
@@ -727,30 +766,6 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 	st.stmt.Store(stmt)
 
 	return st, nil
-}
-
-// parseDSNAddr parse dsn name and return addr.
-func parseDSNAddr(driverName string, dsn string) (addr string) {
-	switch driverName {
-	case "mysql":
-		cfg, err := mysql.ParseDSN(dsn)
-		if err != nil {
-			// just ignore parseDSN error, mysql client will return error for us when connect.
-			return
-		}
-		addr = cfg.Addr
-	case "postgres":
-		cfgKVs := make(map[string]string)
-		attrs := strings.Split(dsn, " ")
-		for _, attr := range attrs {
-			kv := strings.Split(attr, "=")
-			cfgKVs[kv[0]] = kv[1]
-		}
-		addr = cfgKVs["host"] + ":" + cfgKVs["port"]
-	default:
-	}
-
-	return
 }
 
 func slowLog(ctx context.Context, statement string, now time.Time, slowQueryDuration time.Duration) {
