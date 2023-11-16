@@ -22,6 +22,7 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"unicode"
 	"unsafe"
 
 	"github.com/google/uuid"
@@ -33,7 +34,7 @@ const (
 	_letters     = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
-//get locale language
+// get locale language
 func GetLocaleLng(lng string) string {
 	// Multiple types, weighted with the quality value syntax:
 	//Accept-Language: fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5, en-US,en;q=0.5, en, *
@@ -117,4 +118,47 @@ func Reverse(s string) string {
 	}
 
 	return string(runes)
+}
+
+// IsAlpha checks if the string contains only unicode letters.
+func IsAlpha(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, v := range s {
+		if !unicode.IsLetter(v) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsAlphanumeric checks if the string contains only Unicode letters or digits.
+func IsAlphanumeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, v := range s {
+		if !isAlphanumeric(v) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsNumeric Checks if the string contains only digits. A decimal point is not a digit and returns false.
+func IsNumeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, v := range s {
+		if !unicode.IsDigit(v) {
+			return false
+		}
+	}
+	return true
+}
+
+func isAlphanumeric(v rune) bool {
+	return unicode.IsDigit(v) || unicode.IsLetter(v)
 }
