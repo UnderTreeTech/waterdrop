@@ -55,6 +55,7 @@ type Request struct {
 	Body       interface{}
 	PathParam  map[string]string
 	Headers    map[string]string
+	Error      interface{}
 }
 
 // RequestMiddleware http request middleware
@@ -98,6 +99,9 @@ func (c *Client) newRequest(method string, req *Request, reply interface{}) *res
 	request.SetPathParams(req.PathParam)
 	if reply != nil {
 		request.SetResult(reply)
+	}
+	if req.Error != nil {
+		request.SetError(req.Error)
 	}
 	if method != http.MethodGet {
 		request.SetHeader(metadata.HeaderContentType, metadata.DefaultContentTypeJson)
