@@ -22,7 +22,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -57,8 +56,7 @@ var (
 )
 
 const (
-	DBMySQL    = "mysql"
-	DBPostgres = "postgres"
+	DBMySQL = "mysql"
 )
 
 // Config mysql config.
@@ -92,14 +90,6 @@ func (c *Config) parseDSNAddr(dsn string) (addr string) {
 			return
 		}
 		addr = cfg.Addr
-	case DBPostgres:
-		cfgKVs := make(map[string]string)
-		attrs := strings.Split(dsn, " ")
-		for _, attr := range attrs {
-			kv := strings.Split(attr, "=")
-			cfgKVs[kv[0]] = kv[1]
-		}
-		addr = cfgKVs["host"] + ":" + cfgKVs["port"]
 	default:
 		addr = dsn
 		if c.dsnFn != nil {
