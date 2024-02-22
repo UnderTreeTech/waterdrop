@@ -101,10 +101,10 @@ func (c *Config) parseDSNAddr(dsn string) (addr string) {
 		}
 		addr = cfgKVs["host"] + ":" + cfgKVs["port"]
 	default:
-		if c.dsnFn == nil {
-			addr = dsn
+		addr = dsn
+		if c.dsnFn != nil {
+			addr = c.dsnFn(dsn)
 		}
-		addr = c.dsnFn(dsn)
 	}
 	return
 }
