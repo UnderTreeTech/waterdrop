@@ -78,13 +78,17 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 	}
 }
 
-// pushConsumerMetricInterceptor push consumer metric
-func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
+// consumerMetricInterceptor consumer metric
+func consumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
 		now := time.Now()
 		msgs := req.([]*primitive.MessageExt)
 
 		err := next(ctx, msgs, reply)
+
+		if reply == nil {
+			return err
+		}
 
 		var errmsg string
 		if err != nil {
@@ -93,7 +97,6 @@ func pushConsumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 		holder := reply.(*consumer.ConsumeResultHolder)
 		replyCode := strconv.Itoa(int(holder.ConsumeResult))
 		duration := time.Since(now).Seconds()
-
 		for _, msg := range msgs {
 			metric.RocketMQClientHandleCounter.Inc(msg.StoreHost, "rocketmq", pc.Topic, "consume", replyCode)
 			metric.RocketMQClientReqDuration.Observe(duration, msg.StoreHost, "rocketmq", pc.Topic, "consume")

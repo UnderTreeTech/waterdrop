@@ -7,13 +7,13 @@ require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alibaba/sentinel-golang v1.0.2
-	github.com/apache/rocketmq-client-go/v2 v2.1.1
+	github.com/apache/rocketmq-client-go/v2 v2.1.2
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-playground/validator/v10 v10.4.1
-	github.com/go-redis/redis/v8 v8.11.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/mock v1.4.4 // indirect
@@ -25,7 +25,6 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20201021141957-47ffae23317c
 	github.com/olivere/elastic/v7 v7.0.25
-	github.com/onsi/gomega v1.15.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.11.1
 	github.com/qiniu/qmgo v1.0.6
