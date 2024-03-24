@@ -37,11 +37,11 @@ const (
 // get locale language
 func GetLocaleLng(lng string) string {
 	// Multiple types, weighted with the quality value syntax:
-	//Accept-Language: fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5, en-US,en;q=0.5, en, *
+	// Accept-Language: fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5, en-US,en;q=0.5, en, *
 	locale := strings.Split(strings.Split(lng, ";")[0], "-")[0]
 	locale = strings.TrimSpace(locale)
 
-	//lng default to en if it doesn't have Accept-Language header or accept any language
+	// lng default to en if it doesn't have Accept-Language header or accept any language
 	if "" == locale || _lngWildCard == locale {
 		locale = _defalutLng
 	}

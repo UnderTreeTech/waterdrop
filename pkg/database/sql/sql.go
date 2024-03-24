@@ -21,6 +21,7 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -28,8 +29,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/status"
-
-	"errors"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
