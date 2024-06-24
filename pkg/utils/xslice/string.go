@@ -87,19 +87,19 @@ func IntersectString(s1 []string, s2 []string) []string {
 
 // UniqueString Removes duplicate values from slice
 func UniqueString(s1 []string) []string {
-	unique := make(map[string]interface{})
+	unique := make(map[string]struct{})
+	ret := make([]string, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]string, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
 
-//MergeString merge one or more arrays
+// MergeString merge one or more arrays
 func MergeString(s1 []string, s2 ...[]string) []string {
 	if len(s2) == 0 {
 		return s1
@@ -116,7 +116,7 @@ func MergeString(s1 []string, s2 ...[]string) []string {
 	return ret
 }
 
-//SortString sort string slice asc
+// SortString sort string slice asc
 func SortString(s []string) []string {
 	sort.Sort(sort.StringSlice(s))
 	return s

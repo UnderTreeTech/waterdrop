@@ -87,14 +87,14 @@ func IntersectFloat64(s1 []float64, s2 []float64) []float64 {
 
 // UniqueFloat64 Removes duplicate values from slice
 func UniqueFloat64(s1 []float64) []float64 {
-	unique := make(map[float64]interface{})
+	unique := make(map[float64]struct{})
+	ret := make([]float64, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]float64, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -116,7 +116,7 @@ func MergeFloat64(s1 []float64, s2 ...[]float64) []float64 {
 	return ret
 }
 
-//SortFloat64 sort float64 slice asc
+// SortFloat64 sort float64 slice asc
 func SortFloat64(s []float64) []float64 {
 	sort.Sort(sort.Float64Slice(s))
 	return s

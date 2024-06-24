@@ -85,14 +85,14 @@ func IntersectInt8(s1 []int8, s2 []int8) []int8 {
 
 // UniqueInt8 Removes duplicate values from slice
 func UniqueInt8(s1 []int8) []int8 {
-	unique := make(map[int8]interface{})
+	unique := make(map[int8]struct{})
+	ret := make([]int8, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]int8, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -192,14 +192,14 @@ func IntersectUint8(s1 []uint8, s2 []uint8) []uint8 {
 
 // UniqueUint8 Removes duplicate values from slice
 func UniqueUint8(s1 []uint8) []uint8 {
-	unique := make(map[uint8]interface{})
+	unique := make(map[uint8]struct{})
+	ret := make([]uint8, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]uint8, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -299,14 +299,14 @@ func IntersectInt16(s1 []int16, s2 []int16) []int16 {
 
 // UniqueInt16 Removes duplicate values from slice
 func UniqueInt16(s1 []int16) []int16 {
-	unique := make(map[int16]interface{})
+	unique := make(map[int16]struct{})
+	ret := make([]int16, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]int16, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -406,14 +406,14 @@ func IntersectUint16(s1 []uint16, s2 []uint16) []uint16 {
 
 // UniqueUint16 Removes duplicate values from slice
 func UniqueUint16(s1 []uint16) []uint16 {
-	unique := make(map[uint16]interface{})
+	unique := make(map[uint16]struct{})
+	ret := make([]uint16, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]uint16, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -513,14 +513,14 @@ func IntersectInt(s1 []int, s2 []int) []int {
 
 // UniqueInt Removes duplicate values from slice
 func UniqueInt(s1 []int) []int {
-	unique := make(map[int]interface{})
+	unique := make(map[int]struct{})
+	ret := make([]int, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]int, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -613,14 +613,14 @@ func IntersectUint(s1 []uint, s2 []uint) []uint {
 
 // UniqueUint Removes duplicate values from slice
 func UniqueUint(s1 []uint) []uint {
-	unique := make(map[uint]interface{})
+	unique := make(map[uint]struct{})
+	ret := make([]uint, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]uint, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -720,14 +720,14 @@ func IntersectInt32(s1 []int32, s2 []int32) []int32 {
 
 // UniqueInt32 Removes duplicate values from slice
 func UniqueInt32(s1 []int32) []int32 {
-	unique := make(map[int32]interface{})
+	unique := make(map[int32]struct{})
+	ret := make([]int32, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]int32, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -827,14 +827,14 @@ func IntersectUint32(s1 []uint32, s2 []uint32) []uint32 {
 
 // UniqueUint32 Removes duplicate values from slice
 func UniqueUint32(s1 []uint32) []uint32 {
-	unique := make(map[uint32]interface{})
+	unique := make(map[uint32]struct{})
+	ret := make([]uint32, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]uint32, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -934,14 +934,14 @@ func IntersectInt64(s1 []int64, s2 []int64) []int64 {
 
 // UniqueInt64 Removes duplicate values from slice
 func UniqueInt64(s1 []int64) []int64 {
-	unique := make(map[int64]interface{})
+	unique := make(map[int64]struct{})
+	ret := make([]int64, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]int64, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
@@ -1041,14 +1041,14 @@ func IntersectUint64(s1 []uint64, s2 []uint64) []uint64 {
 
 // UniqueUint64 Removes duplicate values from slice
 func UniqueUint64(s1 []uint64) []uint64 {
-	unique := make(map[uint64]interface{})
+	unique := make(map[uint64]struct{})
+	ret := make([]uint64, 0, len(s1))
 	for _, val := range s1 {
-		unique[val] = nil
-	}
-
-	ret := make([]uint64, 0, len(unique))
-	for key := range unique {
-		ret = append(ret, key)
+		if _, ok := unique[val]; ok {
+			continue
+		}
+		unique[val] = struct{}{}
+		ret = append(ret, val)
 	}
 	return ret
 }
