@@ -66,7 +66,7 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 			metric.RocketMQClientHandleCounter.Inc("unknown", "rocketmq", pc.Topic, "produce", err.Error())
 			metric.RocketMQClientReqDuration.Observe(duration, "unknown", "rocketmq", pc.Topic, "produce")
 		} else {
-			log.Info(ctx, "send msg success", fields...)
+			log.Debug(ctx, "send msg success", fields...)
 			metric.RocketMQClientHandleCounter.Inc(realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce", strconv.Itoa(int(realReply.Status)))
 			metric.RocketMQClientReqDuration.Observe(duration, realReply.MessageQueue.BrokerName, "rocketmq", pc.Topic, "produce")
 		}
@@ -115,7 +115,7 @@ func consumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 			if err != nil {
 				log.Error(ctx, "consume msg fail", fields...)
 			} else {
-				log.Info(ctx, "consume msg success", fields...)
+				log.Debug(ctx, "consume msg success", fields...)
 			}
 		}
 		return err
