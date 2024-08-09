@@ -28,6 +28,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -65,8 +66,15 @@ func run(c *cli.Context) (err error) {
 	}
 	defer f.Close()
 
+	pwd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	packageName := filepath.Base(pwd)
+
 	ecodes := make([]Ecode, 0)
 	reader := csv.NewReader(bufio.NewReader(f))
+	reader.LazyQuotes = true
 	locales := make(map[string]string)
 	for {
 		details, err := reader.Read()
@@ -104,7 +112,7 @@ func run(c *cli.Context) (err error) {
 		Locales map[string]string
 		Version int64
 	}{
-		Package: "i18n",
+		Package: packageName,
 		Import:  []string{"github.com/UnderTreeTech/waterdrop/pkg/status"},
 		Ecodes:  ecodes,
 		Locales: locales,
@@ -147,10 +155,6 @@ var (
 		log.Fatal("generate code fail", err)
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
 	output := path.Join(pwd, "ecode.go")
 	if c.Args().Len() == 2 {
 		output = path.Join(c.Args().Slice()[1], "ecode.go")
