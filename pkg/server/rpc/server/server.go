@@ -68,6 +68,10 @@ func New(cfg *config.ServerConfig) *Server {
 		MaxConnectionAge:      cfg.MaxLifeTime,
 	})
 
+	if cfg.MaxReceiveMessageSize > 0 {
+		srv.serverOptions = append(srv.serverOptions, grpc.MaxRecvMsgSize(cfg.MaxReceiveMessageSize))
+	}
+
 	srv.Use(
 		interceptors.RecoveryForUnaryServer(srv.config),
 		interceptors.TraceForUnaryServer(),

@@ -39,7 +39,8 @@ type ServerConfig struct {
 	// WatchConfig whether watch config file changes
 	WatchConfig bool
 	// NotLog escape log detail path
-	NotLog []string
+	NotLog                []string
+	MaxReceiveMessageSize int
 }
 
 // DefaultServerConfig default server config for starting rpc server out of box
