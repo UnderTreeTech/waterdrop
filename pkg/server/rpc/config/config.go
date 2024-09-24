@@ -75,6 +75,8 @@ type ClientConfig struct {
 	SlowRequestDuration time.Duration
 	// NotLog escape log detail path
 	NotLog []string
+	// MaxCallSendMsgSize default 4*1024*1024
+	MaxCallSendMsgSize int
 }
 
 // DefaultClientConfig default client config for starting rpc client out of box

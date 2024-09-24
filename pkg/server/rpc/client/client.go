@@ -64,6 +64,10 @@ func New(config *config.ClientConfig) *Client {
 		cli.clientOptions = append(cli.clientOptions, grpc.WithBlock())
 	}
 
+	if config.MaxCallSendMsgSize > 0 {
+		cli.clientOptions = append(cli.clientOptions, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(config.MaxCallSendMsgSize)))
+	}
+
 	keepaliveOpts := grpc.WithKeepaliveParams(keepalive.ClientParameters{
 		Time:    config.KeepAliveInterval,
 		Timeout: config.KeepAliveTimeout,
