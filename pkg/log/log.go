@@ -158,7 +158,13 @@ func newLogger(config *Config) *Logger {
 	jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: config})
 	encCfg := zap.NewProductionEncoderConfig()
 	encCfg.NewReflectedEncoder = filterReflectEncoder
+	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	encoder := zapcore.NewJSONEncoder(encCfg)
+	if config.Debug {
+		encoder = zapcore.NewConsoleEncoder(encCfg)
+	}
+
 	core := zapcore.NewCore(encoder, ws, lv)
 	opts = append(opts, zap.WrapCore(newFilterCore(core, config)))
 	logger := zap.New(core, opts...)
@@ -265,7 +271,7 @@ func Errorf(msg string, fields ...Field) {
 	defaultLogger.logger.Error(msg, fields...)
 }
 
-// Panic logs a message then panic without context
+// Panicf logs a message then panic without context
 func Panicf(msg string, fields ...Field) {
 	defaultLogger.logger.Panic(msg, fields...)
 }
