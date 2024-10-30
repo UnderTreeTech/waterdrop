@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
+	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/utils/xstring"
 
@@ -95,7 +96,7 @@ func (p *Producer) Shutdown() error {
 
 // SendSyncMsg send message sync
 func (p *Producer) SendSyncMsg(ctx context.Context, content string, tags ...string) error {
-	msgs := getSendMsgs(p.config.Topic, []string{content}, tags...)
+	msgs := getSendMsgs(ctx, p.config.Topic, []string{content}, tags...)
 	_, err := p.producer.SendSync(ctx, msgs...)
 	if err != nil {
 		log.Error(ctx, "send msg fail", log.String("content", content), log.Any("tags", tags),
@@ -107,7 +108,7 @@ func (p *Producer) SendSyncMsg(ctx context.Context, content string, tags ...stri
 
 // BatchSendSyncMsg batch send message sync
 func (p *Producer) BatchSendSyncMsg(ctx context.Context, contents []string, tags ...string) error {
-	msgs := getSendMsgs(p.config.Topic, contents, tags...)
+	msgs := getSendMsgs(ctx, p.config.Topic, contents, tags...)
 	_, err := p.producer.SendSync(ctx, msgs...)
 	if err != nil {
 		log.Error(ctx, "send msg fail", log.Any("content", contents), log.Any("tags", tags),
@@ -119,7 +120,7 @@ func (p *Producer) BatchSendSyncMsg(ctx context.Context, contents []string, tags
 
 // SendAsyncMsg send message async
 func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback func(context.Context, *primitive.SendResult, error), tags ...string) error {
-	msgs := getSendMsgs(p.config.Topic, []string{content}, tags...)
+	msgs := getSendMsgs(ctx, p.config.Topic, []string{content}, tags...)
 	err := p.producer.SendAsync(ctx, callback, msgs...)
 	if err != nil {
 		log.Error(ctx, "async send msg fail", log.String("content", content), log.String("error", err.Error()))
@@ -129,12 +130,13 @@ func (p *Producer) SendAsyncMsg(ctx context.Context, content string, callback fu
 }
 
 // getSendMsgs format send message to primitive.Message
-func getSendMsgs(topic string, contents []string, tags ...string) []*primitive.Message {
+func getSendMsgs(ctx context.Context, topic string, contents []string, tags ...string) []*primitive.Message {
 	msgs := make([]*primitive.Message, 0, len(contents))
+	traceId := trace.TraceID(ctx)
 	for _, content := range contents {
 		bs := xstring.StringToBytes(content)
 		msg := primitive.NewMessage(topic, bs).
-			WithKeys([]string{xstring.RandomString(16)})
+			WithKeys([]string{xstring.RandomString(16) + traceId})
 		if len(tags) > 0 {
 			msg = msg.WithTag(tags[0])
 		}
