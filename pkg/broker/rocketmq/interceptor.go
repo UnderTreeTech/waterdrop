@@ -23,6 +23,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/trace"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/apache/rocketmq-client-go/v2/consumer"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
@@ -81,11 +84,15 @@ func producerMetricInterceptor(pc *ProducerConfig) primitive.Interceptor {
 // consumerMetricInterceptor consumer metric
 func consumerMetricInterceptor(pc *ConsumerConfig) primitive.Interceptor {
 	return func(ctx context.Context, req, reply interface{}, next primitive.Invoker) error {
+		opt := trace.FromIncomingContext(ctx)
+		span, ctx := trace.StartSpanFromContext(ctx, "consumer:"+pc.Topic, opt)
+		ext.Component.Set(span, "MQ")
+		ext.SpanKind.Set(span, ext.SpanKindConsumerEnum)
+		defer span.Finish()
+
 		now := time.Now()
 		msgs := req.([]*primitive.MessageExt)
-
 		err := next(ctx, msgs, reply)
-
 		if reply == nil {
 			return err
 		}
