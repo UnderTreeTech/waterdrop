@@ -33,6 +33,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "github.com/UnderTreeTech/waterdrop/pkg/version"
 	// Automatically set GOMAXPROCS to match Linux container CPU quota
 	_ "go.uber.org/automaxprocs"
 )

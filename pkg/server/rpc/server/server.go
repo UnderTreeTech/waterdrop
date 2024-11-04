@@ -32,6 +32,7 @@ import (
 
 	"google.golang.org/grpc/reflection"
 
+	_ "github.com/UnderTreeTech/waterdrop/pkg/version"
 	"google.golang.org/grpc/keepalive"
 
 	// Automatically set GOMAXPROCS to match Linux container CPU quota
