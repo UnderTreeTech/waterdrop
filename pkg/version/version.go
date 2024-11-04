@@ -87,11 +87,11 @@ func printBuildInfo() {
 	printf("Go version", GoVersion)
 
 	if GitCommit != unknownProperty {
-		printf("Git commit", BuildBranch)
+		printf("Git commit", GitCommit)
 	}
 
 	if SDKGitCommit != unknownProperty {
-		printf("SDK commit", BuildBranch)
+		printf("SDK commit", SDKGitCommit)
 	}
 
 	if BuildDate != unknownProperty {
