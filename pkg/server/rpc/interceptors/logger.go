@@ -107,14 +107,13 @@ func LoggerForUnaryClient(config *config.ClientConfig) grpc.UnaryClientIntercept
 		if peerInfo.Addr != nil {
 			peerIP = peerInfo.Addr.String()
 		}
-		fields := make([]log.Field, 0, 8)
+		fields := make([]log.Field, 0, 7)
 		fields = append(
 			fields,
 			log.String("peer", peerIP),
 			log.String("method", method),
 			log.Float64("quota", quota),
 			log.Float64("duration", duration.Seconds()),
-			log.Any("reply", json.RawMessage(log.JsonBytes(reply))),
 			log.Int("code", estatus.Code()),
 			log.String("error", estatus.Message()),
 		)

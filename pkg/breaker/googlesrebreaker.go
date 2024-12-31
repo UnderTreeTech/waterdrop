@@ -83,12 +83,13 @@ func (gsb *googleSreBreaker) Allow() error {
 	success, total := gsb.summary()
 	googleAccepts := gsb.k * success
 	dropRatio := math.Max(0, (float64(total)-googleAccepts)/float64(total+1))
-	log.Debugf("breaker", log.String("name", gsb.name), log.Int64("total", total), log.Float64("success", success), log.Float64("accepts", googleAccepts), log.Float64("ratio", dropRatio))
 	if dropRatio <= 0 {
 		if atomic.LoadInt32(&gsb.state) == StateOpen {
 			atomic.CompareAndSwapInt32(&gsb.state, StateOpen, StateClosed)
 		}
 		return nil
+	} else {
+		log.Errorf("breaker", log.String("name", gsb.name), log.Int64("total", total), log.Float64("success", success), log.Float64("accepts", googleAccepts), log.Float64("ratio", dropRatio))
 	}
 
 	if atomic.LoadInt32(&gsb.state) == StateClosed {

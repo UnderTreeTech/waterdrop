@@ -123,9 +123,7 @@ func (c *Client) ChainUnaryClient() grpc.UnaryClientInterceptor {
 	}
 }
 
-// Chain creates a single interceptor out of a chain of many interceptors.
 // WithUnaryServerChain is a grpc.Client dial option that accepts multiple unary interceptors.
-// Basically syntactic sugar.
 func (c *Client) WithUnaryServerChain() grpc.DialOption {
 	return grpc.WithUnaryInterceptor(c.ChainUnaryClient())
 }
@@ -151,7 +149,7 @@ func (c *Client) GetConn() *grpc.ClientConn {
 	return c.conn
 }
 
-// GetConn return the client breakers
+// GetBreakers return the client breakers
 func (c *Client) GetBreakers() *breaker.BreakerGroup {
 	return c.breakers
 }
