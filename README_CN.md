@@ -26,7 +26,7 @@
 - Registry：服务注册发现，制定通用接口定义，默认支持etcd
 - Status：全局错误处理，用于HTTP/RPC之间错误转换。后续可扩展成从remote加载错误定义
 - Dashboard：基于Grafana搭建metrics大盘，待实现
-- Breaker：熔断器，支持[alibaba sentinel](github.com/alibaba/sentinel-golang)、[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/)
+- Breaker：熔断器，支持[alibaba sentinel](https://github.com/alibaba/sentinel-golang)、[google sre breaker](https://landing.google.com/sre/sre-book/chapters/handling-overload/)
 - Middlewares & Interceptors：http/rpc server通用中间件，如recovery, trace, metric and logger等
 
 
