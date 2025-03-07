@@ -31,6 +31,7 @@ import (
 	"unsafe"
 
 	jsoniter "github.com/json-iterator/go"
+	"google.golang.org/grpc"
 
 	"github.com/natefinch/lumberjack"
 
@@ -141,11 +142,31 @@ func newLogger(config *Config) *Logger {
 		opts = append(opts, zap.AddStacktrace(zap.ErrorLevel))
 	}
 
+	encCfg := zap.NewProductionEncoderConfig()
+	encCfg.NewReflectedEncoder = filterReflectEncoder
+	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	var ws zapcore.WriteSyncer
+	var encoder zapcore.Encoder
 	if config.Debug {
 		ws = os.Stdout
 	} else {
-		ws = zapcore.AddSync(rotate(config))
+		parsed, err := url.Parse(config.Dir)
+		if err != nil {
+			panic(err.Error())
+		}
+		switch parsed.Scheme {
+		case "file":
+			config.Dir = parsed.Path
+			ws = zapcore.AddSync(rotate(config))
+			encoder = NewRawEncoder()
+		case "grpc":
+			ws, err = NewWriter(*config, parsed.Host)
+			if err != nil {
+				panic(err.Error())
+			}
+			encoder = zapcore.NewJSONEncoder(encCfg)
+		}
 	}
 
 	if config.EnableAsyncLog {
@@ -156,11 +177,6 @@ func newLogger(config *Config) *Logger {
 	}
 
 	jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: config})
-	encCfg := zap.NewProductionEncoderConfig()
-	encCfg.NewReflectedEncoder = filterReflectEncoder
-	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-	encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoder := zapcore.NewJSONEncoder(encCfg)
 	if config.Debug {
 		encoder = zapcore.NewConsoleEncoder(encCfg)
 	}
@@ -426,4 +442,94 @@ func JsonForm(form url.Values) []byte {
 	}
 	bs, _ := jsonAPI.Marshal(logForm)
 	return bs
+}
+
+func NewWriter(cfg Config, host string) (zapcore.WriteSyncer, error) {
+	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, host, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	cli := NewLoggerClient(conn)
+	return &LogSink{
+		cli:     cli,
+		logName: cfg.Name,
+	}, nil
+}
+
+type LogSink struct {
+	cli     LoggerClient
+	logName string
+}
+
+func (ls *LogSink) Write(bs []byte) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err := ls.cli.Log(ctx, &LogRequest{
+		ServerName: ls.logName,
+		Data:       bs,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return len(bs), nil
+}
+
+func (ls *LogSink) Sync() error {
+	return nil
+}
+
+// Debug logs are typically voluminous, and are usually disabled in production
+func (l *Logger) Debug(ctx context.Context, msg string, fields ...Field) {
+	l.logger.Debug(msg, assembleFields(ctx, fields...)...)
+}
+
+// Info logs Info Level
+func (l *Logger) Info(ctx context.Context, msg string, fields ...Field) {
+	l.logger.Info(msg, assembleFields(ctx, fields...)...)
+}
+
+// Warn logs are more important than Info, but don't need individual human review
+func (l *Logger) Warn(ctx context.Context, msg string, fields ...Field) {
+	l.logger.Warn(msg, assembleFields(ctx, fields...)...)
+}
+
+// Error logs are high-priority.
+// If an application is running smoothly, it shouldn't generate any error-Level logs
+func (l *Logger) Error(ctx context.Context, msg string, fields ...Field) {
+	l.logger.Error(msg, assembleFields(ctx, fields...)...)
+}
+
+// Panic logs a message then panic
+func (l *Logger) Panic(ctx context.Context, msg string, fields ...Field) {
+	l.logger.Panic(msg, assembleFields(ctx, fields...)...)
+}
+
+// Debugf logs are typically voluminous without context
+// and are usually disabled in production
+func (l *Logger) Debugf(msg string, fields ...Field) {
+	l.logger.Debug(msg, fields...)
+}
+
+// Infof logs Info Level without context
+func (l *Logger) Infof(msg string, fields ...Field) {
+	l.logger.Info(msg, fields...)
+}
+
+// Warnf logs are more important than Info
+// but don't need individual human review
+func (l *Logger) Warnf(msg string, fields ...Field) {
+	l.logger.Warn(msg, fields...)
+}
+
+// Errorf logs are high-priority without context
+// If an application is running smoothly, it shouldn't generate any error-Level logs.
+func (l *Logger) Errorf(msg string, fields ...Field) {
+	l.logger.Error(msg, fields...)
+}
+
+// Panicf logs a message then panic without context
+func (l *Logger) Panicf(msg string, fields ...Field) {
+	l.logger.Panic(msg, fields...)
 }
