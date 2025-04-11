@@ -27,6 +27,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -148,24 +149,20 @@ func newLogger(config *Config) *Logger {
 	encCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	var ws zapcore.WriteSyncer
 	var encoder zapcore.Encoder
+	parsed, err := url.Parse(config.Dir)
+	if err != nil {
+		panic(err.Error())
+	}
 	if config.Debug {
 		ws = os.Stdout
 	} else {
-		parsed, err := url.Parse(config.Dir)
-		if err != nil {
-			panic(err.Error())
-		}
 		switch parsed.Scheme {
 		case "file":
-			config.Dir = parsed.Path
-			ws = zapcore.AddSync(rotate(config))
-			encoder = NewRawEncoder()
+			encoder, ws = newFileLogger(config, encCfg, parsed)
+		case "dump":
+			encoder, ws = newDumpLogger(config, parsed)
 		case "grpc":
-			ws, err = NewWriter(*config, parsed.Host)
-			if err != nil {
-				panic(err.Error())
-			}
-			encoder = zapcore.NewJSONEncoder(encCfg)
+			encoder, ws = newGrpcLogger(config, encCfg, parsed)
 		}
 	}
 
@@ -182,7 +179,15 @@ func newLogger(config *Config) *Logger {
 	}
 
 	core := zapcore.NewCore(encoder, ws, lv)
-	opts = append(opts, zap.WrapCore(newFilterCore(core, config)))
+	switch parsed.Scheme {
+	case "file":
+		opts = AddFileLoggerOption(core, config, opts)
+	case "dump":
+		core = newDumpCore(config, encoder, ws, lv, parsed.Query().Has("dumpsingle"))
+		opts = AddDumpLoggerOption(core, config, opts)
+	case "grpc":
+		opts = AddGrpcLoggerOption(core, config, opts)
+	}
 	logger := zap.New(core, opts...)
 
 	return &Logger{
@@ -213,6 +218,61 @@ func defaultConfig() *Config {
 		Sensitives:  []string{"token", "pwd", "password", "api_key", "secret"},
 		Placeholder: "*******",
 	}
+}
+
+func newFileLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
+
+	config.Dir = parsed.Path
+	ws := zapcore.AddSync(rotate(config))
+	encoder := zapcore.NewJSONEncoder(encCfg)
+
+	if config.EnableAsyncLog {
+		ws = &zapcore.BufferedWriteSyncer{
+			WS:            ws,
+			FlushInterval: config.FlushInterval,
+		}
+	}
+	return encoder, ws
+}
+
+func AddFileLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) []zap.Option {
+	return append(opts, zap.WrapCore(newFilterCore(core, config)))
+}
+
+func newDumpLogger(config *Config, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
+
+	config.Dir = parsed.Path
+	ws := zapcore.AddSync(rotate(config))
+	encoder := NewRawEncoder()
+
+	if config.EnableAsyncLog {
+		ws = &zapcore.BufferedWriteSyncer{
+			WS:            ws,
+			FlushInterval: config.FlushInterval,
+		}
+	}
+
+	return encoder, ws
+}
+
+func AddDumpLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) []zap.Option {
+	return opts
+}
+
+func newGrpcLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
+
+	ws, err := NewGrpcWriter(*config, parsed.Host)
+	if err != nil {
+		panic(err.Error())
+	}
+	encoder := zapcore.NewJSONEncoder(encCfg)
+	return encoder, ws
+}
+
+func AddGrpcLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) []zap.Option {
+	return append(opts, zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		return newIpCore(newFilterCore(core, config)(c))
+	}))
 }
 
 // New returns a Logger instance
@@ -444,7 +504,31 @@ func JsonForm(form url.Values) []byte {
 	return bs
 }
 
-func NewWriter(cfg Config, host string) (zapcore.WriteSyncer, error) {
+type ipCore struct {
+	zapcore.Core
+	localIP string
+}
+
+func newIpCore(c zapcore.Core) zapcore.Core {
+	return &ipCore{
+		Core:    c,
+		localIP: os.Getenv("NODE_IP"),
+	}
+}
+
+func (c *ipCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+	if c.Core.Enabled(ent.Level) {
+		return ce.AddCore(ent, c)
+	}
+	return ce
+}
+
+func (c *ipCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
+	fields = append(fields, String("local_ip", c.localIP))
+	return c.Core.Write(ent, fields)
+}
+
+func NewGrpcWriter(cfg Config, host string) (*GrpcWriter, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, host, grpc.WithInsecure())
@@ -452,84 +536,151 @@ func NewWriter(cfg Config, host string) (zapcore.WriteSyncer, error) {
 		return nil, err
 	}
 	cli := NewLoggerClient(conn)
-	return &LogSink{
+	ls := &GrpcWriter{
 		cli:     cli,
 		logName: cfg.Name,
-	}, nil
+		buffer:  make([][]byte, 0, maxBufferedLog),
+	}
+	if cfg.EnableAsyncLog {
+		ls.ticker = time.NewTicker(cfg.FlushInterval)
+	}
+	return ls, nil
 }
 
-type LogSink struct {
-	cli     LoggerClient
-	logName string
+const maxBufferedLog = 10
+
+type GrpcWriter struct {
+	cli         LoggerClient
+	logName     string
+	loopStarted bool
+	ticker      *time.Ticker
+	buffer      [][]byte
+	mu          sync.Mutex
 }
 
-func (ls *LogSink) Write(bs []byte) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_, err := ls.cli.Log(ctx, &LogRequest{
-		ServerName: ls.logName,
-		Data:       bs,
-	})
-	if err != nil {
-		return 0, err
+func (ls *GrpcWriter) Write(bs []byte) (int, error) {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+
+	if len(ls.buffer) >= maxBufferedLog {
+		err := ls.send()
+		if err != nil {
+			fmt.Println(err.Error())
+			return 0, err
+		}
+	}
+	ls.buffer = append(ls.buffer, bs)
+
+	if !ls.loopStarted {
+		go ls.flushloop()
+		ls.loopStarted = true
 	}
 	return len(bs), nil
 }
 
-func (ls *LogSink) Sync() error {
+func (ls *GrpcWriter) Sync() error {
+	ls.mu.Lock()
+	defer ls.mu.Unlock()
+
+	if len(ls.buffer) == 0 {
+		return nil
+	}
+	return ls.send()
+}
+
+func (ls *GrpcWriter) send() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for _, v := range ls.buffer {
+		fmt.Println(string(v))
+	}
+	_, err := ls.cli.Log(ctx, &LogRequest{
+		ServerName: ls.logName,
+		Data:       ls.buffer,
+	})
+	if err != nil {
+		return err
+	}
+	ls.buffer = ls.buffer[:0]
 	return nil
 }
 
-// Debug logs are typically voluminous, and are usually disabled in production
-func (l *Logger) Debug(ctx context.Context, msg string, fields ...Field) {
-	l.logger.Debug(msg, assembleFields(ctx, fields...)...)
+func (ls *GrpcWriter) flushloop() {
+
+	for {
+		<-ls.ticker.C
+		ls.Sync()
+	}
+
 }
 
-// Info logs Info Level
-func (l *Logger) Info(ctx context.Context, msg string, fields ...Field) {
-	l.logger.Info(msg, assembleFields(ctx, fields...)...)
+type dumpCore struct {
+	encoder    zapcore.Encoder
+	lv         zap.AtomicLevel
+	coreMu     sync.Mutex
+	cores      map[string]zapcore.Core
+	config     *Config
+	dumpSingle bool
 }
 
-// Warn logs are more important than Info, but don't need individual human review
-func (l *Logger) Warn(ctx context.Context, msg string, fields ...Field) {
-	l.logger.Warn(msg, assembleFields(ctx, fields...)...)
+// func newDumpCore(c zapcore.Core) zapcore.Core {
+// 	return &dumpCore{
+// 		Core: c,
+// 	}
+// }
+
+func newDumpCore(config *Config, encoder zapcore.Encoder, ws zapcore.WriteSyncer, lv zap.AtomicLevel, dumpSingle bool) zapcore.Core {
+	return &dumpCore{
+		config:     config,
+		encoder:    encoder,
+		lv:         lv,
+		cores:      make(map[string]zapcore.Core),
+		dumpSingle: dumpSingle,
+	}
 }
 
-// Error logs are high-priority.
-// If an application is running smoothly, it shouldn't generate any error-Level logs
-func (l *Logger) Error(ctx context.Context, msg string, fields ...Field) {
-	l.logger.Error(msg, assembleFields(ctx, fields...)...)
+func (c *dumpCore) Enabled(l zapcore.Level) bool {
+	return true
 }
 
-// Panic logs a message then panic
-func (l *Logger) Panic(ctx context.Context, msg string, fields ...Field) {
-	l.logger.Panic(msg, assembleFields(ctx, fields...)...)
+func (c *dumpCore) With(fields []Field) zapcore.Core {
+	return c
 }
 
-// Debugf logs are typically voluminous without context
-// and are usually disabled in production
-func (l *Logger) Debugf(msg string, fields ...Field) {
-	l.logger.Debug(msg, fields...)
+func (c *dumpCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+	return ce.AddCore(ent, c)
 }
 
-// Infof logs Info Level without context
-func (l *Logger) Infof(msg string, fields ...Field) {
-	l.logger.Info(msg, fields...)
+func (c *dumpCore) Write(ent zapcore.Entry, fields []Field) error {
+	logName := ""
+	for _, f := range fields {
+		if f.Key == "log_name" {
+			logName = f.String
+			break
+		}
+	}
+	if c.dumpSingle {
+		logName = c.config.Name
+	}
+	c.coreMu.Lock()
+	defer c.coreMu.Unlock()
+	core, found := c.cores[logName]
+	if !found {
+		c.config.Name = logName
+		ws := zapcore.AddSync(rotate(c.config))
+
+		if c.config.EnableAsyncLog {
+			ws = &zapcore.BufferedWriteSyncer{
+				WS:            ws,
+				FlushInterval: c.config.FlushInterval,
+			}
+		}
+		core = zapcore.NewCore(c.encoder, ws, c.lv)
+		c.cores[logName] = core
+	}
+	return core.Write(ent, fields)
 }
 
-// Warnf logs are more important than Info
-// but don't need individual human review
-func (l *Logger) Warnf(msg string, fields ...Field) {
-	l.logger.Warn(msg, fields...)
-}
-
-// Errorf logs are high-priority without context
-// If an application is running smoothly, it shouldn't generate any error-Level logs.
-func (l *Logger) Errorf(msg string, fields ...Field) {
-	l.logger.Error(msg, fields...)
-}
-
-// Panicf logs a message then panic without context
-func (l *Logger) Panicf(msg string, fields ...Field) {
-	l.logger.Panic(msg, fields...)
+func (c *dumpCore) Sync() error {
+	return nil
 }
