@@ -39,6 +39,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
+	"github.com/UnderTreeTech/waterdrop/pkg/utils/xstring"
 
 	"go.uber.org/zap"
 )
@@ -166,13 +167,6 @@ func newLogger(config *Config) *Logger {
 		}
 	}
 
-	if config.EnableAsyncLog {
-		ws = &zapcore.BufferedWriteSyncer{
-			WS:            ws,
-			FlushInterval: config.FlushInterval,
-		}
-	}
-
 	jsonAPI.RegisterExtension(&filterEncoderExtension{cfg: config})
 	if config.Debug {
 		encoder = zapcore.NewConsoleEncoder(encCfg)
@@ -183,7 +177,7 @@ func newLogger(config *Config) *Logger {
 	case "file":
 		opts = AddFileLoggerOption(core, config, opts)
 	case "dump":
-		core = newDumpCore(config, encoder, ws, lv, parsed.Query().Has("dumpsingle"))
+		core = newDumpCore(config, encoder, lv, parsed.Query().Has("dumpsingle"))
 		opts = AddDumpLoggerOption(core, config, opts)
 	case "grpc":
 		opts = AddGrpcLoggerOption(core, config, opts)
@@ -221,7 +215,6 @@ func defaultConfig() *Config {
 }
 
 func newFileLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
-
 	config.Dir = parsed.Path
 	ws := zapcore.AddSync(rotate(config))
 	encoder := zapcore.NewJSONEncoder(encCfg)
@@ -240,7 +233,6 @@ func AddFileLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) [
 }
 
 func newDumpLogger(config *Config, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
-
 	config.Dir = parsed.Path
 	ws := zapcore.AddSync(rotate(config))
 	encoder := NewRawEncoder()
@@ -260,8 +252,7 @@ func AddDumpLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) [
 }
 
 func newGrpcLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL) (zapcore.Encoder, zapcore.WriteSyncer) {
-
-	ws, err := NewGrpcWriter(*config, parsed.Host)
+	ws, err := newGrpcWriter(*config, parsed.Host)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -271,7 +262,7 @@ func newGrpcLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL
 
 func AddGrpcLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) []zap.Option {
 	return append(opts, zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-		return newIpCore(newFilterCore(core, config)(c))
+		return newIpCore(newFilterCore(core, config)(c), config)
 	}))
 }
 
@@ -506,13 +497,23 @@ func JsonForm(form url.Values) []byte {
 
 type ipCore struct {
 	zapcore.Core
-	localIP string
+	hostname string
 }
 
-func newIpCore(c zapcore.Core) zapcore.Core {
+func newIpCore(c zapcore.Core, cfg *Config) zapcore.Core {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		nameElems := strings.Split(cfg.Name, ".")
+		if len(nameElems) > 0 {
+			nameElems[0] = nameElems[0] + "-" + xstring.RandomString(16)
+		} else {
+			nameElems = []string{xstring.RandomString(16)}
+		}
+		hostname = strings.Join(nameElems, ".")
+	}
 	return &ipCore{
-		Core:    c,
-		localIP: os.Getenv("NODE_IP"),
+		Core:     c,
+		hostname: hostname,
 	}
 }
 
@@ -524,11 +525,11 @@ func (c *ipCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.Che
 }
 
 func (c *ipCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
-	fields = append(fields, String("local_ip", c.localIP))
+	fields = append(fields, String("hostname", c.hostname))
 	return c.Core.Write(ent, fields)
 }
 
-func NewGrpcWriter(cfg Config, host string) (*GrpcWriter, error) {
+func newGrpcWriter(cfg Config, host string) (*GrpcWriter, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(ctx, host, grpc.WithInsecure())
@@ -539,49 +540,32 @@ func NewGrpcWriter(cfg Config, host string) (*GrpcWriter, error) {
 	ls := &GrpcWriter{
 		cli:     cli,
 		logName: cfg.Name,
-		buffer:  make([][]byte, 0, maxBufferedLog),
+		buffer:  make(chan []byte, maxBufferedLog),
 	}
-	if cfg.EnableAsyncLog {
-		ls.ticker = time.NewTicker(cfg.FlushInterval)
-	}
+	go ls.flushloop()
 	return ls, nil
 }
 
-const maxBufferedLog = 10
+const (
+	maxBufferedLog = 1024
+	maxSend        = 16
+)
 
 type GrpcWriter struct {
-	cli         LoggerClient
-	logName     string
-	loopStarted bool
-	ticker      *time.Ticker
-	buffer      [][]byte
-	mu          sync.Mutex
+	cli     LoggerClient
+	logName string
+	buffer  chan []byte
 }
 
 func (ls *GrpcWriter) Write(bs []byte) (int, error) {
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
-	if len(ls.buffer) >= maxBufferedLog {
-		err := ls.send()
-		if err != nil {
-			fmt.Println(err.Error())
-			return 0, err
-		}
-	}
-	ls.buffer = append(ls.buffer, bs)
-
-	if !ls.loopStarted {
-		go ls.flushloop()
-		ls.loopStarted = true
+	select {
+	case ls.buffer <- bs:
+	default:
 	}
 	return len(bs), nil
 }
 
 func (ls *GrpcWriter) Sync() error {
-	ls.mu.Lock()
-	defer ls.mu.Unlock()
-
 	if len(ls.buffer) == 0 {
 		return nil
 	}
@@ -591,25 +575,43 @@ func (ls *GrpcWriter) Sync() error {
 func (ls *GrpcWriter) send() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	for _, v := range ls.buffer {
-		fmt.Println(string(v))
-	}
-	_, err := ls.cli.Log(ctx, &LogRequest{
+	req := &LogRequest{
 		ServerName: ls.logName,
-		Data:       ls.buffer,
-	})
+		Logs:       make([][]byte, 0, maxSend),
+	}
+	flag := false
+	for {
+		select {
+		case bs := <-ls.buffer:
+			req.Logs = append(req.Logs, bs)
+			if len(req.GetLogs()) >= maxSend {
+				flag = true
+			}
+		default:
+			flag = true
+		}
+		if flag {
+			break
+		}
+	}
+
+	if len(req.GetLogs()) == 0 {
+		return nil
+	}
+	_, err := ls.cli.Log(ctx, req)
 	if err != nil {
 		return err
 	}
-	ls.buffer = ls.buffer[:0]
 	return nil
 }
 
 func (ls *GrpcWriter) flushloop() {
-
 	for {
-		<-ls.ticker.C
-		ls.Sync()
+		if len(ls.buffer) == 0 {
+			time.Sleep(200 * time.Millisecond)
+		} else {
+			ls.Sync()
+		}
 	}
 
 }
@@ -623,13 +625,7 @@ type dumpCore struct {
 	dumpSingle bool
 }
 
-// func newDumpCore(c zapcore.Core) zapcore.Core {
-// 	return &dumpCore{
-// 		Core: c,
-// 	}
-// }
-
-func newDumpCore(config *Config, encoder zapcore.Encoder, ws zapcore.WriteSyncer, lv zap.AtomicLevel, dumpSingle bool) zapcore.Core {
+func newDumpCore(config *Config, encoder zapcore.Encoder, lv zap.AtomicLevel, dumpSingle bool) zapcore.Core {
 	return &dumpCore{
 		config:     config,
 		encoder:    encoder,
