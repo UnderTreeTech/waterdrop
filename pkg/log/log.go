@@ -123,7 +123,9 @@ type Config struct {
 	// Sensitives filter keywords
 	Sensitives []string
 	// Placeholder filter keyword replacement
-	Placeholder string
+	Placeholder    string
+	LogBufferSize  int
+	MaxLogSendSize int
 }
 
 // newLogger returns a Logger pointer
@@ -495,7 +497,7 @@ func JsonForm(form url.Values) []byte {
 	return bs
 }
 
-type ipCore struct {
+type remoteCore struct {
 	zapcore.Core
 	hostname string
 }
@@ -511,20 +513,20 @@ func newIpCore(c zapcore.Core, cfg *Config) zapcore.Core {
 		}
 		hostname = strings.Join(nameElems, ".")
 	}
-	return &ipCore{
+	return &remoteCore{
 		Core:     c,
 		hostname: hostname,
 	}
 }
 
-func (c *ipCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+func (c *remoteCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	if c.Core.Enabled(ent.Level) {
 		return ce.AddCore(ent, c)
 	}
 	return ce
 }
 
-func (c *ipCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
+func (c *remoteCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
 	fields = append(fields, String("hostname", c.hostname))
 	return c.Core.Write(ent, fields)
 }
@@ -537,10 +539,20 @@ func newGrpcWriter(cfg Config, host string) (*GrpcWriter, error) {
 		return nil, err
 	}
 	cli := NewLoggerClient(conn)
+	bufferCap := cfg.LogBufferSize
+	if bufferCap <= 0 {
+		bufferCap = maxBufferedLog
+	}
+	maxSendSize := cfg.MaxLogSendSize
+	if maxSendSize <= 0 {
+		maxSendSize = maxSend
+	}
+
 	ls := &GrpcWriter{
-		cli:     cli,
-		logName: cfg.Name,
-		buffer:  make(chan []byte, maxBufferedLog),
+		cli:         cli,
+		logName:     cfg.Name,
+		buffer:      make(chan []byte, bufferCap),
+		maxSendSize: maxSendSize,
 	}
 	go ls.flushloop()
 	return ls, nil
@@ -552,9 +564,10 @@ const (
 )
 
 type GrpcWriter struct {
-	cli     LoggerClient
-	logName string
-	buffer  chan []byte
+	cli         LoggerClient
+	logName     string
+	buffer      chan []byte
+	maxSendSize int
 }
 
 func (ls *GrpcWriter) Write(bs []byte) (int, error) {
@@ -577,22 +590,17 @@ func (ls *GrpcWriter) send() error {
 	defer cancel()
 	req := &LogRequest{
 		ServerName: ls.logName,
-		Logs:       make([][]byte, 0, maxSend),
+		Logs:       make([][]byte, 0, ls.maxSendSize),
 	}
-	flag := false
-	for {
-		select {
-		case bs := <-ls.buffer:
-			req.Logs = append(req.Logs, bs)
-			if len(req.GetLogs()) >= maxSend {
-				flag = true
-			}
-		default:
-			flag = true
-		}
-		if flag {
-			break
-		}
+
+	logCount := ls.maxSendSize
+	exsit := len(ls.buffer)
+	if exsit < logCount {
+		logCount = exsit
+	}
+
+	for i := 0; i < logCount; i++ {
+		req.Logs = append(req.Logs, <-ls.buffer)
 	}
 
 	if len(req.GetLogs()) == 0 {
@@ -609,9 +617,9 @@ func (ls *GrpcWriter) flushloop() {
 	for {
 		if len(ls.buffer) == 0 {
 			time.Sleep(200 * time.Millisecond)
-		} else {
-			ls.Sync()
+			continue
 		}
+		ls.Sync()
 	}
 
 }
