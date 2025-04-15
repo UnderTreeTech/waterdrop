@@ -594,9 +594,9 @@ func (ls *GrpcWriter) send() error {
 	}
 
 	logCount := ls.maxSendSize
-	exsit := len(ls.buffer)
-	if exsit < logCount {
-		logCount = exsit
+	exist := len(ls.buffer)
+	if exist < logCount {
+		logCount = exist
 	}
 
 	for i := 0; i < logCount; i++ {
@@ -621,7 +621,6 @@ func (ls *GrpcWriter) flushloop() {
 		}
 		ls.Sync()
 	}
-
 }
 
 type dumpCore struct {
