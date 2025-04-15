@@ -264,7 +264,7 @@ func newGrpcLogger(config *Config, encCfg zapcore.EncoderConfig, parsed *url.URL
 
 func AddGrpcLoggerOption(core zapcore.Core, config *Config, opts []zap.Option) []zap.Option {
 	return append(opts, zap.WrapCore(func(c zapcore.Core) zapcore.Core {
-		return newIpCore(newFilterCore(core, config)(c), config)
+		return newRemoteCore(newFilterCore(core, config)(c), config)
 	}))
 }
 
@@ -502,7 +502,7 @@ type remoteCore struct {
 	hostname string
 }
 
-func newIpCore(c zapcore.Core, cfg *Config) zapcore.Core {
+func newRemoteCore(c zapcore.Core, cfg *Config) zapcore.Core {
 	hostname, err := os.Hostname()
 	if err != nil || hostname == "" {
 		nameElems := strings.Split(cfg.Name, ".")
