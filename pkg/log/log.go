@@ -509,7 +509,7 @@ func newIpCore(c zapcore.Core, cfg *Config) zapcore.Core {
 		if len(nameElems) > 0 {
 			nameElems[0] = nameElems[0] + "-" + xstring.RandomString(16)
 		} else {
-			nameElems = []string{xstring.RandomString(16)}
+			nameElems = []string{xstring.RandomString(16), "log"}
 		}
 		hostname = strings.Join(nameElems, ".")
 	}
