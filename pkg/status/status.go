@@ -66,7 +66,12 @@ func New(code int, msg string) *Status {
 	}
 
 	estatus := add(code, msg)
+	return estatus
+}
 
+// Ephemeral returns a ephemeral Status instance for once
+func Ephemeral(code int, msg string) *Status {
+	estatus := new(code, msg)
 	return estatus
 }
 
