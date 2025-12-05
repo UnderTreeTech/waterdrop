@@ -752,3 +752,14 @@ func (r *Redis) toPairs(zs []redis.Z) (pairs []*Pair) {
 	}
 	return
 }
+
+// Scan is the implementation of redis scan command.
+func (r *Redis) Scan(ctx context.Context, cursor uint64, match string, count int64) (keys []string, total uint64, err error) {
+	err = r.breakers.Do(r.config.dbAddr, func() error {
+		reply, num, rerr := r.client.Scan(ctx, cursor, match, count).Result()
+		keys = reply
+		total = num
+		return rerr
+	}, accept)
+	return
+}
