@@ -195,3 +195,11 @@ func ObjectIDFromHex(s string) (ObjectID, error) {
 
 	return oid, nil
 }
+
+func Marshal(val interface{}) ([]byte, error) {
+	return bson.Marshal(val)
+}
+
+func Unmarshal(data []byte, val interface{}) error {
+	return bson.Unmarshal(data, val)
+}
