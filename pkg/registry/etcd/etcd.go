@@ -66,6 +66,7 @@ type Config struct {
 type EtcdRegistry struct {
 	client   *clientv3.Client
 	services sync.Map
+	cancels sync.Map
 	config   *Config
 }
 
@@ -79,6 +80,8 @@ func New(config *Config) *EtcdRegistry {
 		Endpoints:   config.Endpoints,
 		DialTimeout: config.DialTimeout,
 		DialOptions: []grpc.DialOption{grpc.WithBlock()},
+		Username: config.Username,
+		Password: config.Password,
 	}
 
 	cli, err := clientv3.New(cliConfig)
@@ -94,26 +97,6 @@ func New(config *Config) *EtcdRegistry {
 
 // Register register a service metadata to etcd
 func (e *EtcdRegistry) Register(ctx context.Context, info *registry.ServiceInfo) error {
-	err := e.register(ctx, info)
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		ticker := time.NewTicker(e.config.RegisterTTL / 3)
-		for {
-			select {
-			case <-ticker.C:
-				e.register(ctx, info)
-			}
-		}
-	}()
-
-	return nil
-}
-
-// register register service
-func (e *EtcdRegistry) register(ctx context.Context, info *registry.ServiceInfo) error {
 	key := e.serviceKey(info)
 	val, _ := json.Marshal(info)
 
@@ -129,7 +112,64 @@ func (e *EtcdRegistry) register(ctx context.Context, info *registry.ServiceInfo)
 		return err
 	}
 
+	keepAliveCtx, cancel := context.WithCancel(context.Background())
+	keepAliveCh, err := e.client.KeepAlive(keepAliveCtx, grant.ID)
+	if err != nil {
+		cancel()
+		log.Errorf("etcd keepalive fail", log.Any("service", info), log.String("error", err.Error()))
+		return err
+	}
+
 	e.services.Store(key, val)
+	e.cancels.Store(key, cancel)
+
+	go func() {
+		for {
+			select {
+			case <-keepAliveCtx.Done():
+				return
+			case _, ok := <-keepAliveCh:
+				if !ok {
+					log.Warnf("etcd keepalive channel closed, try to re-register", log.Any("service", info))
+					time.Sleep(time.Second)
+
+					// try to re-register
+					for {
+						select {
+						case <-keepAliveCtx.Done():
+							return
+						default:
+						}
+
+						grant, err := e.client.Grant(keepAliveCtx, int64(e.config.RegisterTTL/1e9))
+						if err != nil {
+							log.Errorf("etcd grant fail during retry", log.String("error", err.Error()))
+							time.Sleep(time.Second)
+							continue
+						}
+
+						_, err = e.client.Put(keepAliveCtx, key, string(val), clientv3.WithLease(grant.ID))
+						if err != nil {
+							log.Errorf("etcd put fail during retry", log.String("error", err.Error()))
+							time.Sleep(time.Second)
+							continue
+						}
+
+						keepAliveCh, err = e.client.KeepAlive(keepAliveCtx, grant.ID)
+						if err != nil {
+							log.Errorf("etcd keepalive fail during retry", log.String("error", err.Error()))
+							time.Sleep(time.Second)
+							continue
+						}
+
+						log.Infof("etcd re-register success", log.Any("service", info))
+						break
+					}
+				}
+			}
+		}
+	}()
+
 	return nil
 }
 
@@ -141,6 +181,11 @@ func (e *EtcdRegistry) DeRegister(ctx context.Context, info *registry.ServiceInf
 
 // deRegister remove service
 func (e *EtcdRegistry) deRegister(ctx context.Context, key string) error {
+	if cancel, ok := e.cancels.Load(key); ok {
+		cancel.(context.CancelFunc)()
+		e.cancels.Delete(key)
+	}
+
 	if resp, err := e.client.Delete(ctx, key); err != nil {
 		log.Errorf("etcd delete fail", log.Any("del_resp", resp), log.String("service", key), log.String("error", err.Error()))
 		return err
