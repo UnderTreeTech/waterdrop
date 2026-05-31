@@ -122,6 +122,15 @@ func (d *DB) Ping() error {
 	return d.client.Ping(2)
 }
 
+// DoTransaction executes the given callback within a MongoDB transaction.
+// All operations performed using the sessCtx within the callback will be
+// part of the same transaction. The transaction is automatically committed
+// if the callback returns nil, or aborted if it returns an error.
+// Note: MongoDB transactions require a replica set or sharded cluster.
+func (d *DB) DoTransaction(ctx context.Context, callback func(sessCtx context.Context) (interface{}, error)) (interface{}, error) {
+	return d.client.DoTransaction(ctx, callback)
+}
+
 // client return mongodb connection instance handler
 func client(config *Config) (*qmgo.Client, func() error) {
 	if config.MaxPoolSize < config.MinPoolSize {
