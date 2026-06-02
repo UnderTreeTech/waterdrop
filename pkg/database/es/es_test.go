@@ -67,7 +67,7 @@ func TestMain(m *testing.M) {
 	cfg := &Config{
 		URLs: []string{"http://localhost:9200"},
 	}
-	cli = NewClient(cfg)
+	cli, _ = NewClient(cfg)
 
 	os.Exit(m.Run())
 }

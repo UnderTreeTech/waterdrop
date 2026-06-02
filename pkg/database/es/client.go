@@ -50,12 +50,12 @@ type Client struct {
 }
 
 // NewClient returns es7 client instance
-func NewClient(config *Config) *Client {
+func NewClient(config *Config) (*Client, error) {
 	if "" == config.Schema {
 		config.Schema = "http"
 	}
 
-	es7, _ := es7.NewClient(
+	es7, err := es7.NewClient(
 		es7.SetHttpClient(&http.Client{
 			Transport: NewTransport(config),
 		}),
@@ -65,11 +65,14 @@ func NewClient(config *Config) *Client {
 		es7.SetRequiredPlugins(config.Plugins...),
 		es7.SetSniff(config.Sniff),
 	)
+	if err != nil {
+		return nil, err
+	}
 	client := &Client{
 		config: config,
 		client: es7,
 	}
-	return client
+	return client, nil
 }
 
 // Ping checks if an Elasticsearch server on a given URL is alive
