@@ -158,7 +158,6 @@ func (s *Server) ChainUnaryServer() grpc.UnaryServerInterceptor {
 	}
 }
 
-// Chain creates a single interceptor out of a chain of many interceptors.
 // WithUnaryServerChain is a grpc.Server config option that accepts multiple unary interceptors.
 // Basically syntactic sugar.
 func (s *Server) WithUnaryServerChain() grpc.ServerOption {

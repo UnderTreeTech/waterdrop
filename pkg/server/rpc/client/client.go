@@ -30,6 +30,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
 	"google.golang.org/grpc"
@@ -55,15 +56,6 @@ func New(config *config.ClientConfig) *Client {
 		unaryInterceptors: make([]grpc.UnaryClientInterceptor, 0),
 	}
 
-	ctx := context.Background()
-	if config.Block {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, config.DialTimeout)
-		defer cancel()
-
-		cli.clientOptions = append(cli.clientOptions, grpc.WithBlock())
-	}
-
 	if config.MaxCallSendMsgSize > 0 {
 		cli.clientOptions = append(cli.clientOptions, grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(config.MaxCallSendMsgSize)))
 	}
@@ -83,7 +75,7 @@ func New(config *config.ClientConfig) *Client {
 	cli.clientOptions = append(
 		cli.clientOptions,
 		keepaliveOpts,
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		// use WithDefaultServiceConfig to fix golinter staticcheck error
 		// maybe it's better to use balancer config struct
 		// you can get more detail at here: https://github.com/grpc/grpc-go/issues/3003
@@ -91,7 +83,7 @@ func New(config *config.ClientConfig) *Client {
 		cli.WithUnaryServerChain(),
 	)
 
-	cc, err := grpc.DialContext(ctx, config.Target, cli.clientOptions...)
+	cc, err := grpc.NewClient(config.Target, cli.clientOptions...)
 	if err != nil {
 		panic(fmt.Sprintf("dial peer service fail, target %s, error %s", config.Target, err.Error()))
 	}

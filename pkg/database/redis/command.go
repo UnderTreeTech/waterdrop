@@ -25,7 +25,7 @@ import (
 
 	"github.com/spf13/cast"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 // Close closes the client, releasing any open resources
@@ -132,7 +132,11 @@ func (r *Redis) Set(ctx context.Context, key string, value string) (err error) {
 // MSet sets the given keys to their respective values
 func (r *Redis) MSet(ctx context.Context, kvs map[string]string) (err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
-		return r.client.MSet(ctx, kvs).Err()
+		pairs := make([]interface{}, 0, len(kvs)*2)
+		for k, v := range kvs {
+			pairs = append(pairs, k, v)
+		}
+		return r.client.MSet(ctx, pairs...).Err()
 	}, accept)
 	return
 }
@@ -140,7 +144,7 @@ func (r *Redis) MSet(ctx context.Context, kvs map[string]string) (err error) {
 // SetEx set key to hold the string value and set key to timeout after a given number of seconds
 func (r *Redis) SetEx(ctx context.Context, key string, value string, seconds int) (err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
-		return r.client.SetEX(ctx, key, value, time.Duration(seconds)*time.Second).Err()
+		return r.client.SetEx(ctx, key, value, time.Duration(seconds)*time.Second).Err()
 	}, accept)
 	return
 }
@@ -253,7 +257,11 @@ func (r *Redis) HSet(ctx context.Context, key string, field string, value string
 // HMSet sets the specified fields to their respective values in the hash stored at key
 func (r *Redis) HMSet(ctx context.Context, key string, kvs map[string]string) (err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
-		_, rerr := r.client.HMSet(ctx, key, kvs).Result()
+		pairs := make([]interface{}, 0, len(kvs)*2)
+		for k, v := range kvs {
+			pairs = append(pairs, k, v)
+		}
+		_, rerr := r.client.HMSet(ctx, key, pairs...).Result()
 		return rerr
 	}, accept)
 	return
@@ -362,7 +370,7 @@ func (r *Redis) SCard(ctx context.Context, key string) (value int64, err error) 
 // SAdd add the specified members to the set stored at key
 func (r *Redis) SAdd(ctx context.Context, key string, members ...interface{}) (value int64, err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
-		reply, rerr := r.client.SAdd(ctx, key, members).Result()
+		reply, rerr := r.client.SAdd(ctx, key, members...).Result()
 		value = reply
 		return rerr
 	}, accept)
@@ -516,9 +524,9 @@ func (r *Redis) ZCard(ctx context.Context, key string) (value int64, err error) 
 // ZAdd adds all the specified members with the specified scores to the sorted set
 func (r *Redis) ZAdd(ctx context.Context, key string, pais ...*Pair) (value int64, err error) {
 	err = r.breakers.Do(r.config.dbAddr, func() error {
-		zs := make([]*redis.Z, 0, len(pais))
+		zs := make([]redis.Z, 0, len(pais))
 		for _, pair := range pais {
-			zs = append(zs, &redis.Z{
+			zs = append(zs, redis.Z{
 				Score:  float64(pair.Score),
 				Member: pair.Member,
 			})

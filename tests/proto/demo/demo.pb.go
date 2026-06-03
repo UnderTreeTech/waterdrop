@@ -254,7 +254,7 @@ var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion7
 
 // DemoClient is the client API for Demo service.
 //
@@ -307,7 +307,7 @@ func (*UnimplementedDemoServer) SayHelloURL(context.Context, *HelloReq) (*HelloR
 	return nil, status.Errorf(codes.Unimplemented, "method SayHelloURL not implemented")
 }
 
-func RegisterDemoServer(s *grpc.Server, srv DemoServer) {
+func RegisterDemoServer(s grpc.ServiceRegistrar, srv DemoServer) {
 	s.RegisterService(&_Demo_serviceDesc, srv)
 }
 

@@ -21,12 +21,13 @@ package redis
 import (
 	"context"
 	"errors"
+	"net"
 	"strings"
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats/metric"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/breaker"
 
@@ -110,8 +111,8 @@ type (
 	FloatCmd = redis.FloatCmd
 	// StringCmd is an alias of redis.StringCmd
 	StringCmd = redis.StringCmd
-	// StringStringMapCmd is an alias of redis.StringStringMapCmd
-	StringStringMapCmd = redis.StringStringMapCmd
+	// StringStringMapCmd is an alias of redis.MapStringStringCmd
+	StringStringMapCmd = redis.MapStringStringCmd
 	// StringSliceCmd is an alias of redis.StringSliceCmd
 	StringSliceCmd = redis.StringSliceCmd
 	// IntSliceCmd is an alias of redis.IntSliceCmd
@@ -163,7 +164,7 @@ func New(cfg *Config) (rdb *Redis, err error) {
 
 	reference = cfg
 	uc := redis.NewUniversalClient(opts)
-	uc.AddHook(redisHook{})
+	uc.AddHook(&redisHook{})
 	rdb = &Redis{
 		client:   uc,
 		config:   cfg,
@@ -184,87 +185,88 @@ type (
 	redisHook struct{}
 )
 
-// BeforeProcess pre handler before process
-func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
-	// init span
-	span, ctx := trace.StartSpanFromContext(ctx, cmd.Name())
-	span = span.SetTag("db.index", reference.DBIndex)
-	ext.Component.Set(span, "redis")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, reference.dbAddr)
-	ext.DBInstance.Set(span, reference.DBName)
-
-	// record current time
-	start := time.Now()
-	ctx = context.WithValue(ctx, timeKey{}, start)
-	return ctx, nil
+// DialHook wraps the dial process
+func (r *redisHook) DialHook(next redis.DialHook) redis.DialHook {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return next(ctx, network, addr)
+	}
 }
 
-// AfterProcess post handler after process
-func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
-	// check if it's a slow query
-	start := ctx.Value(timeKey{}).(time.Time)
-	elapse := time.Since(start)
-	if elapse > reference.SlowOpTimeout {
-		log.Warn(ctx, "slow-redis-query", log.String("statement", cmd.String()), log.Duration("op_time", elapse))
-	}
+// ProcessHook wraps the command process
+func (r *redisHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		// init span
+		span, ctx := trace.StartSpanFromContext(ctx, cmd.Name())
+		span = span.SetTag("db.index", reference.DBIndex)
+		ext.Component.Set(span, "redis")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.PeerAddress.Set(span, reference.dbAddr)
+		ext.DBInstance.Set(span, reference.DBName)
 
-	// finish span
-	if span := trace.SpanFromContext(ctx); span != nil {
-		span.Finish()
-	}
+		// record current time
+		start := time.Now()
 
-	// metric error and hit/miss
-	if cmd.Err() != nil {
-		metric.RedisMissCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
-		if cmd.Err() != redis.Nil {
-			metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
+		// execute command
+		err := next(ctx, cmd)
+
+		// check if it's a slow query
+		elapse := time.Since(start)
+		if elapse > reference.SlowOpTimeout {
+			log.Warn(ctx, "slow-redis-query", log.String("statement", cmd.String()), log.Duration("op_time", elapse))
 		}
-	} else {
-		metric.RedisHitCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
-	}
-	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, cmd.Name())
-	return nil
-}
 
-// BeforeProcessPipeline pre handler before process pipeline
-func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-	// init span
-	span, ctx := trace.StartSpanFromContext(ctx, "pipeline")
-	span = span.SetTag("db.index", reference.DBIndex)
-	ext.Component.Set(span, "redis")
-	ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
-	ext.PeerAddress.Set(span, reference.dbAddr)
-	ext.DBInstance.Set(span, reference.DBName)
-
-	// record current time
-	start := time.Now()
-	ctx = context.WithValue(ctx, timeKey{}, start)
-	return ctx, nil
-}
-
-// AfterProcessPipeline post handler after process pipeline
-func (r redisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
-	// check if it's a slow query
-	start := ctx.Value(timeKey{}).(time.Time)
-	elapse := time.Since(start)
-	queryName := "pipeline"
-	if elapse > reference.SlowOpTimeout {
-		log.Warn(ctx, "slow-redis-query", log.String("statement", queryName), log.Duration("op_time", elapse))
-	}
-
-	// finish span
-	if span := trace.SpanFromContext(ctx); span != nil {
+		// finish span
 		span.Finish()
-	}
 
-	// metric pipeline
-	for _, cmd := range cmds {
-		if cmd.Err() != nil && cmd.Err() != redis.Nil {
-			metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
-			break
+		// metric error and hit/miss
+		if cmd.Err() != nil {
+			metric.RedisMissCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
+			if cmd.Err() != redis.Nil {
+				metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
+			}
+		} else {
+			metric.RedisHitCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name())
 		}
+		metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, cmd.Name())
+		return err
 	}
-	metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, queryName)
-	return nil
+}
+
+// ProcessPipelineHook wraps the pipeline process
+func (r *redisHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return func(ctx context.Context, cmds []redis.Cmder) error {
+		// init span
+		span, ctx := trace.StartSpanFromContext(ctx, "pipeline")
+		span = span.SetTag("db.index", reference.DBIndex)
+		ext.Component.Set(span, "redis")
+		ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+		ext.PeerAddress.Set(span, reference.dbAddr)
+		ext.DBInstance.Set(span, reference.DBName)
+
+		// record current time
+		start := time.Now()
+
+		// execute pipeline
+		err := next(ctx, cmds)
+
+		// check if it's a slow query
+		elapse := time.Since(start)
+		queryName := "pipeline"
+		if elapse > reference.SlowOpTimeout {
+			log.Warn(ctx, "slow-redis-query", log.String("statement", queryName), log.Duration("op_time", elapse))
+		}
+
+		// finish span
+		span.Finish()
+
+		// metric pipeline
+		for _, cmd := range cmds {
+			if cmd.Err() != nil && cmd.Err() != redis.Nil {
+				metric.RedisClientErrCounter.Inc(reference.DBName, reference.dbAddr, cmd.Name(), cmd.Err().Error())
+				break
+			}
+		}
+		metric.RedisClientReqDuration.Observe(elapse.Seconds(), reference.DBName, reference.dbAddr, queryName)
+		return err
+	}
 }

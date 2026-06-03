@@ -29,6 +29,7 @@ import (
 	"go.etcd.io/etcd/api/v3/mvccpb"
 
 	"google.golang.org/grpc/attributes"
+	"google.golang.org/grpc/credentials/insecure"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc/resolver"
@@ -66,7 +67,7 @@ type Config struct {
 type EtcdRegistry struct {
 	client   *clientv3.Client
 	services sync.Map
-	cancels sync.Map
+	cancels  sync.Map
 	config   *Config
 }
 
@@ -79,9 +80,9 @@ func New(config *Config) *EtcdRegistry {
 	cliConfig := clientv3.Config{
 		Endpoints:   config.Endpoints,
 		DialTimeout: config.DialTimeout,
-		DialOptions: []grpc.DialOption{grpc.WithBlock()},
-		Username: config.Username,
-		Password: config.Password,
+		DialOptions: []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
+		Username:    config.Username,
+		Password:    config.Password,
 	}
 
 	cli, err := clientv3.New(cliConfig)
@@ -235,10 +236,10 @@ func (e *EtcdRegistry) Close() {
 	e.client.Close()
 }
 
-// Resolver Segment
 // Build watch service changes
+// Resolver Segment
 func (e *EtcdRegistry) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
-	go e.watch(cc, e.config.Prefix, target.Endpoint)
+	go e.watch(cc, e.config.Prefix, target.Endpoint())
 	return e, nil
 }
 

@@ -25,11 +25,12 @@ import (
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/rpc/config"
+	"github.com/UnderTreeTech/waterdrop/tests/proto/demo"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/test/grpc_testing"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/log"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 var srv = New(config.DefaultServerConfig())
@@ -42,7 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestStart(t *testing.T) {
-	grpc_testing.RegisterTestServiceServer(srv.server, &grpc_testing.UnimplementedTestServiceServer{})
+	demo.RegisterDemoServer(srv.server, &demoService{})
 	net := srv.Start()
 	assert.Equal(t, "[::]:20812", net.String())
 	assert.Equal(t, "tcp", net.Network())
@@ -56,4 +57,16 @@ func TestStop(t *testing.T) {
 	}()
 
 	time.Sleep(200 * time.Millisecond)
+}
+
+type demoService struct {
+	demo.UnimplementedDemoServer
+}
+
+func (s *demoService) SayHello(ctx context.Context, req *demo.HelloReq) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
+func (s *demoService) SayHelloURL(ctx context.Context, req *demo.HelloReq) (*demo.HelloResp, error) {
+	return &demo.HelloResp{Content: "Hello " + req.Name}, nil
 }
