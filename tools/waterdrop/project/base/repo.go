@@ -92,3 +92,11 @@ func (r *Repo) CopyTo(ctx context.Context, to string, modPath string, ignores []
 	}
 	return copyDir(r.Path(), to, []string{mod, modPath}, ignores)
 }
+
+// CopySubDirTo copies a specific subdirectory of the repository to project path.
+func (r *Repo) CopySubDirTo(ctx context.Context, subDir string, to string, replaces []string, ignores []string) error {
+	if err := r.Clone(ctx); err != nil {
+		return err
+	}
+	return copyDir(path.Join(r.Path(), subDir), to, replaces, ignores)
+}

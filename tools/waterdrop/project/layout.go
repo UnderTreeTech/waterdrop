@@ -61,7 +61,7 @@ func run(c *cli.Context) (err error) {
 	}
 
 	repo := base.NewRepo("https://github.com/UnderTreeTech/layout.git", "master")
-	if err = repo.CopyTo(ctx, to, path.Base(projectName), []string{".git", ".github"}); err != nil {
+	if err = repo.CopyTo(ctx, to, path.Base(projectName), []string{".git", ".github", ".harness_template"}); err != nil {
 		fmt.Println("New project fail, please try again later.")
 		return
 	}

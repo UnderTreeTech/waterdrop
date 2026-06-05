@@ -25,6 +25,7 @@ import (
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/ecode"
 
+	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/harness"
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/upgrade"
 
 	"github.com/UnderTreeTech/waterdrop/tools/waterdrop/project"
@@ -46,6 +47,7 @@ func main() {
 	app.Usage = "waterdrop tools"
 	app.Version = Version
 	app.Commands = []*cli.Command{
+		harness.HarnessCmd,
 		project.ProjectCmd,
 		protoc.ProtocCmd,
 		swagger.SwaggerCmd,

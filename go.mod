@@ -7,7 +7,7 @@ require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/alibaba/sentinel-golang v1.0.2
 	github.com/apache/rocketmq-client-go/v2 v2.1.2
-	github.com/gin-contrib/cors v1.3.1
+	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-resty/resty/v2 v2.7.0
