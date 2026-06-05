@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -49,7 +48,7 @@ func runNewHarness(c *cli.Context) (err error) {
 	}
 
 	repo := base.NewRepo("https://github.com/UnderTreeTech/layout.git", "master")
-	
+
 	// Copy harness template
 	replaces := []string{
 		"monorepo-layout", harnessName,
@@ -68,7 +67,7 @@ func runNewHarness(c *cli.Context) (err error) {
 	}
 
 	// Create go.work
-	goWorkContent := `go 1.22.0
+	goWorkContent := `go 1.25.0
 
 use ./api/idl
 `
@@ -78,12 +77,7 @@ use ./api/idl
 	}
 
 	// Create api/idl/go.mod
-	idlModName := fmt.Sprintf("github.com/%s/api/idl", harnessName)
-	if strings.Contains(harnessName, "/") {
-		idlModName = fmt.Sprintf("%s/api/idl", harnessName)
-	}
-
-	idlGoModContent := fmt.Sprintf("module %s\n\ngo 1.22.0\n", idlModName)
+	idlGoModContent := fmt.Sprintf("module %s\n\ngo 1.25.0\n", "idl")
 	if err := os.WriteFile(path.Join(to, "api", "idl", "go.mod"), []byte(idlGoModContent), 0644); err != nil {
 		fmt.Println("Create api/idl/go.mod failed:", err)
 		return err
