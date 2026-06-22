@@ -69,6 +69,11 @@ func New(cfg *config.ServerConfig) *Server {
 		MaxConnectionAge:      cfg.MaxLifeTime,
 	})
 
+	keepaliveEnforcementOpts := grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+		MinTime:             cfg.KeepAliveInterval,
+		PermitWithoutStream: true,
+	})
+
 	if cfg.MaxReceiveMessageSize > 0 {
 		srv.serverOptions = append(srv.serverOptions, grpc.MaxRecvMsgSize(cfg.MaxReceiveMessageSize))
 	}
@@ -79,7 +84,7 @@ func New(cfg *config.ServerConfig) *Server {
 		interceptors.LoggerForUnaryServer(srv.config),
 		interceptors.Metric(),
 	)
-	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, srv.WithUnaryServerChain())
+	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, keepaliveEnforcementOpts, srv.WithUnaryServerChain())
 	srv.server = grpc.NewServer(srv.serverOptions...)
 	return srv
 }

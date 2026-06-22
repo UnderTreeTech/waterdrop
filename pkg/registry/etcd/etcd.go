@@ -259,16 +259,20 @@ func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
 
 // watch etcd changes
 func (e *EtcdRegistry) watch(cc resolver.ClientConn, prefix string, serviceName string) {
-	e.updateAddrs(cc, prefix, serviceName)
 	watchKey := fmt.Sprintf("/%s/%s/", prefix, serviceName)
 
-	respChan := e.client.Watch(context.Background(), watchKey, clientv3.WithPrefix())
-	for event := range respChan {
-		for _, ev := range event.Events {
-			if ev.Type == mvccpb.PUT || ev.Type == mvccpb.DELETE {
-				e.updateAddrs(cc, prefix, serviceName)
+	for {
+		e.updateAddrs(cc, prefix, serviceName)
+		respChan := e.client.Watch(context.Background(), watchKey, clientv3.WithPrefix())
+		for event := range respChan {
+			for _, ev := range event.Events {
+				if ev.Type == mvccpb.PUT || ev.Type == mvccpb.DELETE {
+					e.updateAddrs(cc, prefix, serviceName)
+				}
 			}
 		}
+		log.Warnf("etcd watch channel closed, retrying...", log.String("service", serviceName))
+		time.Sleep(10 * time.Second)
 	}
 }
 

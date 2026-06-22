@@ -61,8 +61,9 @@ func New(config *config.ClientConfig) *Client {
 	}
 
 	keepaliveOpts := grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		Time:    config.KeepAliveInterval,
-		Timeout: config.KeepAliveTimeout,
+		Time:                config.KeepAliveInterval,
+		Timeout:             config.KeepAliveTimeout,
+		PermitWithoutStream: true,
 	})
 
 	cli.Use(
