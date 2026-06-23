@@ -30,6 +30,7 @@ import (
 
 	"google.golang.org/grpc/attributes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"google.golang.org/grpc/resolver"
@@ -80,9 +81,16 @@ func New(config *Config) *EtcdRegistry {
 	cliConfig := clientv3.Config{
 		Endpoints:   config.Endpoints,
 		DialTimeout: config.DialTimeout,
-		DialOptions: []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())},
-		Username:    config.Username,
-		Password:    config.Password,
+		DialOptions: []grpc.DialOption{
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                30 * time.Second,
+				Timeout:             10 * time.Second,
+				PermitWithoutStream: true,
+			}),
+		},
+		Username: config.Username,
+		Password: config.Password,
 	}
 
 	cli, err := clientv3.New(cliConfig)
