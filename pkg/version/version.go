@@ -26,7 +26,7 @@ import (
 
 const (
 	// Version is waterdrop current version
-	Version = "v1.3.6"
+	Version = "v1.3.7"
 	// unknownProperty
 	unknownProperty = ""
 	// Compiler is a convenient alias for runtime.Compiler.

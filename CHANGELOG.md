@@ -1,6 +1,56 @@
 # CHANGELOG
 
 
+## v1.3.7
+This release ships an important gRPC keepalive fix plus a batch of accumulated features and bugfixes since v1.3.6.
+
+### Important Fix
+- fix(rpc): add keepalive enforcement policy to server — set MinTime to KeepAliveInterval (60s) and PermitWithoutStream=true so the server no longer kills idle client connections with too_many_pings GOAWAY ([15797e9](https://github.com/UnderTreeTech/waterdrop/commit/15797e9))
+
+### Features
+- support mongo transaction ([2491655](https://github.com/UnderTreeTech/waterdrop/commit/2491655))
+- support rocketmq pull consumer mode ([3bacb20](https://github.com/UnderTreeTech/waterdrop/commit/3bacb20))
+- support batch send msg to rocketmq ([1298ad3](https://github.com/UnderTreeTech/waterdrop/commit/1298ad3))
+- support consumer trace ([7687431](https://github.com/UnderTreeTech/waterdrop/commit/7687431))
+- inject trace id to mq msg key ([71582ed](https://github.com/UnderTreeTech/waterdrop/commit/71582ed))
+- add redis scan command ([2f6efc0](https://github.com/UnderTreeTech/waterdrop/commit/2f6efc0))
+- rpc client support set MaxCallSendMsgSize ([21b520d](https://github.com/UnderTreeTech/waterdrop/commit/21b520d))
+- rpc server support set MaxReceiveMessageSize ([0a74ee5](https://github.com/UnderTreeTech/waterdrop/commit/0a74ee5))
+- http client support error callback ([5ba5233](https://github.com/UnderTreeTech/waterdrop/commit/5ba5233))
+- support -version flag ([e6997f2](https://github.com/UnderTreeTech/waterdrop/commit/e6997f2))
+- support ephemeral status ([6ceecd9](https://github.com/UnderTreeTech/waterdrop/commit/6ceecd9))
+- add alpha string check funcs ([a0abd8d](https://github.com/UnderTreeTech/waterdrop/commit/a0abd8d))
+- support parse dsn ([c9ab507](https://github.com/UnderTreeTech/waterdrop/commit/c9ab507))
+- support slice unique as origin order ([2311f76](https://github.com/UnderTreeTech/waterdrop/commit/2311f76))
+- export bson marshal/unmarshal funcs ([6c30273](https://github.com/UnderTreeTech/waterdrop/commit/6c30273))
+
+### Optimize/Enhancement
+- use ISO8601TimeEncoder as time formatter ([07b12f6](https://github.com/UnderTreeTech/waterdrop/commit/07b12f6))
+- eliminate log consumption ([bdf9b13](https://github.com/UnderTreeTech/waterdrop/commit/bdf9b13))
+- reset rocketmq interceptor log level ([95a4fdc](https://github.com/UnderTreeTech/waterdrop/commit/95a4fdc))
+- use current directory name as ecode package name ([f0580fc](https://github.com/UnderTreeTech/waterdrop/commit/f0580fc))
+- provide a flag to get the matched prefix without replacing sensitive words in trie ([3b9f92f](https://github.com/UnderTreeTech/waterdrop/commit/3b9f92f))
+- extract file name from object name ([06eec49](https://github.com/UnderTreeTech/waterdrop/commit/06eec49))
+
+### Bugfix
+- fix etcd keepalive grant new lease — replace the periodic re-register ticker with a KeepAlive stream plus a re-register loop, and cancel the keepalive context on DeRegister to fix the goroutine leak ([12e0958](https://github.com/UnderTreeTech/waterdrop/commit/12e0958))
+- return error where new client fail ([47a7c3a](https://github.com/UnderTreeTech/waterdrop/commit/47a7c3a))
+- fix GitCommit, SDKGitCommit use wrong var ([81431d8](https://github.com/UnderTreeTech/waterdrop/commit/81431d8))
+- fix parse dsn ([b387955](https://github.com/UnderTreeTech/waterdrop/commit/b387955))
+- fix endpoint replacement ([261081e](https://github.com/UnderTreeTech/waterdrop/commit/261081e))
+
+### Chore
+- update `sentinel-golang` reference ([02678d6](https://github.com/UnderTreeTech/waterdrop/commit/02678d6))
+- update COPYRIGHT.txt ([4e2150c](https://github.com/UnderTreeTech/waterdrop/commit/4e2150c))
+- format code ([32a8fda](https://github.com/UnderTreeTech/waterdrop/commit/32a8fda))
+- remove pg dsn parse code ([17ea616](https://github.com/UnderTreeTech/waterdrop/commit/17ea616))
+
+### Contributors
+Thanks to all contributors for this release:
+- @emmanuel-ferdman ([#149](https://github.com/UnderTreeTech/waterdrop/pull/149))
+- @Billxunyang ([#148](https://github.com/UnderTreeTech/waterdrop/pull/148))
+- @bytehello ([#147](https://github.com/UnderTreeTech/waterdrop/pull/147))
+
 ## v1.3.6
 This is a minor updates version.
 
