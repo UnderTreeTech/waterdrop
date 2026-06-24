@@ -244,11 +244,23 @@ func (e *EtcdRegistry) Close() {
 	e.client.Close()
 }
 
-// Build watch service changes
+// Build watch service changes.
 // Resolver Segment
-func (e *EtcdRegistry) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
-	go e.watch(cc, e.config.Prefix, target.Endpoint())
-	return e, nil
+func (e *EtcdRegistry) Build(target resolver.Target, cc resolver.ClientConn, _ resolver.BuildOptions) (resolver.Resolver, error) {
+	// grpc 1.80: target.Endpoint() returns URL.Path without the leading "/".
+	serviceName := target.Endpoint()
+	watchKey := fmt.Sprintf("/%s/%s/", e.config.Prefix, serviceName)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	r := &etcdResolver{
+		e:        e,
+		cc:       cc,
+		watchKey: watchKey,
+		ctx:      ctx,
+		cancel:   cancel,
+	}
+	go r.watch()
+	return r, nil
 }
 
 // Scheme return etcd's scheme
@@ -256,54 +268,95 @@ func (e *EtcdRegistry) Scheme() string {
 	return "etcd"
 }
 
-// ResolveNow is a noop for Resolver.
-func (e *EtcdRegistry) ResolveNow(rn resolver.ResolveNowOptions) {
-}
-
 // serviceKey service key format in etcd
 func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
 	return fmt.Sprintf("/%s/%s/%s", e.config.Prefix, info.Name, info.Addr)
 }
 
-// watch etcd changes
-func (e *EtcdRegistry) watch(cc resolver.ClientConn, prefix string, serviceName string) {
-	watchKey := fmt.Sprintf("/%s/%s/", prefix, serviceName)
+// etcdResolver is a per-ClientConn resolver. It owns its own cancellable context
+// and watch goroutine, so Close() only stops this resolver and never touches the
+// shared etcd client (which is also used by server-side KeepAlive and NewMutex).
+// Borrowed from kratos discoveryResolver.
+type etcdResolver struct {
+	e        *EtcdRegistry
+	cc       resolver.ClientConn
+	watchKey string
+	ctx      context.Context
+	cancel   context.CancelFunc
+}
 
+// ResolveNow is a noop for Resolver.
+func (r *etcdResolver) ResolveNow(_ resolver.ResolveNowOptions) {}
+
+// Close stops the resolver. It cancels the watch context so the watch goroutine
+// exits cleanly. It must NOT close the shared etcd client.
+func (r *etcdResolver) Close() {
+	r.cancel()
+}
+
+// watch etcd changes. Re-establishes the watch on channel close with a backoff,
+// mirroring kratos discoveryResolver.watch + etcd watcher.Next.
+func (r *etcdResolver) watch() {
 	for {
-		e.updateAddrs(cc, prefix, serviceName)
-		respChan := e.client.Watch(context.Background(), watchKey, clientv3.WithPrefix())
-		for event := range respChan {
+		select {
+		case <-r.ctx.Done():
+			return
+		default:
+		}
+
+		// Start the watch before the full Get so events between Get and Watch
+		// are not lost (kratos builds the watch with WithRev(0) first).
+		wch := r.e.client.Watch(r.ctx, r.watchKey, clientv3.WithPrefix())
+		// Full snapshot on first connect and after every reconnect.
+		r.updateAddrs()
+
+		for event := range wch {
 			for _, ev := range event.Events {
 				if ev.Type == mvccpb.PUT || ev.Type == mvccpb.DELETE {
-					e.updateAddrs(cc, prefix, serviceName)
+					r.updateAddrs()
 				}
 			}
 		}
-		log.Warnf("etcd watch channel closed, retrying...", log.String("service", serviceName))
-		time.Sleep(10 * time.Second)
+
+		// Watch channel closed. If we were cancelled, stop; otherwise backoff
+		// and reconnect.
+		select {
+		case <-r.ctx.Done():
+			return
+		case <-time.After(time.Second):
+		}
+		log.Warnf("etcd watch channel closed, retrying", log.String("watch_key", r.watchKey))
 	}
 }
 
-// updateAddrs update service information for grpc balancer
-func (e *EtcdRegistry) updateAddrs(cc resolver.ClientConn, prefix string, serviceName string) (err error) {
-	watchKey := fmt.Sprintf("/%s/%s/", prefix, serviceName)
-	peers, err := e.client.Get(context.Background(), watchKey, clientv3.WithPrefix())
+// updateAddrs refreshes the service list from etcd and pushes it to the
+// balancer. On Get failure it reports the error to the ClientConn so the
+// balancer backs off instead of sticking to stale addresses.
+func (r *etcdResolver) updateAddrs() {
+	resp, err := r.e.client.Get(r.ctx, r.watchKey, clientv3.WithPrefix())
 	if err != nil {
-		log.Errorf("etcd get fail", log.String("watch_key", watchKey), log.String("error", err.Error()))
-		return err
+		if r.ctx.Err() == nil {
+			r.cc.ReportError(err)
+			log.Errorf("etcd get fail", log.String("watch_key", r.watchKey), log.String("error", err.Error()))
+		}
+		return
 	}
 
-	services := e.parse(peers)
-	newAddrs := e.getAddrs(services)
-	if len(newAddrs) > 0 {
-		cc.UpdateState(resolver.State{Addresses: newAddrs})
+	addrs := r.getAddrs(r.parse(resp))
+	// Skip pushing an empty list so the balancer is not left with zero
+	// backends on transient reads; mirrors kratos resolver.go behavior.
+	if len(addrs) == 0 {
+		log.Warnf("zero peer resolved, skip UpdateState", log.String("watch_key", r.watchKey))
+		return
 	}
 
-	return nil
+	if err := r.cc.UpdateState(resolver.State{Addresses: addrs}); err != nil {
+		log.Errorf("update state fail", log.String("error", err.Error()))
+	}
 }
 
 // parse etcd response to service info
-func (e *EtcdRegistry) parse(resp *clientv3.GetResponse) (services []*registry.ServiceInfo) {
+func (r *etcdResolver) parse(resp *clientv3.GetResponse) (services []*registry.ServiceInfo) {
 	services = make([]*registry.ServiceInfo, 0)
 	for _, event := range resp.Kvs {
 		service := &registry.ServiceInfo{}
@@ -318,7 +371,7 @@ func (e *EtcdRegistry) parse(resp *clientv3.GetResponse) (services []*registry.S
 }
 
 // getAddrs get addrs from grpc resolver
-func (e *EtcdRegistry) getAddrs(services []*registry.ServiceInfo) []resolver.Address {
+func (r *etcdResolver) getAddrs(services []*registry.ServiceInfo) []resolver.Address {
 	addrs := make([]resolver.Address, 0, len(services))
 	for _, service := range services {
 		if service.Scheme != schemeGRPC {
