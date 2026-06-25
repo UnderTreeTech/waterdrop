@@ -69,22 +69,6 @@ func New(cfg *config.ServerConfig) *Server {
 		MaxConnectionAge:      cfg.MaxLifeTime,
 	})
 
-	// KeepaliveEnforcementPolicy limits how aggressively clients may send
-	// keepalive pings. Without it, the transport applies a default MinTime of
-	// 5 minutes and PermitWithoutStream=false, which rejects clients that ping
-	// more frequently (e.g. every 60s) or ping while idle — sending GOAWAY
-	// (too_many_pings) and breaking the connection.
-	// Setting MinTime to KeepAliveInterval (60s) matches the client ping rate,
-	// and PermitWithoutStream=true allows idle keepalive pings so clients can
-	// proactively detect dead connections. This keeps both old and new clients
-	// working: an old client (PermitWithoutStream=false) never pings while idle
-	// and so never triggers a strike; a new client (PermitWithoutStream=true)
-	// pings at 60s, within the allowed MinTime.
-	keepaliveEnforcementOpts := grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-		MinTime:             cfg.KeepAliveInterval,
-		PermitWithoutStream: true,
-	})
-
 	if cfg.MaxReceiveMessageSize > 0 {
 		srv.serverOptions = append(srv.serverOptions, grpc.MaxRecvMsgSize(cfg.MaxReceiveMessageSize))
 	}
@@ -95,7 +79,7 @@ func New(cfg *config.ServerConfig) *Server {
 		interceptors.LoggerForUnaryServer(srv.config),
 		interceptors.Metric(),
 	)
-	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, keepaliveEnforcementOpts, srv.WithUnaryServerChain())
+	srv.serverOptions = append(srv.serverOptions, keepaliveOpts, srv.WithUnaryServerChain())
 	srv.server = grpc.NewServer(srv.serverOptions...)
 	return srv
 }
