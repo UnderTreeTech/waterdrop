@@ -276,7 +276,6 @@ func (e *EtcdRegistry) serviceKey(info *registry.ServiceInfo) string {
 // etcdResolver is a per-ClientConn resolver. It owns its own cancellable context
 // and watch goroutine, so Close() only stops this resolver and never touches the
 // shared etcd client (which is also used by server-side KeepAlive and NewMutex).
-// Borrowed from kratos discoveryResolver.
 type etcdResolver struct {
 	e        *EtcdRegistry
 	cc       resolver.ClientConn
@@ -294,8 +293,7 @@ func (r *etcdResolver) Close() {
 	r.cancel()
 }
 
-// watch etcd changes. Re-establishes the watch on channel close with a backoff,
-// mirroring kratos discoveryResolver.watch + etcd watcher.Next.
+// watch etcd changes. Re-establishes the watch on channel close with a backoff.
 func (r *etcdResolver) watch() {
 	for {
 		select {
@@ -305,7 +303,7 @@ func (r *etcdResolver) watch() {
 		}
 
 		// Start the watch before the full Get so events between Get and Watch
-		// are not lost (kratos builds the watch with WithRev(0) first).
+		// are not lost.
 		wch := r.e.client.Watch(r.ctx, r.watchKey, clientv3.WithPrefix())
 		// Full snapshot on first connect and after every reconnect.
 		r.updateAddrs()
@@ -344,7 +342,7 @@ func (r *etcdResolver) updateAddrs() {
 
 	addrs := r.getAddrs(r.parse(resp))
 	// Skip pushing an empty list so the balancer is not left with zero
-	// backends on transient reads; mirrors kratos resolver.go behavior.
+	// backends on transient reads.
 	if len(addrs) == 0 {
 		log.Warnf("zero peer resolved, skip UpdateState", log.String("watch_key", r.watchKey))
 		return
