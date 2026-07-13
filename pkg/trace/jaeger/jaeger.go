@@ -20,11 +20,11 @@ package jaeger
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
+	"github.com/UnderTreeTech/waterdrop/pkg/trace/otel"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 
@@ -105,33 +105,77 @@ func newJaegerClient(traceConf *JaegerConfig) (opentracing.Tracer, func()) {
 	return tracer, func() { closer.Close() }
 }
 
-// Init init jaeger tracer
-func Init() func() {
+// buildJaeger builds the opentracing/jaeger tracer from a parsed [trace.jaeger]
+// config and sets it global. Returns the shutdown func.
+func buildJaeger(jconf *Config) func() {
 	traceConf := &JaegerConfig{}
-	jconf := &Config{}
-	err := conf.Unmarshal("trace.jaeger", jconf)
-	if err != nil {
-		log.Printf("unmarshal trace.jaeger config fail, err msg %s", err.Error())
-		traceConf = defaultJaegerConfig()
-	} else {
-		sampler := &jconfig.SamplerConfig{}
-		sampler.Type = jconf.SamplerType
-		sampler.Param = jconf.SamplerParam
-		reporter := &jconfig.ReporterConfig{}
-		reporter.LocalAgentHostPort = jconf.AgentAddr
-		reporter.LogSpans = jconf.ReporterLogSpans
-		reporter.BufferFlushInterval = jconf.ReporterBufferFlushInterval
-		traceConf.ServiceName = jconf.ServiceName
-		traceConf.EnableRPCMetrics = jconf.EnableRPCMetrics
-		traceConf.Sampler = sampler
-		traceConf.Reporter = reporter
-
-		maxTagValueOpt := jconfig.MaxTagValueLength(jconf.MaxTagValueLength)
-		traceConf.WithOption(maxTagValueOpt)
-	}
+	sampler := &jconfig.SamplerConfig{}
+	sampler.Type = jconf.SamplerType
+	sampler.Param = jconf.SamplerParam
+	reporter := &jconfig.ReporterConfig{}
+	reporter.LocalAgentHostPort = jconf.AgentAddr
+	reporter.LogSpans = jconf.ReporterLogSpans
+	reporter.BufferFlushInterval = jconf.ReporterBufferFlushInterval
+	traceConf.ServiceName = jconf.ServiceName
+	traceConf.EnableRPCMetrics = jconf.EnableRPCMetrics
+	traceConf.Sampler = sampler
+	traceConf.Reporter = reporter
+	traceConf.WithOption(jconfig.MaxTagValueLength(jconf.MaxTagValueLength))
 
 	tracer, close := newJaegerClient(traceConf)
 	trace.SetGlobalTracer(tracer)
-
 	return close
+}
+
+// Init initializes tracing from config. It is the single entry point services
+// call (defer jaeger.Init()()), and decides what to start based on which config
+// sections are present, so services opt in purely via config:
+//
+//   - [trace.jaeger] only          -> pure jaeger (UDP agent). Current behavior.
+//   - [trace.otel] only            -> pure OTel (OTLP HTTP). New services.
+//   - both                          -> dual-track (jaeger + OTel, shared TraceID).
+//   - neither                       -> default jaeger (forward-compatible fallback).
+//
+// OTel is initialized via otel.InitWithConfig using the [trace.otel] section.
+// The OTel global propagator is the composite (W3C traceparent + uber-trace-id
+// + Baggage) so OTel and jaeger share a TraceID without a bridge.
+func Init() func() {
+	// Read optional [trace.otel] section.
+	oconf := &otel.Config{}
+	hasOtel := conf.Unmarshal("trace.otel", oconf) == nil
+	otelEnabled := hasOtel && oconf.Enable
+
+	// Read optional [trace.jaeger] section.
+	jconf := &Config{}
+	errJ := conf.Unmarshal("trace.jaeger", jconf)
+
+	var jaegerClose func()
+	switch {
+	case errJ == nil:
+		// [trace.jaeger] present -> build jaeger.
+		jaegerClose = buildJaeger(jconf)
+	case !otelEnabled:
+		// Neither configured -> default jaeger (forward-compatible fallback).
+		tracer, close := newJaegerClient(defaultJaegerConfig())
+		trace.SetGlobalTracer(tracer)
+		jaegerClose = close
+	}
+	// else: pure OTel (no jaeger tracer; opentracing global stays default noop,
+	// the jaeger branches in the Trace middleware / gRPC interceptors run as noop).
+
+	var otelClose func()
+	if otelEnabled {
+		// Default OTel service name to the jaeger service name when omitted.
+		if oconf.ServiceName == "" && errJ == nil {
+			oconf.ServiceName = jconf.ServiceName
+		}
+		otelClose = otel.InitWithConfig(oconf)
+	}
+
+	return func() {
+		otelClose()
+		if jaegerClose != nil {
+			jaegerClose()
+		}
+	}
 }
