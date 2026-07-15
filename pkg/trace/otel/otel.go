@@ -16,34 +16,27 @@
  *
  */
 
-// Package otel provides OpenTelemetry tracing that runs alongside waterdrop's
-// existing opentracing/jaeger stack, sharing the same TraceID without a bridge.
-//
-// Design (trace unification, route W):
-// waterdrop keeps its opentracing `Trace` middleware / gRPC interceptors
-// (jaeger, uber-trace-id). This package adds a parallel OTel stack whose
-// global propagator is a composite of W3C TraceContext + Jaeger
-// (uber-trace-id) + Baggage. Because both dialects are spoken, an OTel
-// span is injected as BOTH `traceparent` and `uber-trace-id`; the existing
-// jaeger middleware extracts the latter and therefore jaeger and OTel
-// share the same TraceID without an opentracing->OTel bridge and without
-// replacing the global opentracing tracer (so pkg/trace.TraceID keeps
-// working for downstream services that receive uber-trace-id carrying the
-// OTel id).
+// Package otel provides the OpenTelemetry backend for waterdrop's trace
+// factory (pkg/trace). The global propagator is a composite of W3C
+// TraceContext + Jaeger (uber-trace-id) + Baggage so that, in dual mode, an
+// OTel span is injected as BOTH `traceparent` and `uber-trace-id` and the
+// jaeger stack can extract the latter, sharing one TraceID without a bridge.
 //
 // Ownership / initialization:
-// OTel is initialized inside jaeger.Init() when the [trace.otel] section is
-// present and enabled, so services opt in purely via config (no code change).
-// Services without that section (or with enable=false) stay pure-jaeger (==
-// current behavior), preserving forward compatibility.
-//   - Services without their own OTel provider (e.g. anchor): set
-//     [trace.otel] with an endpoint -> InitWithConfig builds a
-//     TracerProvider exporting to langfuse and sets the composite propagator.
-//   - Services whose provider is owned elsewhere (e.g. maestro's ADK
-//     langfuse.Setup sets the global TracerProvider): set
-//     [trace.otel] with enable=true but empty endpoint ->
-//     InitWithConfig only installs the composite propagator and flips
-//     Enabled(); the later langfuse.Setup sets the provider.
+// InitWithConfig is called by trace.Init() (the factory) when the [trace.otel]
+// section is present and enabled. Services opt in purely via config.
+//   - Self-built provider: [trace.otel] with an endpoint -> InitWithConfig
+//     builds an OTLP/HTTP TracerProvider, sets it global, and installs the
+//     composite propagator.
+//   - External provider: [trace.otel] with enable=true, endpoint="", and
+//     external=true -> InitWithConfig installs only the composite propagator
+//     and flips Enabled(); a global TracerProvider is set by an external
+//     component (e.g. an ADK langfuse.Setup).
+//   - Disabled: [trace.otel] with enable=true, endpoint="", external=false ->
+//     InitWithConfig warns and leaves OTel disabled to avoid emitting spans
+//     with an all-zero TraceID from the noop provider.
+//   - enable=false or no [trace.otel] section: no-op, the factory selects the
+//     pure-jaeger mode (forward-compatible fallback).
 package otel
 
 import (
@@ -72,9 +65,17 @@ type Config struct {
 	Enable bool
 	// Endpoint is the full OTLP/HTTP trace endpoint, e.g.
 	// "https://cloud.langfuse.com/api/public/otel/v1/traces". When empty with
-	// Enable=true, no provider is built (caller's global provider is used,
-	// e.g. maestro's ADK langfuse.Setup).
+	// Enable=true, no provider is built; see External for how the provider is
+	// then resolved.
 	Endpoint string
+	// External, only meaningful with Enable=true and Endpoint="", declares that
+	// the global TracerProvider is owned and set by an external component (e.g.
+	// an ADK langfuse.Setup). InitWithConfig then installs only the composite
+	// propagator and flips Enabled(), trusting the external provider is set
+	// later. If Endpoint="" and External=false with Enable=true, InitWithConfig
+	// logs a warning and leaves OTel disabled (no propagator, Enabled()=false)
+	// to avoid emitting spans with an all-zero TraceID from the noop provider.
+	External bool
 	// Headers attached to OTLP export requests, e.g.
 	// {"Authorization": "Basic <base64(public:secret)>"}.
 	Headers map[string]string
@@ -92,6 +93,15 @@ var enabled atomic.Bool
 // start an OTel span (otherwise they behave as pure jaeger).
 func Enabled() bool { return enabled.Load() }
 
+// Active reports whether the config would actually enable OTel: enable=true
+// AND (an endpoint to build a provider OR external=true declaring a provider is
+// set elsewhere). The trace factory uses this to select the otel/dual backend;
+// enable=true with neither endpoint nor external is treated as inactive (OTel
+// would emit zero-TraceID spans from the noop provider).
+func (c *Config) Active() bool {
+	return c.Enable && (c.Endpoint != "" || c.External)
+}
+
 // compositePropagator returns the W3C+Jaeger+Baggage composite propagator
 // that lets OTel and waterdrop's jaeger share a TraceID without a bridge.
 func compositePropagator() propagation.TextMapPropagator {
@@ -105,11 +115,13 @@ func compositePropagator() propagation.TextMapPropagator {
 // InitWithConfig installs the composite propagator and, when cfg.Endpoint is
 // non-empty, builds an OTel TracerProvider exporting to the OTLP/HTTP
 // endpoint and sets it global. Returns a shutdown func (noop when nothing was
-// built). Called by jaeger.Init when [trace.otel] is present and enabled.
+// built). Called by trace.Init when [trace.otel] is present and enabled.
 //
-// enable=true + endpoint="": propagator only (provider owned elsewhere, e.g.
-// maestro's ADK langfuse.Setup which sets the global provider later).
-// enable=true + endpoint!="": full provider + propagator (e.g. anchor).
+// enable=true + endpoint!="": full provider + propagator (self-built).
+// enable=true + endpoint=""  + external=true: propagator only (global provider
+// owned and set elsewhere, e.g. ADK langfuse.Setup).
+// enable=true + endpoint=""  + external=false: warn and disable (avoid zero
+// TraceID spans from the noop provider).
 // enable=false: no-op, stays pure jaeger.
 func InitWithConfig(cfg *Config) func() {
 	if cfg == nil || !cfg.Enable {
@@ -122,6 +134,18 @@ func InitWithConfig(cfg *Config) func() {
 	enabled.Store(true)
 
 	if cfg.Endpoint == "" {
+		if !cfg.External {
+			// Enabled but neither an endpoint to build a provider nor a declared
+			// external provider: the global TracerProvider would be the noop
+			// one, so every OTel span would carry an all-zero TraceID. Disable
+			// OTel instead of emitting misleading zero-id spans. Roll back the
+			// propagator/enabled flag set above so middlewares behave as the
+			// non-OTel path.
+			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator())
+			enabled.Store(false)
+			log.Printf("otel: enabled but no endpoint and external=false; OTel disabled to avoid zero TraceID (set external=true if a global provider is set elsewhere)")
+			return func() {}
+		}
 		// Provider owned elsewhere; only the propagator was needed.
 		return func() {}
 	}

@@ -22,8 +22,6 @@ import (
 	"context"
 	"net/http"
 
-	jaeger "github.com/uber/jaeger-client-go"
-
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/grpc/metadata"
 
@@ -103,15 +101,11 @@ func HeaderExtractor(carrier http.Header) opentracing.StartSpanOption {
 	return opentracing.ChildOf(sc)
 }
 
-// TraceID return trace id as string
+// TraceID returns the trace id of the active span on ctx as a string.
+//
+// It delegates to the factory-selected global Tracer so it returns the correct
+// id for the active backend: the jaeger 64-bit id in jaeger mode, or the OTel
+// 128-bit id in otel/dual mode. Before Init() it returns "" (noopTracer).
 func TraceID(ctx context.Context) string {
-	sp := SpanFromContext(ctx)
-	if sp == nil {
-		return ""
-	}
-
-	if jsc, ok := sp.Context().(jaeger.SpanContext); ok {
-		return jsc.TraceID().String()
-	}
-	return ""
+	return globalTracer.TraceID(ctx)
 }

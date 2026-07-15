@@ -19,38 +19,40 @@
 package middlewares
 
 import (
-	"fmt"
+	"flag"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 	"github.com/UnderTreeTech/waterdrop/pkg/trace"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/server/http/config"
 	"github.com/gin-gonic/gin"
-
-	opentracing "github.com/opentracing/opentracing-go"
-	jconfig "github.com/uber/jaeger-client-go/config"
 )
 
-func newJaegerClient() (opentracing.Tracer, func()) {
-	var configuration = jconfig.Configuration{
-		ServiceName: "trace",
-	}
-
-	tracer, closer, err := configuration.NewTracer()
-	if err != nil {
-		panic(fmt.Sprintf("new jaeger trace fail, err msg %s", err.Error()))
-	}
-
-	return tracer, func() { closer.Close() }
+// loadTraceConfig writes a TOML config to a temp file, points the conf flag at
+// it, loads it, and runs the trace factory. Returns the factory shutdown func.
+func loadTraceConfig(t *testing.T, body string) func() {
+	t.Helper()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "app.toml")
+	require.NoError(t, os.WriteFile(path, []byte(body), 0644))
+	require.NoError(t, flag.Set("conf", path))
+	require.NoError(t, flag.Set("watch", "false"))
+	conf.Init()
+	return trace.Init()
 }
 
+// TestTrace: with no trace backend initialized, the middleware writes an empty
+// X-Trace-Id (noopTracer) and TraceID is "".
 func TestTrace(t *testing.T) {
 	engine := gin.New()
-
 	engine.Use(Trace(config.DefaultServerConfig()))
 	engine.GET("/trace/mock", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, trace.TraceID(ctx.Request.Context()))
@@ -60,23 +62,34 @@ func TestTrace(t *testing.T) {
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
 
-	assert.Equal(t, w.Body.String(), "")
+	assert.Equal(t, "", w.Body.String())
+	assert.Equal(t, "", w.Header().Get("X-Trace-Id"))
 }
 
+// TestJaegerTrace: with [trace.jaeger] configured, the middleware starts a
+// jaeger server span, TraceID is non-empty, and X-Trace-Id carries it.
 func TestJaegerTrace(t *testing.T) {
+	closeFn := loadTraceConfig(t, `
+[trace]
+    [trace.jaeger]
+        serviceName = "trace"
+        samplerType = "const"
+        samplerParam = 1
+        agentAddr = "127.0.0.1:6831"
+`)
+	defer closeFn()
+
 	engine := gin.New()
 	engine.Use(Trace(config.DefaultServerConfig()))
 	engine.GET("/trace/jaeger", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, trace.TraceID(ctx.Request.Context()))
 	})
 
-	tracer, close := newJaegerClient()
-	trace.SetGlobalTracer(tracer)
-	defer close()
-
 	req := httptest.NewRequest(http.MethodGet, "/trace/jaeger", nil)
 	w := httptest.NewRecorder()
 	engine.ServeHTTP(w, req)
 
 	assert.NotEqual(t, 0, len(w.Body.String()))
+	assert.Equal(t, w.Body.String(), w.Header().Get("X-Trace-Id"))
+	assert.Len(t, w.Body.String(), 16, "jaeger 64-bit id")
 }
