@@ -38,6 +38,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0
 	go.uber.org/automaxprocs v1.4.0
 	go.uber.org/zap v1.21.0
+	golang.org/x/time v0.15.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
 	google.golang.org/grpc v1.80.0 // pinned: do not bump; OTel deps must stay == v1.43.0 (v1.44.0 requires grpc >= v1.81.1)
 	google.golang.org/protobuf v1.36.11
