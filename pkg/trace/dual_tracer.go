@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 waterdrop authors.
+ * Copyright 2026 waterdrop authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,11 @@ func (t *dualTracer) StartClientSpan(ctx context.Context, name string, kind Span
 	octx = t.otel.bridge.ContextWithBridgeSpan(octx, ospan)
 	t.otel.inject(octx, carrier)
 
-	jspan := t.jaeger.tracer.StartSpan(name, opentracing.Tag{Key: string(ext.Component), Value: componentForCarrier(carrier)})
+	// jaeger side: use StartSpanFromContext so the jaeger client span inherits the
+	// active jaeger span on ctx as parent (the jaeger server span started by
+	// StartServerSpan). t.jaeger.tracer.StartSpan alone would not read the ctx
+	// parent and start a root span, breaking the jaeger-side trace continuity.
+	jspan, _ := opentracing.StartSpanFromContext(ctx, name, opentracing.Tag{Key: string(ext.Component), Value: componentForCarrier(carrier)})
 	ext.SpanKind.Set(jspan, spanKindOpentracing(kind))
 	if carrier != nil {
 		injectWith(t.jaeger.tracer, jspan, carrier)

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 waterdrop authors.
+ * Copyright 2026 waterdrop authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,9 +112,11 @@ func (t *jaegerTracer) StartServerSpan(ctx context.Context, name string, kind Sp
 }
 
 func (t *jaegerTracer) StartClientSpan(ctx context.Context, name string, kind SpanKind, carrier Carrier) (Span, context.Context) {
-	span := t.tracer.StartSpan(name, opentracing.Tag{Key: string(ext.Component), Value: componentForCarrier(carrier)})
+	// Use StartSpanFromContext so the client span inherits the active span on ctx
+	// as parent (the server span started by the Trace middleware). t.tracer.StartSpan
+	// alone would not read the ctx parent and start a root span, breaking continuity.
+	span, ctx := opentracing.StartSpanFromContext(ctx, name, opentracing.Tag{Key: string(ext.Component), Value: componentForCarrier(carrier)})
 	ext.SpanKind.Set(span, spanKindOpentracing(kind))
-	ctx = opentracing.ContextWithSpan(ctx, span)
 	if carrier != nil {
 		injectWith(t.tracer, span, carrier)
 	}

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 waterdrop authors.
+ * Copyright 2026 waterdrop authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@ func newOtelTracer(oconf *otel.Config) (Tracer, func()) {
 	opentracing.SetGlobalTracer(bridge)
 
 	t := &otelTracer{
-		tracer:  otel.Tracer("waterdrop"),
-		bridge:  bridge,
-		prop:    otel.Propagator(),
+		tracer: otel.Tracer("waterdrop"),
+		bridge: bridge,
+		prop:   otel.Propagator(),
 	}
 	return t, func() {
 		otelShutdown()

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 waterdrop authors.
+ * Copyright 2026 waterdrop authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ func resetGlobal() {
 func setOtelInMemoryProvider() *tracetest.InMemoryExporter {
 	exp := tracetest.NewInMemoryExporter()
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSyncer(exp),            // synchronous for deterministic tests
+		sdktrace.WithSyncer(exp), // synchronous for deterministic tests
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	)
 	otel.SetTracerProvider(tp)

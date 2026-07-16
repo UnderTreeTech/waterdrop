@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2020 waterdrop authors.
+ * Copyright 2026 waterdrop authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,11 +144,11 @@ func (noopTracer) Shutdown()                            {}
 // noopSpan implements Span as a set of no-ops.
 type noopSpan struct{}
 
-func (noopSpan) End()                       {}
-func (noopSpan) SetStatus(bool, string)     {}
+func (noopSpan) End()                         {}
+func (noopSpan) SetStatus(bool, string)       {}
 func (noopSpan) SetStringAttr(string, string) {}
-func (noopSpan) SetIntAttr(string, int64)   {}
-func (noopSpan) TraceID() string            { return "" }
+func (noopSpan) SetIntAttr(string, int64)     {}
+func (noopSpan) TraceID() string              { return "" }
 
 // Init is the trace factory entry point. It reads the [trace.jaeger] and
 // [trace.otel] config sections and selects a backend:
