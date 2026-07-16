@@ -49,6 +49,11 @@ import (
 )
 
 // Request request params
+//
+// Deprecated: this resty-based client is superseded by NewClient / TraceClient
+// (see transport.go), which traces every request by default and supports
+// SSE/raw streaming. Build a standard *http.Request with
+// http.NewRequestWithContext and send it via TraceClient.Do instead.
 type Request struct {
 	URI        string
 	QueryParam url.Values
@@ -59,9 +64,18 @@ type Request struct {
 }
 
 // RequestMiddleware http request middleware
+//
+// Deprecated: the resty-based client is superseded by TraceClient; set headers
+// on a standard *http.Request directly instead of using a resty middleware.
 type RequestMiddleware func(client *Client) resty.RequestMiddleware
 
 // Client http client
+//
+// Deprecated: use TraceClient (built with NewClient) instead. TraceClient
+// traces every outbound request by default (tracing is mandatory and
+// unbypassable), supports SSE/raw streaming and custom transports, and emits
+// the same access log as this client. This resty-based client buffers the full
+// response, so it cannot stream SSE.
 type Client struct {
 	client   *resty.Client
 	config   *config.ClientConfig
@@ -69,6 +83,10 @@ type Client struct {
 }
 
 // New return a http client
+//
+// Deprecated: use NewClient instead. NewClient returns a *TraceClient with
+// mandatory tracing and access logging; configure it with WithTimeout /
+// WithBaseTransport / WithSlowRequestThreshold.
 func New(config *config.ClientConfig) *Client {
 	cli := resty.New()
 	cli.SetTimeout(config.Timeout)
@@ -83,6 +101,9 @@ func New(config *config.ClientConfig) *Client {
 }
 
 // Use set client request middleware
+//
+// Deprecated: use TraceClient and set headers/params on a standard
+// *http.Request directly instead of a resty request middleware.
 func (c *Client) Use(m RequestMiddleware) *Client {
 	rm := m(c)
 	c.client = c.client.OnBeforeRequest(rm)
@@ -217,6 +238,9 @@ func accept(err error) bool {
 
 // Get http get request
 // Notice that Get only applied to JSON and XML response MIME type
+//
+// Deprecated: use TraceClient.Do (or TraceClient.Get) with a standard
+// *http.Request instead.
 func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.newRequest(http.MethodGet, req, reply)
 	_, err = c.execute(ctx, request)
@@ -225,6 +249,9 @@ func (c *Client) Get(ctx context.Context, req *Request, reply interface{}) (err 
 
 // Post http post request
 // Notice that Post only applied to JSON and XML response MIME type
+//
+// Deprecated: use TraceClient.PostJson (JSON body) or TraceClient.Post with a
+// standard *http.Request instead.
 func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.newRequest(http.MethodPost, req, reply)
 	_, err = c.execute(ctx, request)
@@ -233,6 +260,8 @@ func (c *Client) Post(ctx context.Context, req *Request, reply interface{}) (err
 
 // Put http put request
 // Notice that Put only applied to JSON and XML response MIME type
+//
+// Deprecated: use TraceClient.Do with a standard *http.Request instead.
 func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.newRequest(http.MethodPut, req, reply)
 	_, err = c.execute(ctx, request)
@@ -241,6 +270,8 @@ func (c *Client) Put(ctx context.Context, req *Request, reply interface{}) (err 
 
 // Delete http delete request
 // Notice that Delete only applied to JSON and XML response MIME type
+//
+// Deprecated: use TraceClient.Do with a standard *http.Request instead.
 func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) (err error) {
 	request := c.newRequest(http.MethodDelete, req, reply)
 	_, err = c.execute(ctx, request)
@@ -248,6 +279,9 @@ func (c *Client) Delete(ctx context.Context, req *Request, reply interface{}) (e
 }
 
 // RawGet http get request and return response body raw byte
+//
+// Deprecated: use TraceClient.Do with a standard *http.Request and read
+// resp.Body instead.
 func (c *Client) RawGet(ctx context.Context, req *Request) (reply []byte, err error) {
 	request := c.newRequest(http.MethodGet, req, nil)
 	resp, err := c.execute(ctx, request)
@@ -255,6 +289,9 @@ func (c *Client) RawGet(ctx context.Context, req *Request) (reply []byte, err er
 }
 
 // RawPost http post request and return response body raw byte
+//
+// Deprecated: use TraceClient.PostJson (or TraceClient.Do) with a standard
+// *http.Request and read resp.Body instead.
 func (c *Client) RawPost(ctx context.Context, req *Request) (reply []byte, err error) {
 	request := c.newRequest(http.MethodPost, req, nil)
 	resp, err := c.execute(ctx, request)
@@ -262,6 +299,9 @@ func (c *Client) RawPost(ctx context.Context, req *Request) (reply []byte, err e
 }
 
 // RawPut http put request and return response body raw byte
+//
+// Deprecated: use TraceClient.Do with a standard *http.Request and read
+// resp.Body instead.
 func (c *Client) RawPut(ctx context.Context, req *Request) (reply []byte, err error) {
 	request := c.newRequest(http.MethodPut, req, nil)
 	resp, err := c.execute(ctx, request)
@@ -269,6 +309,9 @@ func (c *Client) RawPut(ctx context.Context, req *Request) (reply []byte, err er
 }
 
 // RawDelete http delete request and return response body raw byte
+//
+// Deprecated: use TraceClient.Do with a standard *http.Request and read
+// resp.Body instead.
 func (c *Client) RawDelete(ctx context.Context, req *Request) (reply []byte, err error) {
 	request := c.newRequest(http.MethodDelete, req, nil)
 	resp, err := c.execute(ctx, request)
@@ -279,6 +322,10 @@ func (c *Client) RawDelete(ctx context.Context, req *Request) (reply []byte, err
 // sign algorithm:md5(query params + body + secret + timestamp + nonce)
 // Notice:stuff body only when HTTP METHOD is not GET.
 // Encode query params to `"bar=baz&foo=quux"` sorted by key in any case
+//
+// Deprecated: resty request middleware is gone with TraceClient. If signing is
+// needed, compute the signature and set it on the standard *http.Request
+// headers before calling TraceClient.Do.
 func Signature(client *Client) resty.RequestMiddleware {
 	return func(cli *resty.Client, request *resty.Request) error {
 		ts := strconv.Itoa(int(xtime.Now().CurrentUnixTime()))
